@@ -35,6 +35,7 @@ class HlsManifestParser(private val okHttpClient: OkHttpClient = OkHttpClient(),
         return parseVariantManifest(variantUrl, originalManifest)
     }
 
+    //TODO: Implement correct live segments support
     private fun parseVariantManifest(variantUrl: String, manifest: String): String
     {
         val mediaPlaylist = parser.parse(variantUrl.toUri(), manifest.byteInputStream())
@@ -43,8 +44,10 @@ class HlsManifestParser(private val okHttpClient: OkHttpClient = OkHttpClient(),
             throw IOException("The provided URL does not point to a media playlist.")
         }
 
+        var updatedVariantManifest = manifest
 
-        return mediaPlaylist.segments.fold(manifest)  { updatedManifest, segment ->
+        var startTime = 0.0
+        mediaPlaylist.segments.forEachIndexed { index, segment ->
             val segmentUri = segment.url
             val segmentUriInManifest = findUrlInManifest(manifest, segmentUri, variantUrl)
                 ?: throw IllegalStateException("Segment URL not found in the manifest: $segmentUri")
@@ -52,11 +55,29 @@ class HlsManifestParser(private val okHttpClient: OkHttpClient = OkHttpClient(),
                 getAbsoluteUrl(variantUrl, segmentUri).encodeURLQueryComponent()
             val newUrl = "http://127.0.0.1:$serverPort/?segment=$absoluteSegmentUrl"
 
+            val byteRange = ByteRange(
+                start = segment.byteRangeOffset,
+                end = segment.byteRangeLength
+            )
 
+            val endTime = startTime + segment.durationUs.toDouble() / 1_000_000
+            val mediaSegment = Segment(
+                runtimeId = segmentUri,
+                externalId = index,
+                url = newUrl,
+                byteRange = byteRange,
+                startTime = startTime,
+                endTime = endTime
+            )
 
+            startTime = endTime
 
-            updatedManifest.replace(segmentUriInManifest, newUrl)
+            streamSegments.getOrPut(variantUrl) { mutableListOf() }.add(mediaSegment)
+
+            updatedVariantManifest = updatedVariantManifest.replace(segmentUriInManifest, newUrl)
         }
+
+        return updatedVariantManifest
     }
 
     private fun parseMasterManifest(
