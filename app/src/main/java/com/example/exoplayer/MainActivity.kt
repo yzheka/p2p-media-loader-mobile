@@ -82,6 +82,7 @@ class MainActivity : ComponentActivity() {
             val p2pServer = P2PMLServer()
 
             p2pServer.startServer()
+            //val manifest = p2pServer.getServerManifestUrl("https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8")
             //val manifest = p2pServer.getServerManifestUrl("https://devstreaming-cdn.apple.com/videos/streaming/examples/adv_dv_atmos/main.m3u8")
             //val manifest = p2pServer.getServerManifestUrl("https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.DmumNckWFTqz.m3u8")
             val manifest = p2pServer.getServerManifestUrl("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")

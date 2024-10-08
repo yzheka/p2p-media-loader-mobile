@@ -3,7 +3,6 @@ package com.example.p2pml
 // HlsManifestParser.kt
 
 import androidx.core.net.toUri
-import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
 import androidx.media3.exoplayer.hls.playlist.HlsMultivariantPlaylist
@@ -13,6 +12,8 @@ import io.ktor.server.application.ApplicationCall
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.*
+import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
@@ -24,6 +25,7 @@ class HlsManifestParser(private val okHttpClient: OkHttpClient = OkHttpClient(),
 
     private val streams = mutableListOf<Stream>()
     private val streamSegments = mutableMapOf<String, MutableList<Segment>>()
+    private val updateStreamParams = mutableMapOf<String, UpdateStreamParams>()
 
     suspend fun getModifiedMasterManifest(call: ApplicationCall, manifestUrl: String): String {
         val originalManifest = fetchManifest(call, manifestUrl)
@@ -36,6 +38,7 @@ class HlsManifestParser(private val okHttpClient: OkHttpClient = OkHttpClient(),
     }
 
     //TODO: Implement correct live segments support
+    //TODO: Remove Initial segments from the processing
     private fun parseVariantManifest(variantUrl: String, manifest: String): String
     {
         val mediaPlaylist = parser.parse(variantUrl.toUri(), manifest.byteInputStream())
@@ -46,6 +49,7 @@ class HlsManifestParser(private val okHttpClient: OkHttpClient = OkHttpClient(),
 
         var updatedVariantManifest = manifest
 
+        val segmentsInPlaylist = mutableListOf<Segment>()
         var startTime = 0.0
         mediaPlaylist.segments.forEachIndexed { index, segment ->
             val segmentUri = segment.url
@@ -55,29 +59,73 @@ class HlsManifestParser(private val okHttpClient: OkHttpClient = OkHttpClient(),
                 getAbsoluteUrl(variantUrl, segmentUri).encodeURLQueryComponent()
             val newUrl = "http://127.0.0.1:$serverPort/?segment=$absoluteSegmentUrl"
 
-            val byteRange = ByteRange(
-                start = segment.byteRangeOffset,
-                end = segment.byteRangeLength
-            )
+
+            if(segment.initializationSegment == segment) {
+                updatedVariantManifest = updatedVariantManifest.replace(segmentUriInManifest, absoluteSegmentUrl)
+                return@forEachIndexed
+            }
+
+            val startRange = segment.byteRangeOffset
+            val endRange = startRange + segment.byteRangeLength
+
+            val byteRange = if (startRange != 0L && endRange != -1L)
+                ByteRange(startRange, endRange)
+            else
+                null
 
             val endTime = startTime + segment.durationUs.toDouble() / 1_000_000
             val mediaSegment = Segment(
-                runtimeId = segmentUri,
+                runtimeId = absoluteSegmentUrl,
                 externalId = index,
-                url = newUrl,
+                url = absoluteSegmentUrl,
                 byteRange = byteRange,
                 startTime = startTime,
                 endTime = endTime
             )
-
+            segmentsInPlaylist.add(mediaSegment)
             startTime = endTime
-
-            streamSegments.getOrPut(variantUrl) { mutableListOf() }.add(mediaSegment)
 
             updatedVariantManifest = updatedVariantManifest.replace(segmentUriInManifest, newUrl)
         }
 
+        val previousSegments = streamSegments.getOrDefault(variantUrl, null)
+
+        val updateStream = if(previousSegments != null) {
+            val newSegments = segmentsInPlaylist.filter { segment ->
+                previousSegments.none { it.runtimeId == segment.runtimeId }
+            }
+
+            val removedSegments = previousSegments.filter { segment ->
+                segmentsInPlaylist.none { it.runtimeId == segment.runtimeId }
+            }
+
+            UpdateStreamParams(
+                streamRuntimeId = variantUrl,
+                addSegments = newSegments,
+                removeSegmentsIds = removedSegments.map { it.runtimeId }
+            )
+        } else {
+            UpdateStreamParams(
+                streamRuntimeId = variantUrl,
+                addSegments = segmentsInPlaylist,
+                removeSegmentsIds = emptyList()
+            )
+        }
+
+        streamSegments[variantUrl] = segmentsInPlaylist
+        updateStreamParams[variantUrl] = updateStream
+
         return updatedVariantManifest
+    }
+
+    fun getUpdateStreamParamsJSON(variantUrl: String): String {
+        val updateStream = updateStreamParams[variantUrl]
+            ?: throw IllegalStateException("Update stream params not found for variant: $variantUrl")
+        return Json.encodeToString(updateStream)
+    }
+
+    fun getStreamsJSON(): String {
+        return Json.encodeToString(streams)
     }
 
     private fun parseMasterManifest(

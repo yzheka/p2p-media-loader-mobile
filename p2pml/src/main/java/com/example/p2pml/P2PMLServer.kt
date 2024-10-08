@@ -88,7 +88,8 @@ class P2PMLServer(
 
         try {
             val modifiedManifest = hlsManifestParser.getModifiedMasterManifest(call, decodedManifestUrl)
-            Log.i(TAG, "Modified master manifest: $modifiedManifest")
+            val streamsJSON = hlsManifestParser.getStreamsJSON()
+
             call.respondText(modifiedManifest, ContentType.parse("application/vnd.apple.mpegurl"))
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching or modifying master manifest: ${e.message}")
@@ -105,7 +106,8 @@ class P2PMLServer(
 
         try {
             val modifiedVariantManifest = hlsManifestParser.getModifiedVariantManifest(call, decodedVariantUrl)
-
+            val updateStreamJSON = hlsManifestParser.getUpdateStreamParamsJSON(decodedVariantUrl)
+            println("Update Stream JSON: $updateStreamJSON")
             call.respondText(modifiedVariantManifest, ContentType.parse("application/vnd.apple.mpegurl"))
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching or modifying variant manifest: ${e.message}")
