@@ -1,25 +1,71 @@
 <!DOCTYPE html>
 <html lang="">
-<head>
+  <head>
     <title>WebView Example</title>
     <script type="text/javascript">
-        function receiveMessageFromAndroid(message) {
-            document.getElementById("message").innerHTML = "Message from Kotlin: " + message;
-        }
+      function receiveMessageFromAndroid(message) {
+        document.getElementById("message").innerHTML =
+          "Message from Kotlin: " + message;
+      }
     </script>
     <script type="importmap">
-        {
-          "imports": {
-            "p2p-media-loader-core": "https://cdn.jsdelivr.net/npm/p2p-media-loader-core@^1/dist/p2p-media-loader-core.es.min.js",
-          }
+      {
+        "imports": {
+          "p2p-media-loader-core": "https://cdn.jsdelivr.net/npm/p2p-media-loader-core@^1/dist/p2p-media-loader-core.es.min.js"
         }
+      }
     </script>
-</head>
-<body>
-<h1>WebView with JavaScript Bridge</h1>
-<p id="message">Waiting for a message from Kotlin...</p>
-</body>
-<script>
+  </head>
+  <body>
+    <h1>WebView with JavaScript Bridge</h1>
+    <p id="message">Waiting for a message from Kotlin...</p>
+  </body>
+  <script type="module">
+    import { Core } from "p2p-media-loader-core";
+    console.log("Core", Core);
 
-</script>
+    class P2P {
+      core = new Core();
+      port = null;
+
+      constructor() {}
+
+      listenPort() {
+        window.addEventListener("message", (event) => {
+          const port = event.ports[0];
+          const data = event.data;
+          if (!port || data !== "init") return;
+          this.port = port;
+          port.onmessage = (event) => {
+            const message = event.data;
+            console.log("Received message from Kotlin:", message);
+            this.handleMessage(message);
+          };
+        });
+      }
+    }
+
+    window.addEventListener("message", function (event) {
+      var port = event.ports[0];
+      if (port) {
+        document.getElementById("message").innerHTML =
+          "Message from Kotlin: " + event.data;
+        port.onmessage = function (event) {
+          var message = event.data;
+          document.getElementById("message").innerHTML =
+            "Message from Kotlin: " + message;
+          console.log("Received message from Kotlin:", message);
+          // Handle the message from Kotlin
+        };
+
+        const arrayBuffer = new ArrayBuffer(4 * 1024 * 1024);
+        const uint8View = new Uint8Array(arrayBuffer);
+        for (let i = 0; i < uint8View.length; i++) {
+          uint8View[i] = i % 256;
+        }
+        port.postMessage(arrayBuffer, [arrayBuffer]);
+        //port.postMessage('Hello from JS2323');
+      }
+    });
+  </script>
 </html>
