@@ -137,13 +137,13 @@ class MainActivity : ComponentActivity() {
                 AndroidView(
                     modifier = Modifier.weight(1f),
                     factory = {
-                        coreWebView.webView // Access the WebView from CoreWebView
+                        coreWebView.webView
                     }
                 )
 
                 Button(
                     onClick = {
-                        coreWebView.sendMessage("Hello from Android Button!")
+                        coreWebView.sendInitialMessage()
                     },
                     modifier = Modifier
                         .padding(16.dp)

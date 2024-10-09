@@ -40,6 +40,7 @@ dependencies {
     implementation ("androidx.media3:media3-exoplayer-hls:1.4.1")
     implementation ("androidx.media3:media3-exoplayer:1.4.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("androidx.webkit:webkit:1.9.0")
 
 
     implementation(libs.androidx.core.ktx)

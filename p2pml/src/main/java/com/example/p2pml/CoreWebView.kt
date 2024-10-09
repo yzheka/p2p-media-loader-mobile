@@ -1,22 +1,62 @@
 package com.example.p2pml
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.net.Uri
+import android.util.Log
+import android.webkit.WebMessage
 import android.webkit.WebView
-import android.webkit.WebViewClient
+import androidx.webkit.WebMessageCompat
+import androidx.webkit.WebMessagePortCompat
+import androidx.webkit.WebViewClientCompat
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 
 
 class CoreWebView(context: Context) {
     private val fileToLoad = "file:///android_asset/core.html"
+    private lateinit var nativePort: WebMessagePortCompat
+    private lateinit var jsPort: WebMessagePortCompat
+
 
     val webView = WebView(context).apply {
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
 
-        webViewClient = WebViewClient()
+        webViewClient = WebViewClientCompat()
+        //visibility = View.GONE
     }
 
+    @SuppressLint("RequiresFeature")
     fun loadCore() {
-        webView.loadUrl(fileToLoad)
+
+
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.CREATE_WEB_MESSAGE_CHANNEL))
+        {
+            webView.loadUrl(fileToLoad)
+            val channels = WebViewCompat.createWebMessageChannel(webView)
+            nativePort = channels[0]
+            jsPort = channels[1]
+
+            nativePort.setWebMessageCallback(
+                object : WebMessagePortCompat.WebMessageCallbackCompat() {
+                    override fun onMessage(port: WebMessagePortCompat, message: WebMessageCompat?) {
+                       val arrayBuffer = message?.arrayBuffer
+                        Log.d("CoreWebView", "Received message from  JS: ${arrayBuffer?.size}")
+                    }
+                },
+            )
+        }
+    }
+
+    @SuppressLint("RequiresFeature")
+    fun sendInitialMessage() {
+        val initialMessage = WebMessageCompat("", arrayOf(jsPort))
+        WebViewCompat.postWebMessage(
+            webView,
+            initialMessage,
+            Uri.parse("*")
+        )
     }
 
     fun sendMessage(message: String) {
