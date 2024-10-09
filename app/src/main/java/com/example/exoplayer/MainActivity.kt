@@ -8,11 +8,20 @@ import android.os.Handler
 import android.os.Looper
 import android.webkit.WebMessagePort
 import android.webkit.WebView
+import android.widget.FrameLayout
+import android.widget.ProgressBar
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.OptIn
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
@@ -28,9 +37,11 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsManifest
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
+import com.example.p2pml.CoreWebView
 import com.example.p2pml.P2PMLServer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -70,22 +81,23 @@ class LoggingDataSourceFactory(private val context: Context) : DataSource.Factor
 
 class MainActivity : ComponentActivity() {
     private lateinit var player: ExoPlayer
-    private lateinit var webView: WebView
-    private lateinit var webMessagePort: WebMessagePort
+    private lateinit var coreWebView: CoreWebView
 
     @OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val isPlayerReady = mutableStateOf(false)
 
         lifecycleScope.launch {
-            val p2pServer = P2PMLServer()
+            val p2pServer = P2PMLServer(this@MainActivity)
 
+            coreWebView = p2pServer.coreWebView
+            p2pServer.startCoreWebView()
             p2pServer.startServer()
-            //val manifest = p2pServer.getServerManifestUrl("https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8")
-            //val manifest = p2pServer.getServerManifestUrl("https://devstreaming-cdn.apple.com/videos/streaming/examples/adv_dv_atmos/main.m3u8")
-            //val manifest = p2pServer.getServerManifestUrl("https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.DmumNckWFTqz.m3u8")
-            val manifest = p2pServer.getServerManifestUrl("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")
+
+            val manifest =
+                p2pServer.getServerManifestUrl("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")
             val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
             val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory).createMediaSource(
                 MediaItem.fromUri(manifest)
@@ -96,17 +108,50 @@ class MainActivity : ComponentActivity() {
                 prepare()
                 playWhenReady = true
             }
+
+            isPlayerReady.value = true
         }
 
         setContent {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    PlayerView(context).apply {
-                        player = this@MainActivity.player
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                AndroidView(
+                    modifier = Modifier.weight(1f),
+                    factory = { context ->
+                        if (isPlayerReady.value) {
+                            PlayerView(context).apply {
+                                player = this@MainActivity.player
+                            }
+                        } else {
+                            FrameLayout(context).apply {
+                                val progressBar = ProgressBar(context).apply {
+                                    isIndeterminate = true
+                                }
+                                addView(progressBar)
+                            }
+                        }
                     }
+                )
+
+                AndroidView(
+                    modifier = Modifier.weight(1f),
+                    factory = {
+                        coreWebView.webView // Access the WebView from CoreWebView
+                    }
+                )
+
+                Button(
+                    onClick = {
+                        coreWebView.sendMessage("Hello from Android Button!")
+                    },
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text("Send Message to WebView")
                 }
-            )
+            }
         }
     }
 
@@ -115,31 +160,3 @@ class MainActivity : ComponentActivity() {
         player.release()
     }
 }
-
-
-//        player.addListener(
-//            object : Player.Listener {
-//                @OptIn(UnstableApi::class)
-//                override fun onTimelineChanged(timeline: Timeline, @Player.TimelineChangeReason reason: Int) {
-//                    val manifest = player.currentManifest
-//                    if (manifest is HlsManifest) {
-//                        manifest.mediaPlaylist.let { playlist ->
-//                            Log.d("=HLS_MANIFEST", "Media Playlist Duration: ${playlist.durationUs}")
-//                            Log.d("=HLS_MANIFEST", "Media Playlist Start Time: ${playlist.startTimeUs}")
-//                            Log.d("=HLS_MANIFEST", "Media Playlist End Time: ${playlist.endTimeUs}")
-//                            // You can log other specific properties or details you are interested in
-//                        }
-//                    }
-//
-//                }
-//            }
-//        )
-//        Handler(Looper.getMainLooper()).postDelayed({
-//            val currentPos = player.currentPosition
-//            Log.d("=CURRENT_POSITION", "Current Position: $currentPos")
-//            val currentMediaItem = player.currentMediaItem
-//
-//            val tracks = player.currentTracks
-//            val trackCount = tracks.groups.size
-//            Log.d("=TRACK_COUNT", "Track Count: $trackCount")
-//        }, 5000)

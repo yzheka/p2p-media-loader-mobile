@@ -1,6 +1,9 @@
 package com.example.p2pml
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.provider.ContactsContract.CommonDataKinds.Website.URL
 import android.util.Log
 import androidx.core.net.toUri
@@ -29,8 +32,11 @@ import okhttp3.Request
 
 @UnstableApi
 class P2PMLServer(
+    context: Context,
     private val serverPort: Int = 8080
 ) {
+    val coreWebView = CoreWebView(context)
+
     private var server: ApplicationEngine? = null
     private val hlsManifestParser: HlsManifestParser = HlsManifestParser()
     private val client = OkHttpClient()
@@ -38,6 +44,10 @@ class P2PMLServer(
     fun getServerManifestUrl(manifestUrl: String): String {
         val encodedManifestURL = manifestUrl.encodeURLQueryComponent()
         return "http://127.0.0.1:$serverPort/?manifest=$encodedManifestURL"
+    }
+
+    fun startCoreWebView() {
+        coreWebView.loadCore()
     }
 
     /**
@@ -89,7 +99,9 @@ class P2PMLServer(
         try {
             val modifiedManifest = hlsManifestParser.getModifiedMasterManifest(call, decodedManifestUrl)
             val streamsJSON = hlsManifestParser.getStreamsJSON()
-
+            runOnUiThread {
+                coreWebView.sendMessage(streamsJSON)
+            }
             call.respondText(modifiedManifest, ContentType.parse("application/vnd.apple.mpegurl"))
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching or modifying master manifest: ${e.message}")
@@ -183,6 +195,10 @@ class P2PMLServer(
                 }
             }
         }
+    }
+
+    private fun runOnUiThread(action: () -> Unit) {
+        Handler(Looper.getMainLooper()).post(action)
     }
 
     companion object {

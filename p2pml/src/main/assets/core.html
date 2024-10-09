@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+    <title>WebView Example</title>
+    <script type="text/javascript">
+        function receiveMessageFromAndroid(message) {
+            document.getElementById("message").innerHTML = "Message from Kotlin: " + message;
+        }
+    </script>
+    <script type="importmap">
+        {
+          "imports": {
+            "p2p-media-loader-core": "https://cdn.jsdelivr.net/npm/p2p-media-loader-core@^1/dist/p2p-media-loader-core.es.min.js",
+          }
+        }
+    </script>
+</head>
+<body>
+<h1>WebView with JavaScript Bridge</h1>
+<p id="message">Waiting for a message from Kotlin...</p>
+</body>
+<script>
+
+</script>
+</html>
