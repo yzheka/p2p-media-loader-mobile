@@ -87,13 +87,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val isPlayerReady = mutableStateOf(false)
+        WebView.setWebContentsDebuggingEnabled(true)
+
 
         lifecycleScope.launch {
             val p2pServer = P2PMLServer(this@MainActivity)
 
             coreWebView = p2pServer.coreWebView
             p2pServer.startCoreWebView()
+            // TODO: Remove this delay
+            delay(1000)
             p2pServer.startServer()
 
             val manifest =
@@ -103,60 +106,52 @@ class MainActivity : ComponentActivity() {
                 MediaItem.fromUri(manifest)
             )
 
+
             player = ExoPlayer.Builder(this@MainActivity).build().apply {
                 setMediaSource(mediaSource)
                 prepare()
                 playWhenReady = true
             }
 
-            isPlayerReady.value = true
-        }
-
-        setContent {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                AndroidView(
-                    modifier = Modifier.weight(1f),
-                    factory = { context ->
-                        if (isPlayerReady.value) {
+            setContent {
+                Column(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    AndroidView(
+                        modifier = Modifier.weight(1f),
+                        factory = { context ->
                             PlayerView(context).apply {
                                 player = this@MainActivity.player
                             }
-                        } else {
-                            FrameLayout(context).apply {
-                                val progressBar = ProgressBar(context).apply {
-                                    isIndeterminate = true
-                                }
-                                addView(progressBar)
-                            }
                         }
-                    }
-                )
+                    )
 
-                AndroidView(
-                    modifier = Modifier.weight(1f),
-                    factory = {
-                        coreWebView.webView
-                    }
-                )
+                    AndroidView(
+                        modifier = Modifier.weight(1f),
+                        factory = {
+                            coreWebView.webView
+                        }
+                    )
 
-                Button(
-                    onClick = {
-                        coreWebView.sendInitialMessage()
-                    },
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                ) {
-                    Text("Send Message to WebView")
+                    Button(
+                        onClick = {
+                            coreWebView.sendInitialMessage()
+                        },
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Text("Send Message to WebView")
+                    }
                 }
             }
+
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         player.release()
+        coreWebView.destroy()
     }
 }

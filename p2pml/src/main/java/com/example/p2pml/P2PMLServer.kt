@@ -4,13 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import android.provider.ContactsContract.CommonDataKinds.Website.URL
 import android.util.Log
-import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
-import androidx.media3.exoplayer.hls.playlist.HlsMultivariantPlaylist
-import androidx.media3.exoplayer.hls.playlist.HlsPlaylistParser
 import io.ktor.http.encodeURLQueryComponent
 import io.ktor.http.decodeURLQueryComponent
 import io.ktor.http.ContentType
@@ -99,9 +94,13 @@ class P2PMLServer(
         try {
             val modifiedManifest = hlsManifestParser.getModifiedMasterManifest(call, decodedManifestUrl)
             val streamsJSON = hlsManifestParser.getStreamsJSON()
+
             runOnUiThread {
-                coreWebView.sendMessage(streamsJSON)
+                coreWebView.setManifestUrl(decodedManifestUrl)
+                coreWebView.sendAllStreams(streamsJSON)
+                coreWebView.sendInitialMessage()
             }
+
             call.respondText(modifiedManifest, ContentType.parse("application/vnd.apple.mpegurl"))
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching or modifying master manifest: ${e.message}")
@@ -120,6 +119,9 @@ class P2PMLServer(
             val modifiedVariantManifest = hlsManifestParser.getModifiedVariantManifest(call, decodedVariantUrl)
             val updateStreamJSON = hlsManifestParser.getUpdateStreamParamsJSON(decodedVariantUrl)
             println("Update Stream JSON: $updateStreamJSON")
+            runOnUiThread {
+                coreWebView.sendStream(updateStreamJSON)
+            }
             call.respondText(modifiedVariantManifest, ContentType.parse("application/vnd.apple.mpegurl"))
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching or modifying variant manifest: ${e.message}")
@@ -136,6 +138,10 @@ class P2PMLServer(
         Log.i(TAG, "Received request for segment: $decodedSegmentUrl")
         try {
             val segmentBytes = fetchSegment(call ,decodedSegmentUrl)
+
+            runOnUiThread {
+                coreWebView.sendSegmentRequest(decodedSegmentUrl)
+            }
 
             call.respondBytes(segmentBytes, ContentType.Application.OctetStream)
         } catch (e: Exception) {

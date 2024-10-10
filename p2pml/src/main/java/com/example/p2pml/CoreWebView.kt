@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import android.webkit.WebMessage
 import android.webkit.WebView
 import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebMessagePortCompat
@@ -27,12 +26,15 @@ class CoreWebView(context: Context) {
         //visibility = View.GONE
     }
 
+    fun destroy() {
+        webView.destroy()
+    }
+
     @SuppressLint("RequiresFeature")
     fun loadCore() {
-
-
         if (WebViewFeature.isFeatureSupported(WebViewFeature.CREATE_WEB_MESSAGE_CHANNEL))
         {
+
             webView.loadUrl(fileToLoad)
             val channels = WebViewCompat.createWebMessageChannel(webView)
             nativePort = channels[0]
@@ -61,5 +63,21 @@ class CoreWebView(context: Context) {
 
     fun sendMessage(message: String) {
         webView.evaluateJavascript("javascript:receiveMessageFromAndroid('$message');", null)
+    }
+
+    fun sendAllStreams(streamsJSON: String){
+        webView.evaluateJavascript("javascript:window.p2p.parseAllStreams('$streamsJSON');", null)
+    }
+
+    fun sendStream(streamJSON: String){
+        webView.evaluateJavascript("javascript:window.p2p.parseStream('$streamJSON');", null)
+    }
+
+    fun sendSegmentRequest(segmentUrl: String){
+        webView.evaluateJavascript("javascript:window.p2p.requestSegment('$segmentUrl');", null)
+    }
+
+    fun setManifestUrl(manifestUrl: String){
+        webView.evaluateJavascript("javascript:window.p2p.setManifestUrl('$manifestUrl');", null)
     }
 }
