@@ -41,10 +41,6 @@ class P2PMLServer(
         return "http://127.0.0.1:$serverPort/?manifest=$encodedManifestURL"
     }
 
-    fun startCoreWebView() {
-        coreWebView.loadCore()
-    }
-
     /**
      * Starts the Ktor server on the specified port asynchronously.
      */
@@ -96,9 +92,9 @@ class P2PMLServer(
             val streamsJSON = hlsManifestParser.getStreamsJSON()
 
             runOnUiThread {
+                coreWebView.sendInitialMessage()
                 coreWebView.setManifestUrl(decodedManifestUrl)
                 coreWebView.sendAllStreams(streamsJSON)
-                coreWebView.sendInitialMessage()
             }
 
             call.respondText(modifiedManifest, ContentType.parse("application/vnd.apple.mpegurl"))
@@ -139,9 +135,9 @@ class P2PMLServer(
         try {
             val segmentBytes = fetchSegment(call ,decodedSegmentUrl)
 
-            runOnUiThread {
-                coreWebView.sendSegmentRequest(decodedSegmentUrl)
-            }
+            val deferredSegmentBytes = coreWebView.requestSegmentBytes(decodedSegmentUrl)
+            //val segmentBytes = deferredSegmentBytes.await()
+
 
             call.respondBytes(segmentBytes, ContentType.Application.OctetStream)
         } catch (e: Exception) {

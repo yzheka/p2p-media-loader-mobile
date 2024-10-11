@@ -12,7 +12,6 @@
 
     <script type="module">
       import { Core } from "p2p-media-loader-core";
-      console.log("Core", Core);
 
       class P2P {
         constructor() {
@@ -24,6 +23,8 @@
         listenPort() {
           window.addEventListener("message", (event) => {
             const port = event.ports[0];
+            console.log("port received", port);
+            console.log(window.postMessage);
             if (!port) return;
             this.port = port;
           });
@@ -39,22 +40,31 @@
 
         parseStream(jsonData) {
           const playlist = JSON.parse(jsonData);
-          // this.core.addPlaylist(playlist);
+
           this.core.updateStream(
             playlist.streamRuntimeId,
             playlist.addSegments,
             playlist.removeSegmentsIds
           );
-          console.log("playlist", playlist);
         }
 
         requestSegment(segmentUrl) {
-          function onSuccess(response) {
-            console.log("response", response);
-          }
-          function onError(error) {
+          const onSuccess = (response) => {
+            const copyData = new ArrayBuffer(response.data.byteLength);
+            new Uint8Array(copyData).set(new Uint8Array(response.data));
+
+            //this.port.postMessage(segmentUrl);
+            //this.port.postMessage(copyData, [copyData]);
+            this.port.postMessage({
+              id: segmentUrl,
+              buffer: copyData,
+            });
+          };
+
+          const onError = (error) => {
+            // TODO: Implement error handling
             console.error("error", error);
-          }
+          };
 
           this.core.loadSegment(segmentUrl, {
             onSuccess,

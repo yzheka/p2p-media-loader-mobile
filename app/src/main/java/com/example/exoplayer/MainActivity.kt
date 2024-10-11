@@ -94,7 +94,6 @@ class MainActivity : ComponentActivity() {
             val p2pServer = P2PMLServer(this@MainActivity)
 
             coreWebView = p2pServer.coreWebView
-            p2pServer.startCoreWebView()
             // TODO: Remove this delay
             delay(1000)
             p2pServer.startServer()
