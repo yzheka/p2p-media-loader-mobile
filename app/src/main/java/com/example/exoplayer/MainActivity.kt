@@ -22,7 +22,6 @@ import androidx.media3.datasource.TransferListener
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
-import com.example.p2pml.CoreWebView
 import com.example.p2pml.P2PMLServer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -51,7 +50,7 @@ class LoggingDataSource(private val wrappedDataSource: DataSource) : DataSource 
 }
 
 @UnstableApi
-class LoggingDataSourceFactory(private val context: Context) : DataSource.Factory {
+class LoggingDataSourceFactory(context: Context) : DataSource.Factory {
     private val baseDataSourceFactory = DefaultDataSource.Factory(context)
 
     override fun createDataSource(): DataSource {
@@ -59,9 +58,10 @@ class LoggingDataSourceFactory(private val context: Context) : DataSource.Factor
     }
 }
 
+@UnstableApi
 class MainActivity : ComponentActivity() {
     private lateinit var player: ExoPlayer
-    private lateinit var coreWebView: CoreWebView
+    private lateinit var p2pServer: P2PMLServer
 
     @OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,7 +70,7 @@ class MainActivity : ComponentActivity() {
         WebView.setWebContentsDebuggingEnabled(true)
 
         lifecycleScope.launch {
-            val p2pServer = P2PMLServer(this@MainActivity, lifecycleScope)
+            p2pServer = P2PMLServer(this@MainActivity, lifecycleScope)
 
             // TODO: Remove this delay
             delay(1000)
@@ -112,13 +112,6 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         player.release()
-        coreWebView.destroy()
+        p2pServer.stopServer()
     }
-
-    override fun onPause() {
-        super.onPause()
-        player.playWhenReady = false
-        player.pause()
-    }
-
 }

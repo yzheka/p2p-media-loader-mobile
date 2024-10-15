@@ -21,11 +21,7 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import okhttp3.Request
-
 
 @UnstableApi
 class P2PMLServer(
@@ -55,29 +51,11 @@ class P2PMLServer(
         server = embeddedServer(CIO, serverPort) {
             routing {
                 get("/") {
-                    val manifestParam = call.request.queryParameters["manifest"]
-                    val variantPlaylistParam = call.request.queryParameters["variantPlaylist"]
-                    val segmentUrlParam = call.request.queryParameters["segment"]
-
                     when {
-                        !manifestParam.isNullOrBlank() -> {
-                            handleMasterManifestRequest(call, manifestParam)
-                        }
-
-                        !variantPlaylistParam.isNullOrBlank() -> {
-                            handleVariantPlaylistRequest(call, variantPlaylistParam)
-                        }
-
-                        !segmentUrlParam.isNullOrBlank() -> {
-                            handleSegmentRequest(call, segmentUrlParam)
-                        }
-
-                        else -> {
-                            call.respondText(
-                                "Missing required query parameter",
-                                status = HttpStatusCode.BadRequest
-                            )
-                        }
+                        call.parameters["manifest"] != null -> handleMasterManifestRequest(call)
+                        call.parameters["variantPlaylist"] != null -> handleVariantPlaylistRequest(call)
+                        call.parameters["segment"] != null -> handleSegmentRequest(call)
+                        else -> call.respondText("Missing required parameter", status = HttpStatusCode.BadRequest)
                     }
                 }
             }
@@ -89,7 +67,8 @@ class P2PMLServer(
     }
 
     @SuppressLint("UnsafeOptInUsageError")
-    private suspend fun handleMasterManifestRequest(call: ApplicationCall, manifestParam: String) {
+    private suspend fun handleMasterManifestRequest(call: ApplicationCall) {
+        val manifestParam = call.request.queryParameters["manifest"]!!
         val decodedManifestUrl = manifestParam.decodeURLQueryComponent()
         Log.i(TAG, "Received request for master manifest: $decodedManifestUrl")
 
@@ -113,7 +92,8 @@ class P2PMLServer(
         }
     }
 
-    private suspend fun handleVariantPlaylistRequest(call: ApplicationCall, variantPlaylistParam: String) {
+    private suspend fun handleVariantPlaylistRequest(call: ApplicationCall) {
+        val variantPlaylistParam = call.request.queryParameters["variantPlaylist"]!!
         val decodedVariantUrl = variantPlaylistParam.decodeURLQueryComponent()
         Log.i(TAG, "Received request for variant playlist: $decodedVariantUrl")
 
@@ -124,6 +104,7 @@ class P2PMLServer(
             runOnUiThread {
                 coreWebView.sendStream(updateStreamJSON)
             }
+
             call.respondText(modifiedVariantManifest, ContentType.parse("application/vnd.apple.mpegurl"))
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching or modifying variant manifest: ${e.message}")
@@ -134,12 +115,12 @@ class P2PMLServer(
         }
     }
 
-    private suspend fun handleSegmentRequest(call: ApplicationCall, segmentUrlParam: String) {
+    private suspend fun handleSegmentRequest(call: ApplicationCall) {
+        val segmentUrlParam = call.request.queryParameters["segment"]!!
         val decodedSegmentUrl = segmentUrlParam.decodeURLQueryComponent()
 
         Log.i(TAG, "Received request for segment: $decodedSegmentUrl")
         try {
-            //val segmentBytes = fetchSegment(call ,decodedSegmentUrl)
             val deferredSegmentBytes = coreWebView.requestSegmentBytes(decodedSegmentUrl)
             val segmentBytes = deferredSegmentBytes.await()
 
@@ -159,48 +140,8 @@ class P2PMLServer(
     fun stopServer() {
         server?.stop(1000, 2000)
         client.dispatcher.executorService.shutdown()
+        coreWebView.destroy()
         Log.i(TAG, "P2PMLServer stopped.")
-    }
-
-    private suspend fun fetchSegment(call: ApplicationCall, url: String): ByteArray = withContext(Dispatchers.IO) {
-        val requestBuilder = Request.Builder()
-            .url(url)
-
-        copyHeaders(call, requestBuilder)
-
-        val request = requestBuilder.build()
-
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw Exception("Unexpected code $response")
-            }
-            response.body?.bytes() ?: throw Exception("Empty response body")
-        }
-    }
-
-    private fun copyHeaders(call: ApplicationCall, requestBuilder: Request.Builder) {
-        val excludedHeaders = setOf(
-            "Host",
-            "Content-Length",
-            "Connection",
-            "Transfer-Encoding",
-            "Expect",
-            "Upgrade",
-            "Proxy-Connection",
-            "Keep-Alive",
-            "Accept-Encoding"
-        )
-
-        for (headerName in call.request.headers.names()) {
-            if (headerName !in excludedHeaders) {
-                val headerValues = call.request.headers.getAll(headerName)
-                if (headerValues != null) {
-                    for (headerValue in headerValues) {
-                        requestBuilder.addHeader(headerName, headerValue)
-                    }
-                }
-            }
-        }
     }
 
     private fun runOnUiThread(action: () -> Unit) {
