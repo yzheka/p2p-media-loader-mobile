@@ -20,6 +20,7 @@ import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -29,10 +30,10 @@ import okhttp3.Request
 @UnstableApi
 class P2PMLServer(
     context: Context,
+    private val coroutineScope: CoroutineScope,
     private val serverPort: Int = 8080
 ) {
-    val coreWebView = CoreWebView(context)
-
+    private val coreWebView = CoreWebView(context, coroutineScope)
     private var server: ApplicationEngine? = null
     private val hlsManifestParser: HlsManifestParser = HlsManifestParser()
     private val client = OkHttpClient()
@@ -119,7 +120,7 @@ class P2PMLServer(
         try {
             val modifiedVariantManifest = hlsManifestParser.getModifiedVariantManifest(call, decodedVariantUrl)
             val updateStreamJSON = hlsManifestParser.getUpdateStreamParamsJSON(decodedVariantUrl)
-            println("Update Stream JSON: $updateStreamJSON")
+
             runOnUiThread {
                 coreWebView.sendStream(updateStreamJSON)
             }

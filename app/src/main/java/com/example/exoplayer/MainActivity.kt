@@ -90,7 +90,7 @@ class MainActivity : ComponentActivity() {
         WebView.setWebContentsDebuggingEnabled(true)
 
         lifecycleScope.launch {
-            val p2pServer = P2PMLServer(this@MainActivity)
+            val p2pServer = P2PMLServer(this@MainActivity, lifecycleScope)
 
             // TODO: Remove this delay
             delay(1000)

@@ -49,7 +49,16 @@
           );
         }
 
-        requestSegment(segmentUrl) {
+        requestSegment(segmentRequestJSON) {
+          const segmentRequest = JSON.parse(segmentRequestJSON);
+          const { segmentUrl, currentPlayPosition, currentPlaySpeed } =
+            segmentRequest;
+
+          console.log("playPosition", currentPlayPosition);
+          console.log("playBackRate", currentPlaySpeed);
+
+          this.core.updatePlayback(currentPlayPosition, currentPlaySpeed);
+
           const onSuccess = (response) => {
             try {
               const copyData = new ArrayBuffer(response.data.byteLength);
@@ -60,17 +69,6 @@
               this.port.postMessage(segmentUrl);
               this.port.postMessage(copyData, [copyData]);
               console.log(">>> response");
-              //const copyData = new ArrayBuffer(response.data.byteLength);
-              //new Uint8Array(copyData).set(new Uint8Array(response.data));
-
-              //console.log("Response data:", response);
-
-              //AndroidInterface.receiveSegmentId(segmentUrl);
-
-              //this.port.postMessage(copyData, [copyData]);
-
-              //console.log("size", response.data.byteLength);
-              //console.log("response", copyData.byteLength);
             } catch (e) {
               console.error("Error in onSuccess:", e);
             }

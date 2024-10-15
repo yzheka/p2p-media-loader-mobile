@@ -31,3 +31,10 @@ data class UpdateStreamParams(
     val addSegments: List<Segment>,
     val removeSegmentsIds: List<String>,
 )
+
+@Serializable
+data class SegmentRequest(
+    val segmentUrl: String,
+    val currentPlayPosition: Float,
+    val currentPlaySpeed: Float
+)

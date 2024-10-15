@@ -3,12 +3,12 @@ package com.example.p2pml
 import android.annotation.SuppressLint
 import android.net.Uri
 import android.util.Log
-import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.webkit.WebMessagePortCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebMessageCompat
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -16,8 +16,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.*
 
-class WebMessageProtocol(private val webView: WebView) {
+class WebMessageProtocol(private val webView: WebView, private val coroutineScope: CoroutineScope) {
     @SuppressLint("RequiresFeature")
     private val channels: Array<WebMessagePortCompat> = WebViewCompat.createWebMessageChannel(webView)
     private val segmentResponseCallbacks = mutableMapOf<String, CompletableDeferred<ByteArray>>()
@@ -29,7 +31,6 @@ class WebMessageProtocol(private val webView: WebView) {
         setupWebMessageCallback()
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     @SuppressLint("RequiresFeature")
     private fun setupWebMessageCallback() {
         channels[0].setWebMessageCallback(
@@ -42,14 +43,14 @@ class WebMessageProtocol(private val webView: WebView) {
 
                         incomingSegmentRequest = segmentId
 
-                    }else if(message?.type == WebMessageCompat.TYPE_ARRAY_BUFFER) {
+                    } else if(message?.type == WebMessageCompat.TYPE_ARRAY_BUFFER) {
                         val arrayBuffer = message.arrayBuffer
 
                         if(incomingSegmentRequest == null) {
                             Log.d("CoreWebView", "Error: Received segment bytes without a segment ID")
                         }
 
-                        GlobalScope.launch {
+                        coroutineScope.launch {
                             val deferred = getSegmentResponseCallback(incomingSegmentRequest!!)
                             if (deferred != null) {
                                 deferred.complete(arrayBuffer)
@@ -77,13 +78,16 @@ class WebMessageProtocol(private val webView: WebView) {
         )
     }
 
-    suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray>{
+    suspend fun requestSegmentBytes(segmentUrl: String, currentPlayPosition: Float, currentPlaySpeed: Float): CompletableDeferred<ByteArray>{
         val deferred = CompletableDeferred<ByteArray>()
+
+        val segmentRequest = SegmentRequest(segmentUrl, currentPlayPosition, currentPlaySpeed)
+        val jsonRequest = Json.encodeToString(segmentRequest)
 
         addSegmentResponseCallback(segmentUrl, deferred)
 
         withContext(Dispatchers.Main) {
-            sendSegmentRequest(segmentUrl)
+            sendSegmentRequest(jsonRequest)
         }
 
         return deferred

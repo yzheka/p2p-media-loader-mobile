@@ -8,24 +8,28 @@ import android.webkit.WebView
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.webkit.WebViewClientCompat
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
 class CoreWebView(
     context: Context,
+    private val coroutineScope: CoroutineScope,
     private val fileToLoad: String = "file:///android_asset/core.html"
 ) {
     private var playbackInfo: PlaybackInfo? = null
 
-    // TODO: Make vebView private
     @SuppressLint("SetJavaScriptEnabled")
     private val webView = WebView(context).apply {
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
         webViewClient = WebViewClientCompat()
-        loadUrl(fileToLoad)
         visibility = View.GONE
+
+        loadUrl(fileToLoad)
     }
-    private val webMessageProtocol = WebMessageProtocol(webView)
+    private val webMessageProtocol = WebMessageProtocol(webView, coroutineScope)
 
     fun destroy() {
         webView.apply {
@@ -39,15 +43,15 @@ class CoreWebView(
     }
 
     suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray> {
-       return webMessageProtocol.requestSegmentBytes(segmentUrl)
-    }
+        var currentPosition = 0f
+        var playbackSpeed = 1f
 
-    fun updatePlaybackInfo() {
-        playbackInfo?.let {
-            val currentPosition = it.currentPosition
-            val playbackSpeed = it.playbackSpeed
-            webView.evaluateJavascript("javascript:window.p2p.core.updatePlayback($currentPosition, $playbackSpeed);", null)
+        withContext(Dispatchers.Main) {
+            currentPosition = (playbackInfo?.currentPosition?.div(1000f)) ?: 0f
+            playbackSpeed = playbackInfo?.playbackSpeed ?: 1f
         }
+
+       return webMessageProtocol.requestSegmentBytes(segmentUrl, currentPosition, playbackSpeed)
     }
 
     fun sendInitialMessage() {
