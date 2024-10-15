@@ -30,7 +30,7 @@ import okhttp3.Request
 @UnstableApi
 class P2PMLServer(
     context: Context,
-    private val coroutineScope: CoroutineScope,
+    coroutineScope: CoroutineScope,
     private val serverPort: Int = 8080
 ) {
     private val coreWebView = CoreWebView(context, coroutineScope)

@@ -15,7 +15,7 @@ import kotlinx.coroutines.withContext
 
 class CoreWebView(
     context: Context,
-    private val coroutineScope: CoroutineScope,
+    coroutineScope: CoroutineScope,
     private val fileToLoad: String = "file:///android_asset/core.html"
 ) {
     private var playbackInfo: PlaybackInfo? = null
@@ -43,8 +43,8 @@ class CoreWebView(
     }
 
     suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray> {
-        var currentPosition = 0f
-        var playbackSpeed = 1f
+        var currentPosition: Float
+        var playbackSpeed: Float
 
         withContext(Dispatchers.Main) {
             currentPosition = (playbackInfo?.currentPosition?.div(1000f)) ?: 0f
