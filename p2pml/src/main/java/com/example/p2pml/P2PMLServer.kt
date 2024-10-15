@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
 import io.ktor.http.encodeURLQueryComponent
 import io.ktor.http.decodeURLQueryComponent
 import io.ktor.http.ContentType
@@ -82,6 +83,10 @@ class P2PMLServer(
         }.start(wait = false)
     }
 
+    fun setUpPlaybackInfo(exoPlayer: ExoPlayer) {
+        coreWebView.setUpPlaybackInfo(exoPlayer)
+    }
+
     @SuppressLint("UnsafeOptInUsageError")
     private suspend fun handleMasterManifestRequest(call: ApplicationCall, manifestParam: String) {
         val decodedManifestUrl = manifestParam.decodeURLQueryComponent()
@@ -133,11 +138,9 @@ class P2PMLServer(
 
         Log.i(TAG, "Received request for segment: $decodedSegmentUrl")
         try {
-            val segmentBytes = fetchSegment(call ,decodedSegmentUrl)
-
+            //val segmentBytes = fetchSegment(call ,decodedSegmentUrl)
             val deferredSegmentBytes = coreWebView.requestSegmentBytes(decodedSegmentUrl)
-            //val segmentBytes = deferredSegmentBytes.await()
-
+            val segmentBytes = deferredSegmentBytes.await()
 
             call.respondBytes(segmentBytes, ContentType.Application.OctetStream)
         } catch (e: Exception) {

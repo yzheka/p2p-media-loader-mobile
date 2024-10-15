@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <title>WebView Example</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "p2p-media-loader-core": "http://192.168.1.111:3000/p2p-media-loader-core.es.min.js"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import { Core } from "p2p-media-loader-core";
+
+      class P2P {
+        constructor() {
+          this.core = new Core();
+        }
+
+        parseAllStreams(jsonData) {
+          const streams = [
+            {
+              runtimeId:
+                "https://test-streams.mux.dev/x36xhzz/url_0/193039199_mp4_h264_aac_hd_7.m3u8",
+              type: "main",
+              index: 0,
+            },
+            {
+              runtimeId:
+                "https://test-streams.mux.dev/x36xhzz/url_2/193039199_mp4_h264_aac_ld_7.m3u8",
+              type: "main",
+              index: 1,
+            },
+            {
+              runtimeId:
+                "https://test-streams.mux.dev/x36xhzz/url_4/193039199_mp4_h264_aac_7.m3u8",
+              type: "main",
+              index: 2,
+            },
+            {
+              runtimeId:
+                "https://test-streams.mux.dev/x36xhzz/url_6/193039199_mp4_h264_aac_hq_7.m3u8",
+              type: "main",
+              index: 3,
+            },
+            {
+              runtimeId:
+                "https://test-streams.mux.dev/x36xhzz/url_8/193039199_mp4_h264_aac_fhd_7.m3u8",
+              type: "main",
+              index: 4,
+            },
+          ];
+
+          for (const stream of streams) {
+            this.core.addStreamIfNoneExists(stream);
+          }
+          console.log("streams", streams);
+        }
+
+        parseStream(jsonData) {
+          const playlist = {
+            streamRuntimeId:
+              "https://test-streams.mux.dev/x36xhzz/url_0/193039199_mp4_h264_aac_hd_7.m3u8",
+            addSegments: [
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_462/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 0,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_462/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 0.0,
+                endTime: 10.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_463/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 1,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_463/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 10.0,
+                endTime: 20.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_464/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 2,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_464/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 20.0,
+                endTime: 30.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_465/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 3,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_465/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 30.0,
+                endTime: 40.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_466/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 4,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_466/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 40.0,
+                endTime: 50.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_467/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 5,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_467/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 50.0,
+                endTime: 60.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_468/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 6,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_468/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 60.0,
+                endTime: 70.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_469/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 7,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_469/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 70.0,
+                endTime: 79.95,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_470/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 8,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_470/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 79.95,
+                endTime: 90.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_471/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 9,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_471/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 90.0,
+                endTime: 100.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_472/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 10,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_472/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 100.0,
+                endTime: 110.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_473/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 11,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_473/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 110.0,
+                endTime: 120.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_474/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 12,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_474/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 120.0,
+                endTime: 130.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_475/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 13,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_475/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 130.0,
+                endTime: 140.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_476/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 14,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_476/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 140.0,
+                endTime: 150.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_477/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 15,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_477/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 150.0,
+                endTime: 160.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_478/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 16,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_478/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 160.0,
+                endTime: 170.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_479/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 17,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_479/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 170.0,
+                endTime: 180.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_480/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 18,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_480/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 180.0,
+                endTime: 190.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_481/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 19,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_481/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 190.0,
+                endTime: 200.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_482/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 20,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_482/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 200.0,
+                endTime: 210.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_483/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 21,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_483/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 210.0,
+                endTime: 220.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_484/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 22,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_484/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 220.0,
+                endTime: 230.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_485/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 23,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_485/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 230.0,
+                endTime: 240.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_486/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 24,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_486/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 240.0,
+                endTime: 250.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_487/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 25,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_487/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 250.0,
+                endTime: 260.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_488/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 26,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_488/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 260.0,
+                endTime: 270.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_489/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 27,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_489/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 270.0,
+                endTime: 280.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_490/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 28,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_490/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 280.0,
+                endTime: 290.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_491/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 29,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_491/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 290.0,
+                endTime: 299.95,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_492/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 30,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_492/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 299.95,
+                endTime: 310.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_493/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 31,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_493/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 310.0,
+                endTime: 320.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_494/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 32,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_494/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 320.0,
+                endTime: 330.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_495/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 33,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_495/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 330.0,
+                endTime: 340.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_496/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 34,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_496/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 340.0,
+                endTime: 350.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_497/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 35,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_497/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 350.0,
+                endTime: 360.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_498/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 36,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_498/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 360.0,
+                endTime: 370.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_499/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 37,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_499/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 370.0,
+                endTime: 380.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_500/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 38,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_500/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 380.0,
+                endTime: 390.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_501/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 39,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_501/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 390.0,
+                endTime: 400.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_502/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 40,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_502/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 400.0,
+                endTime: 410.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_503/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 41,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_503/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 410.0,
+                endTime: 420.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_504/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 42,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_504/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 420.0,
+                endTime: 430.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_505/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 43,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_505/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 430.0,
+                endTime: 439.95,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_506/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 44,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_506/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 439.95,
+                endTime: 450.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_507/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 45,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_507/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 450.0,
+                endTime: 460.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_508/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 46,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_508/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 460.0,
+                endTime: 470.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_509/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 47,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_509/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 470.0,
+                endTime: 480.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_510/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 48,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_510/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 480.0,
+                endTime: 490.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_511/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 49,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_511/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 490.0,
+                endTime: 500.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_512/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 50,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_512/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 500.0,
+                endTime: 510.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_513/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 51,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_513/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 510.0,
+                endTime: 520.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_514/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 52,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_514/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 520.0,
+                endTime: 530.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_515/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 53,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_515/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 530.0,
+                endTime: 540.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_516/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 54,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_516/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 540.0,
+                endTime: 550.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_517/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 55,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_517/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 550.0,
+                endTime: 560.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_518/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 56,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_518/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 560.0,
+                endTime: 570.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_519/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 57,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_519/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 570.0,
+                endTime: 580.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_520/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 58,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_520/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 580.0,
+                endTime: 590.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_521/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 59,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_521/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 590.0,
+                endTime: 600.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_522/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 60,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_522/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 600.0,
+                endTime: 610.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_523/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 61,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_523/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 610.0,
+                endTime: 620.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_524/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 62,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_524/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 620.0,
+                endTime: 630.0,
+              },
+              {
+                runtimeId:
+                  "https://test-streams.mux.dev/x36xhzz/url_0/url_525/193039199_mp4_h264_aac_hd_7.ts",
+                externalId: 63,
+                url: "https://test-streams.mux.dev/x36xhzz/url_0/url_525/193039199_mp4_h264_aac_hd_7.ts",
+                byteRange: null,
+                startTime: 630.0,
+                endTime: 634.584,
+              },
+            ],
+            removeSegmentsIds: [],
+          };
+
+          this.core.updateStream(
+            playlist.streamRuntimeId,
+            playlist.addSegments,
+            playlist.removeSegmentsIds
+          );
+        }
+
+        requestSegment(segmentUrl) {
+          const onSuccess = (response) => {
+            try {
+              const copyData = new ArrayBuffer(response.data.byteLength);
+              new Uint8Array(copyData).set(new Uint8Array(response.data));
+
+              console.log("==Response data:", response);
+
+              //this.port.postMessage(segmentUrl);
+              //this.port.postMessage(copyData, [copyData]);
+            } catch (e) {
+              console.error("Error in onSuccess:", e);
+            }
+          };
+
+          const onError = (error) => {
+            // TODO: Implement error handling
+            console.error("error", error);
+          };
+
+          this.core.loadSegment(segmentUrl, {
+            onSuccess,
+            onError,
+          });
+
+          console.log("requestSegment", segmentUrl);
+        }
+
+        setManifestUrl(manifestUrl) {
+          this.core.setManifestResponseUrl(manifestUrl);
+          console.log("setManifestUrl", manifestUrl);
+        }
+      }
+
+      const p2p = new P2P();
+      window.p2p = p2p;
+      p2p.setManifestUrl("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8");
+      p2p.parseAllStreams();
+      p2p.parseStream();
+
+      const segments = [
+        "https://test-streams.mux.dev/x36xhzz/url_0/url_462/193039199_mp4_h264_aac_hd_7.ts",
+        "https://test-streams.mux.dev/x36xhzz/url_0/url_463/193039199_mp4_h264_aac_hd_7.ts",
+        "https://test-streams.mux.dev/x36xhzz/url_0/url_464/193039199_mp4_h264_aac_hd_7.ts",
+        "https://test-streams.mux.dev/x36xhzz/url_0/url_465/193039199_mp4_h264_aac_hd_7.ts",
+      ];
+
+      for (const segment of segments) {
+        p2p.requestSegment(segment);
+        console.log("==Requesting segment", segment);
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+    </script>
+  </head>
+  <body>
+    <h1>WebView with JavaScript Bridge</h1>
+    <p id="message">Waiting for a message from Kotlin...</p>
+  </body>
+</html>

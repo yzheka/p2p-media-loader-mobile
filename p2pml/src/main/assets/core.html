@@ -5,14 +5,14 @@
     <script type="importmap">
       {
         "imports": {
-          "p2p-media-loader-core": "https://cdn.jsdelivr.net/npm/p2p-media-loader-core@^1/dist/p2p-media-loader-core.es.min.js"
+          "p2p-media-loader-core": "http://192.168.1.111:3000/p2p-media-loader-core.es.min.js"
         }
       }
     </script>
 
     <script type="module">
       import { Core } from "p2p-media-loader-core";
-
+      console.log("Core", Core);
       class P2P {
         constructor() {
           this.core = new Core();
@@ -25,7 +25,9 @@
             const port = event.ports[0];
             console.log("port received", port);
             console.log(window.postMessage);
-            if (!port) return;
+            if (!port || this.port) {
+              return;
+            }
             this.port = port;
           });
         }
@@ -40,7 +42,6 @@
 
         parseStream(jsonData) {
           const playlist = JSON.parse(jsonData);
-
           this.core.updateStream(
             playlist.streamRuntimeId,
             playlist.addSegments,
@@ -50,22 +51,36 @@
 
         requestSegment(segmentUrl) {
           const onSuccess = (response) => {
-            const copyData = new ArrayBuffer(response.data.byteLength);
-            new Uint8Array(copyData).set(new Uint8Array(response.data));
+            try {
+              const copyData = new ArrayBuffer(response.data.byteLength);
+              new Uint8Array(copyData).set(new Uint8Array(response.data));
 
-            //this.port.postMessage(segmentUrl);
-            //this.port.postMessage(copyData, [copyData]);
-            this.port.postMessage({
-              id: segmentUrl,
-              buffer: copyData,
-            });
+              console.log("Response data:", response);
+
+              this.port.postMessage(segmentUrl);
+              this.port.postMessage(copyData, [copyData]);
+              console.log(">>> response");
+              //const copyData = new ArrayBuffer(response.data.byteLength);
+              //new Uint8Array(copyData).set(new Uint8Array(response.data));
+
+              //console.log("Response data:", response);
+
+              //AndroidInterface.receiveSegmentId(segmentUrl);
+
+              //this.port.postMessage(copyData, [copyData]);
+
+              //console.log("size", response.data.byteLength);
+              //console.log("response", copyData.byteLength);
+            } catch (e) {
+              console.error("Error in onSuccess:", e);
+            }
           };
 
           const onError = (error) => {
             // TODO: Implement error handling
             console.error("error", error);
           };
-
+          console.log(">>> new request");
           this.core.loadSegment(segmentUrl, {
             onSuccess,
             onError,
@@ -83,18 +98,6 @@
       const p2p = new P2P();
       window.p2p = p2p;
     </script>
-
-    <script>
-      function receiveMessageFromAndroid(message) {
-        console.log("Message from Kotlin: " + message);
-        console.log("port:", window.p2p);
-        /*document.getElementById("message").innerHTML =
-          "Message from Kotlin: " + message;*/
-      }
-    </script>
   </head>
-  <body>
-    <h1>WebView with JavaScript Bridge</h1>
-    <p id="message">Waiting for a message from Kotlin...</p>
-  </body>
+  <body></body>
 </html>

@@ -31,6 +31,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.TransferListener
 import androidx.media3.exoplayer.ExoPlayer
@@ -52,7 +53,6 @@ class LoggingDataSource(private val wrappedDataSource: DataSource) : DataSource 
     @OptIn(UnstableApi::class)
     override fun open(dataSpec: DataSpec): Long {
         Log.d("HLSSegmentLogger", "Requesting: ${dataSpec.uri}")
-        // Log.d("HLSSegmentLogger", "Requesting segment: $dataSpec")
 
         return wrappedDataSource.open(dataSpec)
     }
@@ -89,59 +89,40 @@ class MainActivity : ComponentActivity() {
 
         WebView.setWebContentsDebuggingEnabled(true)
 
-
         lifecycleScope.launch {
             val p2pServer = P2PMLServer(this@MainActivity)
 
-            coreWebView = p2pServer.coreWebView
             // TODO: Remove this delay
             delay(1000)
             p2pServer.startServer()
 
             val manifest =
                 p2pServer.getServerManifestUrl("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")
+            /*val httpDataSourceFactory = DefaultHttpDataSource.Factory().setConnectTimeoutMs(30000)
+                .setReadTimeoutMs(30000)*/
             val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
             val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory).createMediaSource(
                 MediaItem.fromUri(manifest)
             )
-
 
             player = ExoPlayer.Builder(this@MainActivity).build().apply {
                 setMediaSource(mediaSource)
                 prepare()
                 playWhenReady = true
             }
+            p2pServer.setUpPlaybackInfo(player)
 
             setContent {
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     AndroidView(
-                        modifier = Modifier.weight(1f),
                         factory = { context ->
                             PlayerView(context).apply {
                                 player = this@MainActivity.player
                             }
                         }
                     )
-
-                    AndroidView(
-                        modifier = Modifier.weight(1f),
-                        factory = {
-                            coreWebView.webView
-                        }
-                    )
-
-                    Button(
-                        onClick = {
-                            coreWebView.sendInitialMessage()
-                        },
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                    ) {
-                        Text("Send Message to WebView")
-                    }
                 }
             }
 
@@ -153,4 +134,11 @@ class MainActivity : ComponentActivity() {
         player.release()
         coreWebView.destroy()
     }
+
+    override fun onPause() {
+        super.onPause()
+        player.playWhenReady = false
+        player.pause()
+    }
+
 }
