@@ -46,6 +46,7 @@ class CoreWebView(
         var currentPosition: Float
         var playbackSpeed: Float
 
+        // ExoPlayer is not thread-safe, so we need to access it on the main thread
         withContext(Dispatchers.Main) {
             currentPosition = (playbackInfo?.currentPosition?.div(1000f)) ?: 0f
             playbackSpeed = playbackInfo?.playbackSpeed ?: 1f

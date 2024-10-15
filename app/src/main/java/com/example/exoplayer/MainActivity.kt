@@ -8,9 +8,18 @@ import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.OptIn
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
@@ -93,17 +102,7 @@ class MainActivity : ComponentActivity() {
             p2pServer.setUpPlaybackInfo(player)
 
             setContent {
-                Column(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    AndroidView(
-                        factory = { context ->
-                            PlayerView(context).apply {
-                                player = this@MainActivity.player
-                            }
-                        }
-                    )
-                }
+                ExoPlayerScreen(player = player, videoTitle = "Test Stream")
             }
 
         }
@@ -113,5 +112,33 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         player.release()
         p2pServer.stopServer()
+    }
+}
+
+@Composable
+fun ExoPlayerScreen(player: ExoPlayer, videoTitle: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = videoTitle,
+            color = Color.White,
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.displayLarge
+        )
+
+        AndroidView(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            factory = { context ->
+                PlayerView(context).apply {
+                    this.player = player
+                }
+            }
+        )
     }
 }

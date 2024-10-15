@@ -34,36 +34,43 @@ class WebMessageProtocol(private val webView: WebView, private val coroutineScop
         channels[0].setWebMessageCallback(
             object : WebMessagePortCompat.WebMessageCallbackCompat() {
                 override fun onMessage(port: WebMessagePortCompat, message: WebMessageCompat?) {
-                    if(message?.type == WebMessageCompat.TYPE_STRING) {
-                        Log.d("CoreWebView", "Received segment ID from  JS: ${message.data}")
-
-                        val segmentId = message.data
-
-                        incomingSegmentRequest = segmentId
-
-                    } else if(message?.type == WebMessageCompat.TYPE_ARRAY_BUFFER) {
-                        val arrayBuffer = message.arrayBuffer
-
-                        if(incomingSegmentRequest == null) {
-                            Log.d("CoreWebView", "Error: Received segment bytes without a segment ID")
+                    when (message?.type) {
+                        WebMessageCompat.TYPE_ARRAY_BUFFER -> {
+                            handleSegmentIdBytes(message.arrayBuffer)
                         }
-
-                        coroutineScope.launch {
-                            val deferred = getSegmentResponseCallback(incomingSegmentRequest!!)
-                            if (deferred != null) {
-                                deferred.complete(arrayBuffer)
-                                Log.d("CoreWebView", "Completed deferred for segment ID: $incomingSegmentRequest")
-                            } else {
-                                Log.d("CoreWebView", "Error: No deferred found for segment ID: $incomingSegmentRequest")
-                            }
-
-                            removeSegmentResponseCallback(incomingSegmentRequest!!)
-                            incomingSegmentRequest = null
+                        WebMessageCompat.TYPE_STRING -> {
+                            handleSegmentIdMessage(message.data!!)
                         }
                     }
                 }
             },
         )
+    }
+
+    private fun handleSegmentIdBytes(arrayBuffer: ByteArray) {
+        Log.d("CoreWebView", "Received segment bytes from  JS: ${arrayBuffer.size}")
+
+        if(incomingSegmentRequest == null) {
+            throw IllegalStateException("Received segment bytes without a segment ID")
+        }
+
+        coroutineScope.launch {
+            val deferred = getSegmentResponseCallback(incomingSegmentRequest!!)
+            if (deferred != null) {
+                deferred.complete(arrayBuffer)
+                Log.d("CoreWebView", "Completed deferred for segment ID: $incomingSegmentRequest")
+            } else {
+                Log.d("CoreWebView", "Error: No deferred found for segment ID: $incomingSegmentRequest")
+            }
+
+            removeSegmentResponseCallback(incomingSegmentRequest!!)
+            incomingSegmentRequest = null
+        }
+    }
+
+    private fun handleSegmentIdMessage(segmentId: String) {
+        Log.d("CoreWebView", "Received segment ID from  JS: $segmentId")
+        incomingSegmentRequest = segmentId
     }
 
     @SuppressLint("RequiresFeature")
@@ -78,7 +85,6 @@ class WebMessageProtocol(private val webView: WebView, private val coroutineScop
 
     suspend fun requestSegmentBytes(segmentUrl: String, currentPlayPosition: Float, currentPlaySpeed: Float): CompletableDeferred<ByteArray>{
         val deferred = CompletableDeferred<ByteArray>()
-
         val segmentRequest = SegmentRequest(segmentUrl, currentPlayPosition, currentPlaySpeed)
         val jsonRequest = Json.encodeToString(segmentRequest)
 
