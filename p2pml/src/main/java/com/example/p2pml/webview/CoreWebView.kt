@@ -1,4 +1,4 @@
-package com.example.p2pml
+package com.example.p2pml.webview
 
 import android.annotation.SuppressLint
 import android.content.Context

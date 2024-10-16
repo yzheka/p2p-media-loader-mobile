@@ -1,6 +1,8 @@
-package com.example.p2pml
+package com.example.p2pml.server
 
 import androidx.media3.common.util.UnstableApi
+import com.example.p2pml.webview.WebViewManager
+import com.example.p2pml.parser.HlsManifestParser
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
@@ -11,8 +13,8 @@ import io.ktor.server.routing.routing
 
 @UnstableApi
 class ServerModule(private val webViewManager: WebViewManager,
-    private val manifestParser: HlsManifestParser,
-    private val onServerStarted: () -> Unit) {
+                   private val manifestParser: HlsManifestParser,
+                   private val onServerStarted: () -> Unit) {
     private var server: ApplicationEngine? = null
 
     fun startServer(port: Int = 8080) {

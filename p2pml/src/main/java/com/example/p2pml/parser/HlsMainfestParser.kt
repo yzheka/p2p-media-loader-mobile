@@ -1,10 +1,15 @@
-package com.example.p2pml
+package com.example.p2pml.parser
 
 import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
 import androidx.media3.exoplayer.hls.playlist.HlsMultivariantPlaylist
 import androidx.media3.exoplayer.hls.playlist.HlsPlaylistParser
+import com.example.p2pml.ByteRange
+import com.example.p2pml.Segment
+import com.example.p2pml.Stream
+import com.example.p2pml.UpdateStreamParams
+import com.example.p2pml.utils.Utils
 import io.ktor.http.encodeURLQueryComponent
 import io.ktor.server.application.ApplicationCall
 
@@ -190,7 +195,7 @@ class HlsManifestParser(private val okHttpClient: OkHttpClient = OkHttpClient(),
         val requestBuilder = Request.Builder()
             .url(manifestUrl)
 
-        copyHeaders(call, requestBuilder)
+        Utils.copyHeaders(call, requestBuilder)
 
         val request = requestBuilder.build()
 
@@ -202,30 +207,4 @@ class HlsManifestParser(private val okHttpClient: OkHttpClient = OkHttpClient(),
             response.body?.string() ?: throw IOException("Empty response body")
         }
     }
-
-    private fun copyHeaders(call: ApplicationCall, requestBuilder: Request.Builder) {
-        val excludedHeaders = setOf(
-            "Host",
-            "Content-Length",
-            "Connection",
-            "Transfer-Encoding",
-            "Expect",
-            "Upgrade",
-            "Proxy-Connection",
-            "Keep-Alive",
-            "Accept-Encoding"
-        )
-
-        for (headerName in call.request.headers.names()) {
-            if (headerName !in excludedHeaders) {
-                val headerValues = call.request.headers.getAll(headerName)
-                if (headerValues != null) {
-                    for (headerValue in headerValues) {
-                        requestBuilder.addHeader(headerName, headerValue)
-                    }
-                }
-            }
-        }
-    }
-
 }

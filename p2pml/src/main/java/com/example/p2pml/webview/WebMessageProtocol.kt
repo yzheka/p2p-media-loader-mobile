@@ -1,4 +1,4 @@
-package com.example.p2pml
+package com.example.p2pml.webview
 
 import android.annotation.SuppressLint
 import android.net.Uri
@@ -7,6 +7,7 @@ import android.webkit.WebView
 import androidx.webkit.WebMessagePortCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebMessageCompat
+import com.example.p2pml.SegmentRequest
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

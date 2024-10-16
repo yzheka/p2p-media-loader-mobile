@@ -1,4 +1,4 @@
-package com.example.p2pml
+package com.example.p2pml.server
 
 import io.ktor.server.application.call
 import io.ktor.server.http.content.staticResources
