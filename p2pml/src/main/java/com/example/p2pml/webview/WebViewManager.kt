@@ -6,8 +6,9 @@ import kotlinx.coroutines.CoroutineScope
 class WebViewManager(
     context: Context,
     coroutineScope: CoroutineScope,
+    onPageLoadFinished: () -> Unit
 ) {
-    private val coreWebView = CoreWebView(context, coroutineScope)
+    private val coreWebView = CoreWebView(context, coroutineScope, onPageLoadFinished)
 
     fun loadWebView(url: String) {
         coreWebView.loadUrl(url)

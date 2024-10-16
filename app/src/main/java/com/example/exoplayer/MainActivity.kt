@@ -81,11 +81,10 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             p2pServer = P2PML(this@MainActivity, lifecycleScope)
-            // TODO: Remove this delay
-            delay(1000)
 
             val manifest =
                 p2pServer.getServerManifestUrl("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")
+
             val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
             val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory).createMediaSource(
                 MediaItem.fromUri(manifest)
@@ -105,7 +104,6 @@ class MainActivity : ComponentActivity() {
             setContent {
                 ExoPlayerScreen(player = player, videoTitle = "Test Stream")
             }
-
         }
     }
 

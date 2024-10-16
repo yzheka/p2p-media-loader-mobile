@@ -12,7 +12,7 @@
 
     <script type="module">
       import { Core } from "p2p-media-loader-core";
-      console.log("Core", Core);
+
       class P2P {
         constructor() {
           this.core = new Core();
@@ -92,6 +92,13 @@
           console.log("setManifestUrl", manifestUrl);
         }
       }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const p2p = new P2P();
+        window.p2p = p2p;
+
+        Android.onWebViewLoaded();
+      });
 
       const p2p = new P2P();
       window.p2p = p2p;

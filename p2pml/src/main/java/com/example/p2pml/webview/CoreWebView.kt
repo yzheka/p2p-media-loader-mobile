@@ -15,7 +15,8 @@ import kotlinx.coroutines.withContext
 
 class CoreWebView(
     context: Context,
-    private val coroutineScope: CoroutineScope
+    private val coroutineScope: CoroutineScope,
+    private val onPageLoadFinished: () -> Unit
 ) {
     private var playbackInfoCallback: () -> Pair<Float, Float> = { Pair(0f, 1f) }
 
@@ -24,6 +25,7 @@ class CoreWebView(
         settings.javaScriptEnabled = true
         webViewClient = WebViewClientCompat()
         visibility = View.GONE
+        addJavascriptInterface(JavaScriptInterface(context, onPageLoadFinished), "Android")
     }
     private val webMessageProtocol = WebMessageProtocol(webView, coroutineScope)
 
