@@ -99,7 +99,12 @@ class MainActivity : ComponentActivity() {
                 prepare()
                 playWhenReady = true
             }
-            p2pServer.setUpPlaybackInfo(player)
+
+            fun getCurrentPositionAndSpeed(): Pair<Float, Float> {
+                return Pair(player.currentPosition / 1000f, player.playbackParameters.speed)
+            }
+
+            p2pServer.setUpPlaybackInfoCallback(::getCurrentPositionAndSpeed)
 
             setContent {
                 ExoPlayerScreen(player = player, videoTitle = "Test Stream")
@@ -127,7 +132,7 @@ fun ExoPlayerScreen(player: ExoPlayer, videoTitle: String) {
             text = videoTitle,
             color = Color.White,
             modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.displayLarge
+            style = MaterialTheme.typography.headlineMedium
         )
 
         AndroidView(

@@ -6,22 +6,26 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
 import io.ktor.http.encodeURLQueryComponent
 import io.ktor.http.decodeURLQueryComponent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
+import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.http.content.static
+import io.ktor.server.http.content.staticFiles
+import io.ktor.server.http.content.staticResources
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.CoroutineScope
 import okhttp3.OkHttpClient
+import io.ktor.server.plugins.cors.routing.CORS
 
 @UnstableApi
 class P2PMLServer(
@@ -29,7 +33,7 @@ class P2PMLServer(
     coroutineScope: CoroutineScope,
     private val serverPort: Int = 8080
 ) {
-    private val coreWebView = CoreWebView(context, coroutineScope)
+    private var coreWebView : CoreWebView
     private var server: ApplicationEngine? = null
     private val hlsManifestParser: HlsManifestParser = HlsManifestParser()
     private val client = OkHttpClient()
@@ -37,6 +41,10 @@ class P2PMLServer(
     fun getServerManifestUrl(manifestUrl: String): String {
         val encodedManifestURL = manifestUrl.encodeURLQueryComponent()
         return "http://127.0.0.1:$serverPort/?manifest=$encodedManifestURL"
+    }
+    init {
+        startServer()
+        coreWebView = CoreWebView(context, coroutineScope)
     }
 
     /**
@@ -49,6 +57,9 @@ class P2PMLServer(
         }
 
         server = embeddedServer(CIO, serverPort) {
+            install(CORS) {
+                anyHost()
+            }
             routing {
                 get("/") {
                     when {
@@ -58,13 +69,16 @@ class P2PMLServer(
                         else -> call.respondText("Missing required parameter", status = HttpStatusCode.BadRequest)
                     }
                 }
+
+                staticResources("/p2pml/static", "p2pml/static")
             }
         }.start(wait = false)
     }
 
-    fun setUpPlaybackInfo(exoPlayer: ExoPlayer) {
-        coreWebView.setUpPlaybackInfo(exoPlayer)
+    fun setUpPlaybackInfoCallback(callback: () -> Pair<Float, Float>) {
+        coreWebView.setUpPlaybackInfoCallback(callback)
     }
+
 
     @SuppressLint("UnsafeOptInUsageError")
     private suspend fun handleMasterManifestRequest(call: ApplicationCall) {

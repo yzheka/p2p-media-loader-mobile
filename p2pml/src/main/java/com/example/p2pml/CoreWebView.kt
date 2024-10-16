@@ -5,7 +5,6 @@ import android.content.Context
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.webkit.WebViewClientCompat
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -16,9 +15,9 @@ import kotlinx.coroutines.withContext
 class CoreWebView(
     context: Context,
     coroutineScope: CoroutineScope,
-    private val fileToLoad: String = "file:///android_asset/core.html"
+    private val loadUrl: String = "http://127.0.0.1:8080/p2pml/static/core.html"
 ) {
-    private var playbackInfo: PlaybackInfo? = null
+    private var playbackInfoCallback: () -> Pair<Float, Float> = { Pair(0f, 1f) }
 
     @SuppressLint("SetJavaScriptEnabled")
     private val webView = WebView(context).apply {
@@ -27,7 +26,7 @@ class CoreWebView(
         webViewClient = WebViewClientCompat()
         visibility = View.GONE
 
-        loadUrl(fileToLoad)
+        loadUrl(loadUrl)
     }
     private val webMessageProtocol = WebMessageProtocol(webView, coroutineScope)
 
@@ -38,8 +37,8 @@ class CoreWebView(
         }
     }
 
-    fun setUpPlaybackInfo(exoPlayer: ExoPlayer) {
-        this.playbackInfo = PlaybackInfo(exoPlayer)
+    fun setUpPlaybackInfoCallback(callback: () -> Pair<Float, Float>) {
+        this.playbackInfoCallback = callback
     }
 
     suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray> {
@@ -48,8 +47,8 @@ class CoreWebView(
 
         // ExoPlayer is not thread-safe, so we need to access it on the main thread
         withContext(Dispatchers.Main) {
-            currentPosition = (playbackInfo?.currentPosition?.div(1000f)) ?: 0f
-            playbackSpeed = playbackInfo?.playbackSpeed ?: 1f
+            currentPosition = playbackInfoCallback().first
+            playbackSpeed = playbackInfoCallback().second
         }
 
        return webMessageProtocol.requestSegmentBytes(segmentUrl, currentPosition, playbackSpeed)
