@@ -31,7 +31,8 @@ import androidx.media3.datasource.TransferListener
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
-import com.example.p2pml.P2PMLServer
+import com.example.p2pml.P2PML
+//import com.example.p2pml.P2PMLServer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -70,7 +71,7 @@ class LoggingDataSourceFactory(context: Context) : DataSource.Factory {
 @UnstableApi
 class MainActivity : ComponentActivity() {
     private lateinit var player: ExoPlayer
-    private lateinit var p2pServer: P2PMLServer
+    private lateinit var p2pServer: P2PML
 
     @OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -79,16 +80,12 @@ class MainActivity : ComponentActivity() {
         WebView.setWebContentsDebuggingEnabled(true)
 
         lifecycleScope.launch {
-            p2pServer = P2PMLServer(this@MainActivity, lifecycleScope)
-
+            p2pServer = P2PML(this@MainActivity, lifecycleScope)
             // TODO: Remove this delay
             delay(1000)
-            p2pServer.startServer()
 
             val manifest =
                 p2pServer.getServerManifestUrl("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")
-            /*val httpDataSourceFactory = DefaultHttpDataSource.Factory().setConnectTimeoutMs(30000)
-                .setReadTimeoutMs(30000)*/
             val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
             val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory).createMediaSource(
                 MediaItem.fromUri(manifest)
@@ -103,7 +100,6 @@ class MainActivity : ComponentActivity() {
             fun getCurrentPositionAndSpeed(): Pair<Float, Float> {
                 return Pair(player.currentPosition / 1000f, player.playbackParameters.speed)
             }
-
             p2pServer.setUpPlaybackInfoCallback(::getCurrentPositionAndSpeed)
 
             setContent {

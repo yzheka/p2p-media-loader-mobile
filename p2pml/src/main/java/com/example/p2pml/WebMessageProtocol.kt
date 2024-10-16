@@ -98,7 +98,9 @@ class WebMessageProtocol(private val webView: WebView, private val coroutineScop
     }
 
     private fun sendSegmentRequest(segmentUrl: String){
-        webView.evaluateJavascript("javascript:window.p2p.requestSegment('$segmentUrl');", null)
+        coroutineScope.launch {
+            webView.evaluateJavascript("javascript:window.p2p.requestSegment('$segmentUrl');", null)
+        }
     }
 
     private suspend fun addSegmentResponseCallback(segmentId: String, deferred: CompletableDeferred<ByteArray>) {
