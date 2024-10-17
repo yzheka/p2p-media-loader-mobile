@@ -47,10 +47,12 @@
             playlist.addSegments,
             playlist.removeSegmentsIds
           );
+          console.log("playlist", playlist);
         }
 
         requestSegment(segmentRequestJSON) {
           const segmentRequest = JSON.parse(segmentRequestJSON);
+          console.log("segmentRequest", segmentRequest);
           const { segmentUrl, currentPlayPosition, currentPlaySpeed } =
             segmentRequest;
 

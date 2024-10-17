@@ -33,7 +33,6 @@ import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
 import com.example.p2pml.P2PML
 //import com.example.p2pml.P2PMLServer
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
@@ -79,11 +78,12 @@ class MainActivity : ComponentActivity() {
 
         WebView.setWebContentsDebuggingEnabled(true)
 
+        val streamUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+        //val streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/adv_dv_atmos/main.m3u8"
         lifecycleScope.launch {
             p2pServer = P2PML(this@MainActivity, lifecycleScope)
-
             val manifest =
-                p2pServer.getServerManifestUrl("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")
+                p2pServer.getServerManifestUrl(streamUrl)
 
             val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
             val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory).createMediaSource(

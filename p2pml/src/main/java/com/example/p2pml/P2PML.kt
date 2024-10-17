@@ -1,6 +1,7 @@
 package com.example.p2pml
 
 import android.content.Context
+import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.media3.common.util.UnstableApi
 import com.example.p2pml.Constants.QueryParams.MANIFEST
 import com.example.p2pml.Constants.CORE_FILE_PATH
@@ -10,12 +11,11 @@ import com.example.p2pml.utils.Utils
 import com.example.p2pml.webview.WebViewManager
 import io.ktor.http.encodeURLQueryComponent
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
 
 @UnstableApi
 class P2PML(
     context: Context,
-    coroutineScope: CoroutineScope,
+    coroutineScope: LifecycleCoroutineScope,
     private val serverPort: Int = Constants.DEFAULT_SERVER_PORT
 ) {
     private val webViewManager: WebViewManager = WebViewManager(context, coroutineScope) {
