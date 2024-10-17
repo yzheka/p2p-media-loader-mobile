@@ -8,6 +8,7 @@ import androidx.webkit.WebMessagePortCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebMessageCompat
 import com.example.p2pml.SegmentRequest
+import com.example.p2pml.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -99,7 +100,7 @@ class WebMessageProtocol(private val webView: WebView, private val coroutineScop
     }
 
     private fun sendSegmentRequest(segmentUrl: String){
-        coroutineScope.launch {
+        Utils.runOnUiThread {
             webView.evaluateJavascript("javascript:window.p2p.requestSegment('$segmentUrl');", null)
         }
     }

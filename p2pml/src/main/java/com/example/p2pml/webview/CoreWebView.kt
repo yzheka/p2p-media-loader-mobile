@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.webkit.WebViewClientCompat
+import com.example.p2pml.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +16,7 @@ import kotlinx.coroutines.withContext
 
 class CoreWebView(
     context: Context,
-    private val coroutineScope: CoroutineScope,
+    coroutineScope: CoroutineScope,
     private val onPageLoadFinished: () -> Unit
 ) {
     private var playbackInfoCallback: () -> Pair<Float, Float> = { Pair(0f, 1f) }
@@ -30,7 +31,7 @@ class CoreWebView(
     private val webMessageProtocol = WebMessageProtocol(webView, coroutineScope)
 
     fun loadUrl(url: String) {
-        coroutineScope.launch {
+        Utils.runOnUiThread {
             webView.loadUrl(url)
         }
     }
@@ -64,7 +65,7 @@ class CoreWebView(
     }
 
     fun sendAllStreams(streamsJSON: String){
-        coroutineScope.launch {
+        Utils.runOnUiThread {
             webView.evaluateJavascript(
                 "javascript:window.p2p.parseAllStreams('$streamsJSON');",
                 null
@@ -73,7 +74,7 @@ class CoreWebView(
     }
 
     fun sendStream(streamJSON: String){
-        coroutineScope.launch {
+        Utils.runOnUiThread {
             webView.evaluateJavascript(
                 "javascript:window.p2p.parseStream('$streamJSON');",
                 null
@@ -82,7 +83,7 @@ class CoreWebView(
     }
 
     fun setManifestUrl(manifestUrl: String){
-        coroutineScope.launch {
+        Utils.runOnUiThread {
             webView.evaluateJavascript(
                 "javascript:window.p2p.setManifestUrl('$manifestUrl');",
                 null
