@@ -6,6 +6,8 @@ import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
 import androidx.media3.exoplayer.hls.playlist.HlsMultivariantPlaylist
 import androidx.media3.exoplayer.hls.playlist.HlsPlaylistParser
 import com.example.p2pml.ByteRange
+import com.example.p2pml.Constants.HTTPS_PREFIX
+import com.example.p2pml.Constants.HTTP_PREFIX
 import com.example.p2pml.Segment
 import com.example.p2pml.Stream
 import com.example.p2pml.UpdateStreamParams
@@ -20,12 +22,16 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import com.example.p2pml.Constants.QueryParams.SEGMENT
+import com.example.p2pml.Constants.QueryParams.VARIANT_PLAYLIST
+import com.example.p2pml.Constants.ManifestErrorMessages.MASTER_PLAYLIST_ERROR
+import com.example.p2pml.Constants.ManifestErrorMessages.MEDIA_PLAYLIST_ERROR
 
 @UnstableApi
 class HlsManifestParser(
-    private val okHttpClient: OkHttpClient = OkHttpClient(),
-    private val serverPort: Int = 8080
+    private val serverPort: Int
 ) {
+    private val okHttpClient: OkHttpClient = OkHttpClient()
     private val parser = HlsPlaylistParser()
     private val mutex = Mutex()
 
@@ -50,7 +56,7 @@ class HlsManifestParser(
         val mediaPlaylist = parser.parse(variantUrl.toUri(), manifest.byteInputStream())
 
         require(mediaPlaylist is HlsMediaPlaylist) {
-            "The provided URL does not point to a media playlist."
+            MEDIA_PLAYLIST_ERROR
         }
 
         var startTime = 0.0
@@ -61,7 +67,7 @@ class HlsManifestParser(
             val segmentUriInManifest = findUrlInManifest(manifest, segmentUri, variantUrl)
             val absoluteSegmentUrl =
                 getAbsoluteUrl(variantUrl, segmentUri).encodeURLQueryComponent()
-            val newUrl = "http://127.0.0.1:$serverPort/?segment=$absoluteSegmentUrl"
+            val newUrl = Utils.getUrl(serverPort, "$SEGMENT$absoluteSegmentUrl")
 
 
             val startIndex = updatedVariantManifestBuilder.indexOf(segmentUriInManifest)
@@ -141,7 +147,7 @@ class HlsManifestParser(
         val hlsPlaylist = parser.parse(manifestUrl.toUri(), manifest.byteInputStream())
 
         require(hlsPlaylist is HlsMultivariantPlaylist) {
-            "The provided URL does not point to a master playlist."
+            MASTER_PLAYLIST_ERROR
         }
 
         val updatedManifestBuilder = StringBuilder(manifest)
@@ -158,7 +164,7 @@ class HlsManifestParser(
             val mediaUriInManifest = findUrlInManifest(manifest, mediaUri, manifestUrl)
 
             val absoluteVariantUrl = getAbsoluteUrl(manifestUrl, mediaUri).encodeURLQueryComponent()
-            val newUrl = "http://127.0.0.1:$serverPort/?variantPlaylist=$absoluteVariantUrl"
+            val newUrl = Utils.getUrl(serverPort, "$VARIANT_PLAYLIST$absoluteVariantUrl")
 
             val startIndex = updatedManifestBuilder.indexOf(mediaUriInManifest)
             if (startIndex == -1) {
@@ -184,7 +190,7 @@ class HlsManifestParser(
     }
 
     private fun getAbsoluteUrl(baseManifestUrl: String, mediaUri: String): String {
-        if(mediaUri.startsWith("http://") || mediaUri.startsWith("https://")) {
+        if(mediaUri.startsWith(HTTP_PREFIX) || mediaUri.startsWith(HTTPS_PREFIX)) {
             return mediaUri
         }
 
