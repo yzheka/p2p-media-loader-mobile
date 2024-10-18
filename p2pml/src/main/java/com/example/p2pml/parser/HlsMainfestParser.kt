@@ -25,8 +25,6 @@ import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import com.example.p2pml.Constants.QueryParams
-import com.example.p2pml.Constants.ManifestErrorMessages.MASTER_PLAYLIST_ERROR
-import com.example.p2pml.Constants.ManifestErrorMessages.MEDIA_PLAYLIST_ERROR
 
 @UnstableApi
 class HlsManifestParser(
@@ -40,25 +38,26 @@ class HlsManifestParser(
     private val streamSegments = mutableMapOf<String, MutableList<Segment>>()
     private val updateStreamParams = mutableMapOf<String, UpdateStreamParams>()
 
-    suspend fun getModifiedMasterManifest(call: ApplicationCall, manifestUrl: String): String {
+    suspend fun getModifiedManifest(call: ApplicationCall, manifestUrl: String): String {
         val originalManifest = fetchManifest(call, manifestUrl)
-        return mutex.withLock { parseMasterManifest(manifestUrl, originalManifest) }
+        return mutex.withLock{ parseHlsManifest(manifestUrl, originalManifest) }
     }
 
-    suspend fun getModifiedVariantManifest(call: ApplicationCall, variantUrl: String): String {
-        val originalManifest = fetchManifest(call, variantUrl)
-        return mutex.withLock { parseVariantManifest(variantUrl, originalManifest) }
+    private fun parseHlsManifest(manifestUrl: String, manifest: String): String {
+        val hlsPlaylist = parser.parse(manifestUrl.toUri(), manifest.byteInputStream())
+
+        return when (hlsPlaylist) {
+            is HlsMediaPlaylist -> parseMediaPlaylist(manifestUrl, hlsPlaylist, manifest)
+            is HlsMultivariantPlaylist -> parseMultivariantPlaylist(manifestUrl, hlsPlaylist, manifest)
+            else -> throw IllegalStateException("Unsupported playlist type")
+        }
     }
 
     //TODO: Implement correct live segments support
     //TODO: Remove Initial segments from the processing
-    private fun parseVariantManifest(variantUrl: String, manifest: String): String
+    private fun parseMediaPlaylist(manifestUrl: String, mediaPlaylist: HlsMediaPlaylist,originalManifest: String): String
     {
-        val mediaPlaylist = parser.parse(variantUrl.toUri(), manifest.byteInputStream())
-
-        require(mediaPlaylist is HlsMediaPlaylist) { MEDIA_PLAYLIST_ERROR }
-
-        val updatedManifestBuilder = StringBuilder(manifest)
+        val updatedManifestBuilder = StringBuilder(originalManifest)
         val segmentsInPlaylist = mutableListOf<Segment>()
         var startTime = 0.0
 
@@ -68,60 +67,60 @@ class HlsManifestParser(
                 initializationSegments.add(segment.initializationSegment!!)
             }
 
-            val newSegment = processSegment(segment, variantUrl, index, startTime, updatedManifestBuilder)
+            val newSegment = processSegment(segment, manifestUrl, index, startTime, updatedManifestBuilder)
             segmentsInPlaylist.add(newSegment)
             startTime += segment.durationUs.toDouble() / 1_000_000
         }
 
         initializationSegments.forEach { initializationSegment ->
-            println("Initialization segment: ${initializationSegment.url}")
-            replaceUrlInManifest(manifest, variantUrl, initializationSegment.url, updatedManifestBuilder)
+            replaceUrlInManifest(originalManifest, manifestUrl, initializationSegment.url, updatedManifestBuilder)
         }
 
-        updateStreamData(variantUrl, segmentsInPlaylist)
-
+        updateStreamData(manifestUrl, segmentsInPlaylist)
+        val stream = findStreamByRuntimeId(manifestUrl)
+        if(stream == null) {
+            streams.add(Stream(runtimeId = manifestUrl, type = StreamTypes.MAIN, index = 0))
+        }
+        Log.d("-HlsManifestParser", "Updated Manifest: ${updatedManifestBuilder.toString()}")
         return updatedManifestBuilder.toString()
     }
 
-    suspend fun getUpdateStreamParamsJSON(variantUrl: String): String {
+    suspend fun getUpdateStreamParamsJSON(variantUrl: String): String? {
         mutex.withLock {
             val updateStream = updateStreamParams[variantUrl]
-                ?: throw IllegalStateException("Update stream params not found for variant: $variantUrl")
+                ?: return null
             return Json.encodeToString(updateStream)
         }
     }
 
     suspend fun getStreamsJSON(): String {
-        return mutex.withLock { Json.encodeToString(streams) }
+        return mutex.withLock {
+            Json.encodeToString(streams)
+        }
     }
 
-    private fun parseMasterManifest(
+    private fun parseMultivariantPlaylist(
         manifestUrl: String,
-        manifest: String
+        hlsPlaylist: HlsMultivariantPlaylist,
+        originalManifest: String
     ): String {
-        val hlsPlaylist = parser.parse(manifestUrl.toUri(), manifest.byteInputStream())
-
-        require(hlsPlaylist is HlsMultivariantPlaylist) { MASTER_PLAYLIST_ERROR }
-
-        val updatedManifestBuilder = StringBuilder(manifest)
+        val updatedManifestBuilder = StringBuilder(originalManifest)
 
         hlsPlaylist.variants.forEachIndexed { index, variant ->
-            processVariant(variant, index, manifest, manifestUrl, updatedManifestBuilder)
-        }
-        hlsPlaylist.audios.forEachIndexed { index, audio ->
-            processRendition(audio, index, manifest, manifestUrl, updatedManifestBuilder)
+            processVariant(variant, index, originalManifest, manifestUrl, updatedManifestBuilder)
         }
 
-        Log.d("HlsManifestParser", "Original Manifest: $manifest")
+        hlsPlaylist.audios.forEachIndexed { index, audio ->
+            processRendition(audio, index, originalManifest, manifestUrl, updatedManifestBuilder)
+        }
 
         hlsPlaylist.subtitles.forEach{ subtitle ->
-            replaceUrlInManifest(manifest, manifestUrl, subtitle.url.toString(), updatedManifestBuilder)
+            replaceUrlInManifest(originalManifest, manifestUrl, subtitle.url.toString(), updatedManifestBuilder)
         }
 
         hlsPlaylist.closedCaptions.forEach{ caption ->
-            replaceUrlInManifest(manifest, manifestUrl, caption.url.toString(), updatedManifestBuilder)
+            replaceUrlInManifest(originalManifest, manifestUrl, caption.url.toString(), updatedManifestBuilder)
         }
-        Log.d("HlsManifestParser", "Updated Manifest: $updatedManifestBuilder")
         return updatedManifestBuilder.toString()
     }
 
@@ -151,6 +150,10 @@ class HlsManifestParser(
         updateStreamParams[variantUrl] = updateStream
     }
 
+    private fun findStreamByRuntimeId(runtimeId: String): Stream? {
+        return streams.find { it.runtimeId == runtimeId }
+    }
+
     private fun processVariant(
         variant: HlsMultivariantPlaylist.Variant,
         index: Int,
@@ -160,7 +163,7 @@ class HlsManifestParser(
     ) {
         val streamUrl = variant.url.toString()
         streams.add(Stream(runtimeId = streamUrl, type = StreamTypes.MAIN, index = index))
-        replaceUrlInManifest(manifest, manifestUrl, streamUrl, updatedManifestBuilder, QueryParams.VARIANT_PLAYLIST)
+        replaceUrlInManifest(manifest, manifestUrl, streamUrl, updatedManifestBuilder, QueryParams.MANIFEST)
     }
 
     private fun processRendition(
@@ -172,7 +175,7 @@ class HlsManifestParser(
     ) {
         val streamUrl = rendition.url.toString()
         streams.add(Stream(runtimeId = streamUrl, type = StreamTypes.SECONDARY, index = index))
-        replaceUrlInManifest(manifest, manifestUrl, streamUrl, updatedManifestBuilder, QueryParams.VARIANT_PLAYLIST)
+        replaceUrlInManifest(manifest, manifestUrl, streamUrl, updatedManifestBuilder, QueryParams.MANIFEST)
     }
 
 
@@ -188,15 +191,23 @@ class HlsManifestParser(
         val absoluteSegmentUrl = getAbsoluteUrl(variantUrl, segmentUri).encodeURLQueryComponent()
         val newUrl = Utils.getUrl(serverPort, "${QueryParams.SEGMENT}$absoluteSegmentUrl")
 
+        val startIndex = manifestBuilder.indexOf(segmentUriInManifest)
+            .takeIf { it != -1 }
+            ?: throw IllegalStateException("URL not found in manifest: $segmentUri")
+        val endIndex = startIndex + segmentUriInManifest.length
+
         manifestBuilder.replace(
-            manifestBuilder.indexOf(segmentUriInManifest),
-            manifestBuilder.indexOf(segmentUriInManifest) + segmentUriInManifest.length,
+            startIndex,
+            endIndex,
             newUrl
         )
 
-        val byteRange = segment.byteRangeLength.takeIf { it != -1L && segment.byteRangeOffset != 0L }
+        val byteRange = segment.byteRangeLength.takeIf { it != -1L  }
             ?.let { ByteRange(segment.byteRangeOffset, segment.byteRangeOffset + it) }
 
+        print("startRange: ${segment.byteRangeOffset}")
+        print("endRange: ${segment.byteRangeOffset + segment.byteRangeLength}")
+        println("byteRange: $byteRange")
         val endTime = startTime + segment.durationUs.toDouble() / 1_000_000
 
         return Segment(
@@ -223,12 +234,15 @@ class HlsManifestParser(
         } else {
            absoluteUrl
         }
-
+        Log.d("HlsManifestParser", "Replacing $urlToFind with $newUrl")
         val startIndex = updatedManifestBuilder.indexOf(urlToFind)
             .takeIf { it != -1 }
             ?: throw IllegalStateException("URL not found in manifest: $originalUrl")
         val endIndex = startIndex + urlToFind.length
+
         updatedManifestBuilder.replace(startIndex, endIndex, newUrl)
+
+        Log.d("HlsManifestParser", "Replacing ${updatedManifestBuilder.toString()}")
     }
 
     private fun findUrlInManifest(manifest: String, urlToFind: String, manifestUrl: String): String {

@@ -14,8 +14,7 @@ class ServerRoutes(
         routing {
             get("/") {
                 when {
-                    call.parameters["manifest"] != null -> manifestHandler.handleMasterManifestRequest(call)
-                    call.parameters["variantPlaylist"] != null -> manifestHandler.handleVariantPlaylistRequest(call)
+                    call.parameters["manifest"] != null -> manifestHandler.handleManifestRequest(call)
                     call.parameters["segment"] != null -> segmentHandler.handleSegmentRequest(call)
                     else -> call.respondText("Missing required parameter", status = io.ktor.http.HttpStatusCode.BadRequest)
                 }

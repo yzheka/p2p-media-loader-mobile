@@ -37,7 +37,7 @@
           for (const stream of streams) {
             this.core.addStreamIfNoneExists(stream);
           }
-          console.log("streams", streams);
+          console.log(">>> addStreamsIfNoneExist", streams);
         }
 
         parseStream(jsonData) {
@@ -47,7 +47,7 @@
             playlist.addSegments,
             playlist.removeSegmentsIds
           );
-          console.log("playlist", playlist);
+          console.log(">>> updateStream", playlist);
         }
 
         requestSegment(segmentRequestJSON) {
@@ -55,9 +55,6 @@
           console.log("segmentRequest", segmentRequest);
           const { segmentUrl, currentPlayPosition, currentPlaySpeed } =
             segmentRequest;
-
-          console.log("playPosition", currentPlayPosition);
-          console.log("playBackRate", currentPlaySpeed);
 
           this.core.updatePlayback(currentPlayPosition, currentPlaySpeed);
 

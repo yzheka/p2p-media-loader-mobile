@@ -10,12 +10,6 @@ object Constants {
     object QueryParams {
         const val SEGMENT = "?segment="
         const val MANIFEST = "?manifest="
-        const val VARIANT_PLAYLIST = "?variantPlaylist="
-    }
-
-    object ManifestErrorMessages {
-        const val MASTER_PLAYLIST_ERROR = "The provided URL does not point to a master playlist."
-        const val MEDIA_PLAYLIST_ERROR = "The provided URL does not point to a media playlist."
     }
 
     object StreamTypes {
