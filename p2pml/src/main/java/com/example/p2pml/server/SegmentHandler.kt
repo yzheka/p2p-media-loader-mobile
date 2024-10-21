@@ -1,11 +1,9 @@
 package com.example.p2pml.server
 
-import android.util.Log
 import com.example.p2pml.utils.Utils
 import com.example.p2pml.webview.WebViewManager
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondText
