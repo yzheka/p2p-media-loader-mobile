@@ -50,8 +50,6 @@ class WebMessageProtocol(private val webView: WebView, private val coroutineScop
     }
 
     private fun handleSegmentIdBytes(arrayBuffer: ByteArray) {
-        Log.d("CoreWebView", "Received segment bytes from  JS: ${arrayBuffer.size}")
-
         if(incomingSegmentRequest == null) {
             throw IllegalStateException("Received segment bytes without a segment ID")
         }
