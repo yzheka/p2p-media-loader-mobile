@@ -81,7 +81,6 @@ class HlsManifestParser(
         if(stream == null) {
             streams.add(Stream(runtimeId = manifestUrl, type = StreamTypes.MAIN, index = 0))
         }
-        Log.d("-HlsManifestParser", "Updated Manifest: ${updatedManifestBuilder.toString()}")
         return updatedManifestBuilder.toString()
     }
 
@@ -188,14 +187,14 @@ class HlsManifestParser(
     ): Segment {
         val segmentUri = segment.url
         val segmentUriInManifest = findUrlInManifest(manifestBuilder.toString(), segmentUri, variantUrl)
-        val absoluteSegmentUrl = getAbsoluteUrl(variantUrl, segmentUri).encodeURLQueryComponent()
-        val newUrl = Utils.getUrl(serverPort, "${QueryParams.SEGMENT}$absoluteSegmentUrl")
+        val absoluteSegmentUrl = getAbsoluteUrl(variantUrl, segmentUri)
+        val encodedAbsoluteSegmentUrl = Utils.encodeUrlToBase64(absoluteSegmentUrl)
+        val newUrl = Utils.getUrl(serverPort, "${QueryParams.SEGMENT}$encodedAbsoluteSegmentUrl")
 
         val startIndex = manifestBuilder.indexOf(segmentUriInManifest)
             .takeIf { it != -1 }
             ?: throw IllegalStateException("URL not found in manifest: $segmentUri")
         val endIndex = startIndex + segmentUriInManifest.length
-
         manifestBuilder.replace(
             startIndex,
             endIndex,
@@ -205,9 +204,6 @@ class HlsManifestParser(
         val byteRange = segment.byteRangeLength.takeIf { it != -1L  }
             ?.let { ByteRange(segment.byteRangeOffset, segment.byteRangeOffset + it) }
 
-        print("startRange: ${segment.byteRangeOffset}")
-        print("endRange: ${segment.byteRangeOffset + segment.byteRangeLength}")
-        println("byteRange: $byteRange")
         val endTime = startTime + segment.durationUs.toDouble() / 1_000_000
 
         return Segment(
@@ -232,17 +228,14 @@ class HlsManifestParser(
         val newUrl = if(queryParam != null) {
             Utils.getUrl(serverPort, "$queryParam$absoluteUrl")
         } else {
-           absoluteUrl
+            absoluteUrl
         }
-        Log.d("HlsManifestParser", "Replacing $urlToFind with $newUrl")
+
         val startIndex = updatedManifestBuilder.indexOf(urlToFind)
             .takeIf { it != -1 }
             ?: throw IllegalStateException("URL not found in manifest: $originalUrl")
         val endIndex = startIndex + urlToFind.length
-
         updatedManifestBuilder.replace(startIndex, endIndex, newUrl)
-
-        Log.d("HlsManifestParser", "Replacing ${updatedManifestBuilder.toString()}")
     }
 
     private fun findUrlInManifest(manifest: String, urlToFind: String, manifestUrl: String): String {

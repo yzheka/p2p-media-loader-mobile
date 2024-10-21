@@ -1,7 +1,6 @@
 package com.example.p2pml.server
 
 import androidx.annotation.OptIn
-import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import com.example.p2pml.utils.Utils
 import com.example.p2pml.webview.WebViewManager
@@ -34,7 +33,6 @@ class ManifestHandler(
 
         try {
             val modifiedManifest = manifestParser.getModifiedManifest(call, decodedManifestUrl)
-            Log.d("Modified Manifest","Modified Manifest: $modifiedManifest")
 
             val needsInitialSetup: Boolean
             mutex.withLock {
@@ -45,7 +43,7 @@ class ManifestHandler(
             }
 
             val updateStreamJSON = manifestParser.getUpdateStreamParamsJSON(decodedManifestUrl)
-            Log.d("ManifestHandler", "updateStreamJSON: $updateStreamJSON")
+
             if (needsInitialSetup) {
                 val streamsJSON = manifestParser.getStreamsJSON()
                 Utils.runOnUiThread {
@@ -62,7 +60,6 @@ class ManifestHandler(
                    webViewManager.sendStream(updateStreamJSON)
                 }
             }
-
             call.respondText(modifiedManifest, ContentType.parse("application/vnd.apple.mpegurl"))
         } catch (e: Exception) {
             call.respondText(

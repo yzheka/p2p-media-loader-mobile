@@ -4,11 +4,23 @@ import android.os.Handler
 import android.os.Looper
 import com.example.p2pml.Constants.HTTP_PREFIX
 import com.example.p2pml.Constants.LOCALHOST
+import io.ktor.http.decodeURLQueryComponent
+import io.ktor.http.encodeURLParameter
 
 import io.ktor.server.application.ApplicationCall
+import io.ktor.util.decodeBase64String
+import io.ktor.util.encodeBase64
 import okhttp3.Request
 
 object Utils {
+
+    fun encodeUrlToBase64(url: String): String {
+        return url.encodeBase64().encodeURLParameter()
+    }
+
+    fun decodeBase64Url(encodedString: String): String {
+        return encodedString.decodeBase64String().decodeURLQueryComponent()
+    }
 
     fun getUrl(port: Int, path: String): String {
         return "$HTTP_PREFIX$LOCALHOST:$port/$path"
