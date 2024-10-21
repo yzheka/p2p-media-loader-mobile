@@ -12,7 +12,7 @@ import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.routing.routing
 
 @UnstableApi
-class ServerModule(
+internal class ServerModule(
     private val webViewManager: WebViewManager,
     private val manifestParser: HlsManifestParser,
     private val onServerStarted: () -> Unit

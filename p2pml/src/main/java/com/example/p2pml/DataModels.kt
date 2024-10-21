@@ -3,14 +3,14 @@ package com.example.p2pml
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Stream(
+internal data class Stream(
     val runtimeId: String,
     val type: String,
     val index: Int,
 )
 
 @Serializable
-data class Segment(
+internal data class Segment(
     val runtimeId: String,
     val externalId: Int,
     val url: String,
@@ -20,20 +20,20 @@ data class Segment(
 )
 
 @Serializable
-data class ByteRange(
+internal data class ByteRange(
     val start: Long,
     val end: Long,
 )
 
 @Serializable
-data class UpdateStreamParams(
+internal data class UpdateStreamParams(
     val streamRuntimeId: String,
     val addSegments: List<Segment>,
     val removeSegmentsIds: List<String>,
 )
 
 @Serializable
-data class SegmentRequest(
+internal data class SegmentRequest(
     val segmentUrl: String,
     val currentPlayPosition: Float,
     val currentPlaySpeed: Float

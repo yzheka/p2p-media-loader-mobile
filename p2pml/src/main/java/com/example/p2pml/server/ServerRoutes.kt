@@ -6,7 +6,7 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 
-class ServerRoutes(
+internal class ServerRoutes(
     private val manifestHandler: ManifestHandler,
     private val segmentHandler: SegmentHandler
 ){

@@ -19,7 +19,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 
-class WebMessageProtocol(private val webView: WebView, private val coroutineScope: CoroutineScope) {
+internal class WebMessageProtocol(private val webView: WebView, private val coroutineScope: CoroutineScope) {
     @SuppressLint("RequiresFeature")
     private val channels: Array<WebMessagePortCompat> = WebViewCompat.createWebMessageChannel(webView)
     private val segmentResponseCallbacks = mutableMapOf<String, CompletableDeferred<ByteArray>>()

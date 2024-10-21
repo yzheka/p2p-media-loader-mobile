@@ -12,7 +12,7 @@ import io.ktor.util.decodeBase64String
 import io.ktor.util.encodeBase64
 import okhttp3.Request
 
-object Utils {
+internal object Utils {
 
     fun encodeUrlToBase64(url: String): String {
         return url.encodeBase64().encodeURLParameter()

@@ -12,7 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class WebViewManager(
+internal class WebViewManager(
     context: Context,
     coroutineScope: CoroutineScope,
     onPageLoadFinished: () -> Unit

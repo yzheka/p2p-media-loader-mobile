@@ -27,7 +27,7 @@ import okhttp3.Request
 import com.example.p2pml.Constants.QueryParams
 
 @UnstableApi
-class HlsManifestParser(
+internal class HlsManifestParser(
     private val serverPort: Int
 ) {
     private val okHttpClient: OkHttpClient = OkHttpClient()
