@@ -1,44 +1,91 @@
 package com.example.p2pml.webview
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.WebView
+import androidx.webkit.WebViewClientCompat
+import com.example.p2pml.utils.Utils
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class WebViewManager(
     context: Context,
     coroutineScope: CoroutineScope,
     onPageLoadFinished: () -> Unit
 ) {
-    private val coreWebView = CoreWebView(context, coroutineScope, onPageLoadFinished)
+    @SuppressLint("SetJavaScriptEnabled")
+    private val webView = WebView(context).apply {
+        settings.javaScriptEnabled = true
+        webViewClient = WebViewClientCompat()
+        visibility = View.GONE
+        addJavascriptInterface(JavaScriptInterface(context, onPageLoadFinished), "Android")
+    }
+    private val webMessageProtocol = WebMessageProtocol(webView, coroutineScope)
+    private var playbackInfoCallback: () -> Pair<Float, Float> = { Pair(0f, 1f) }
 
     fun loadWebView(url: String) {
-        coreWebView.loadUrl(url)
+        Utils.runOnUiThread {
+            webView.loadUrl(url)
+        }
     }
 
     fun setUpPlaybackInfoCallback(callback: () -> Pair<Float, Float>) {
-        coreWebView.setUpPlaybackInfoCallback(callback)
+        this.playbackInfoCallback = callback
     }
 
-    suspend fun requestSegmentBytes(segmentUrl: String): kotlinx.coroutines.Deferred<ByteArray> {
-        return coreWebView.requestSegmentBytes(segmentUrl)
+    suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray> {
+        var currentPosition: Float
+        var playbackSpeed: Float
+
+        // ExoPlayer is not thread-safe, so we need to access it on the main thread
+        withContext(Dispatchers.Main) {
+            currentPosition = playbackInfoCallback().first
+            playbackSpeed = playbackInfoCallback().second
+        }
+
+        return webMessageProtocol.requestSegmentBytes(segmentUrl, currentPosition, playbackSpeed)
     }
 
     fun sendInitialMessage() {
-        coreWebView.sendInitialMessage()
+        webMessageProtocol.sendInitialMessage()
     }
 
     fun sendAllStreams(streamsJSON: String) {
-        coreWebView.sendAllStreams(streamsJSON)
+        Utils.runOnUiThread {
+            webView.evaluateJavascript(
+                "javascript:window.p2p.parseAllStreams('$streamsJSON');",
+                null
+            )
+        }
     }
 
     fun sendStream(streamJSON: String) {
-        coreWebView.sendStream(streamJSON)
+        Utils.runOnUiThread {
+            webView.evaluateJavascript(
+                "javascript:window.p2p.parseStream('$streamJSON');",
+                null
+            )
+        }
     }
 
     fun setManifestUrl(manifestUrl: String) {
-        coreWebView.setManifestUrl(manifestUrl)
+        Utils.runOnUiThread {
+            webView.evaluateJavascript(
+                "javascript:window.p2p.setManifestUrl('$manifestUrl');",
+                null
+            )
+        }
     }
 
+
     fun destroy() {
-        coreWebView.destroy()
+        webView.apply {
+            parent?.let { (it as ViewGroup).removeView(this) }
+            destroy()
+        }
     }
 }

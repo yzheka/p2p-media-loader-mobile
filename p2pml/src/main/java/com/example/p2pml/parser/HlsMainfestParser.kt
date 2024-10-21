@@ -1,6 +1,5 @@
 package com.example.p2pml.parser
 
-import android.util.Log
 import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
@@ -10,6 +9,7 @@ import com.example.p2pml.ByteRange
 import com.example.p2pml.Constants.StreamTypes
 import com.example.p2pml.Constants.HTTPS_PREFIX
 import com.example.p2pml.Constants.HTTP_PREFIX
+import com.example.p2pml.Constants.MICROSECONDS_IN_SECOND
 import com.example.p2pml.Segment
 import com.example.p2pml.Stream
 import com.example.p2pml.UpdateStreamParams
@@ -54,7 +54,6 @@ class HlsManifestParser(
     }
 
     //TODO: Implement correct live segments support
-    //TODO: Remove Initial segments from the processing
     private fun parseMediaPlaylist(manifestUrl: String, mediaPlaylist: HlsMediaPlaylist,originalManifest: String): String
     {
         val updatedManifestBuilder = StringBuilder(originalManifest)
@@ -69,7 +68,7 @@ class HlsManifestParser(
 
             val newSegment = processSegment(segment, manifestUrl, index, startTime, updatedManifestBuilder)
             segmentsInPlaylist.add(newSegment)
-            startTime += segment.durationUs.toDouble() / 1_000_000
+            startTime += segment.durationUs.toDouble() / MICROSECONDS_IN_SECOND
         }
 
         initializationSegments.forEach { initializationSegment ->
@@ -77,7 +76,9 @@ class HlsManifestParser(
         }
 
         updateStreamData(manifestUrl, segmentsInPlaylist)
+
         val stream = findStreamByRuntimeId(manifestUrl)
+        // This should be fired if there is no master manifest
         if(stream == null) {
             streams.add(Stream(runtimeId = manifestUrl, type = StreamTypes.MAIN, index = 0))
         }
@@ -176,7 +177,6 @@ class HlsManifestParser(
         streams.add(Stream(runtimeId = streamUrl, type = StreamTypes.SECONDARY, index = index))
         replaceUrlInManifest(manifest, manifestUrl, streamUrl, updatedManifestBuilder, QueryParams.MANIFEST)
     }
-
 
     private fun processSegment(
         segment: HlsMediaPlaylist.Segment,
