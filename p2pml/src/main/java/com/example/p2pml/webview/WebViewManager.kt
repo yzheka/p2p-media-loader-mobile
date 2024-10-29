@@ -5,16 +5,25 @@ import android.content.Context
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
+import androidx.annotation.OptIn
+import androidx.media3.common.util.Log
+import androidx.media3.common.util.UnstableApi
 import androidx.webkit.WebViewClientCompat
+import com.example.p2pml.ExoPlayerPlaybackCalculator
+import com.example.p2pml.parser.HlsManifestParser
 import com.example.p2pml.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-internal class WebViewManager(
+@OptIn(UnstableApi::class)
+internal class WebViewManager
+    (
     context: Context,
     coroutineScope: CoroutineScope,
+    private val exoPlayerPlaybackCalculator: ExoPlayerPlaybackCalculator,
+    private val manifestParser: HlsManifestParser,
     onPageLoadFinished: () -> Unit
 ) {
     @SuppressLint("SetJavaScriptEnabled")
@@ -37,17 +46,24 @@ internal class WebViewManager(
         this.playbackInfoCallback = callback
     }
 
-    suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray> {
-        var currentPosition: Float
-        var playbackSpeed: Float
-
-        // ExoPlayer is not thread-safe, so we need to access it on the main thread
-        withContext(Dispatchers.Main) {
-            currentPosition = playbackInfoCallback().first
-            playbackSpeed = playbackInfoCallback().second
+    suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray> = withContext(Dispatchers.Main) {
+        val currentPlaybackInfo = runCatching {
+            exoPlayerPlaybackCalculator.getPlaybackPositionAndSpeed()
+        }.onFailure { exception ->
+            Log.e("PlaybackError", "Error occurred: ${exception.message}", exception)
+        }.getOrNull() ?: run {
+            Log.e("PlaybackError", "Error getting playback position and speed")
+            throw IllegalStateException("Error getting playback position and speed")
         }
 
-        return webMessageProtocol.requestSegmentBytes(segmentUrl, currentPosition, playbackSpeed)
+        Log.d("PlaybackInfo", "Current position: ${currentPlaybackInfo.first}, Speed: ${currentPlaybackInfo.second}")
+
+        if (!manifestParser.isLastRequestedStreamLive()) {
+            Log.d("PlaybackInfo", "Is not live")
+            return@withContext webMessageProtocol.requestSegmentBytes(segmentUrl, currentPlaybackInfo.first / 1_000_000f , currentPlaybackInfo.second)
+        }
+        Log.d("PlaybackInfo", "Is live ${manifestParser.isLastRequestedStreamLive()}")
+        return@withContext webMessageProtocol.requestSegmentBytes(segmentUrl, currentPlaybackInfo.first / 1_000_000f, currentPlaybackInfo.second)
     }
 
     fun sendInitialMessage() {

@@ -3,6 +3,7 @@ package com.example.p2pml
 import android.content.Context
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
 import com.example.p2pml.Constants.QueryParams.MANIFEST
 import com.example.p2pml.Constants.CORE_FILE_PATH
 import com.example.p2pml.parser.HlsManifestParser
@@ -18,10 +19,17 @@ class P2PML(
     coroutineScope: LifecycleCoroutineScope,
     private val serverPort: Int = Constants.DEFAULT_SERVER_PORT
 ) {
-    private val webViewManager: WebViewManager = WebViewManager(context, coroutineScope) {
+    private val exoPlayerPlaybackCalculator = ExoPlayerPlaybackCalculator()
+    private val manifestParser: HlsManifestParser = HlsManifestParser(exoPlayerPlaybackCalculator, serverPort)
+
+    private val webViewManager: WebViewManager = WebViewManager(
+        context,
+        coroutineScope,
+        exoPlayerPlaybackCalculator,
+        manifestParser
+    ) {
         webViewLoadDeferred.complete(Unit)
     }
-    private val manifestParser: HlsManifestParser = HlsManifestParser(serverPort)
     private val serverModule: ServerModule = ServerModule(webViewManager, manifestParser) {
         onServerStarted()
     }
@@ -29,6 +37,10 @@ class P2PML(
 
     init {
         startServer()
+    }
+
+    fun setExoPlayer(exoPlayer: ExoPlayer) {
+        exoPlayerPlaybackCalculator.setExoPlayer(exoPlayer)
     }
 
     private fun startServer() {

@@ -28,6 +28,7 @@ import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.TransferListener
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
@@ -77,6 +78,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         WebView.setWebContentsDebuggingEnabled(true)
+
+        val streamUrl = "https://video-weaver.waw02.hls.live-video.net/v1/playlist/CrgFccpDUdSb0-36OTAxgDsPTsZG9pmQjJapDgX2sYoQNSoQmR7-9gtVVweHUZY2XAkRwg9Ra2A0A0Ja8Ev0bLpb_4uygvIodu4mGyB0TwgvNeH6uHE7MAr8QdmruHK28fvgjNr90YlTXgSS-RGUO7ld0NIZw8NajjRkO9vp51qKliqlGJtllCP_icLVxnkrLQ50sqXCnzyMYKkzaiLNdcNKo3ADwzwSm_G-1GMj5bbkAC1Pj6o2fVg5RZgngghZOvaLGttF7i0Cl4U7XrgL7zG1j8_430WyCjven91BfSIR_0Gdp8CB7WbRKeIj6_kWB9rcUvDv4zThWfEZ0XKdCHdrfkoqbOI7rN7MDA_8FSfxJBtgLAd6qNbS2U_v142yT-V8ZAZ-ntqpS4-6I6th_GL1lsW7bPh4fPTkpVmCe__V2a4O_XWHfANYi3cgUZvBKDzes4TbD4f5hA6ijAcwjGiA93NHY7gKTPrI5xSOzBITuUtE2oWYPxVQ894n-76Dgp7mtzdo_BDbuEe_u3I0By-ZgKXWja6k_d1tVPenl9gYv8kjXlFoFgHhjTaSZg_ayCtj08tX_OWYRlKJKjCpBDA3MXdUGuHwBo8F0QULuckxBNBcJj-wpWWysWJaX-fu2oKu_N8oPmBa2IuIZE1dG0vb7WPxyR2BqVC0B_0Y4aabmCDTxcTF5Q_FxeibHok3T6t4haLpvpvuElR_Lr4q0kAvu85X3u_5HIWgJOsXOXtP6Lwf61pAXAukeMUheZZYuH4sEO4hhNUnC8UYr-3-C5fofbSxmyw9b_IiIkb5e8DRTEg0GAwiqZN0hxQaMzu8R0tw5NldyOPSrZ2oeavTwdSEMPn2XKn5FvJCuKPm58SlzbRyiJMdJxe98CqMNB-h_a4GuI2MnHJ0V_Rh53b6UW1va7AJ51NLPogiGgwcCUsFOx4OCuGEzlsgASoJZXUtd2VzdC0yMN0K.m3u8"
+        //val streamUrl = "https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.DmumNckWFTqz.m3u8"
+
         //var streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8"
         //val streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/gear1/prog_index.m3u8"
         //val streamUrl = "https://test-streams.mux.dev/x36xhzz/url_0/193039199_mp4_h264_aac_hd_7.m3u8"
@@ -84,7 +89,7 @@ class MainActivity : ComponentActivity() {
         //val streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8"
 
         //val streamUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
-        val streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/adv_dv_atmos/main.m3u8"
+        //val streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/adv_dv_atmos/main.m3u8"
         lifecycleScope.launch {
             p2pServer = P2PML(this@MainActivity, lifecycleScope)
             val manifest =
@@ -95,11 +100,31 @@ class MainActivity : ComponentActivity() {
                 MediaItem.fromUri(manifest)
             )
 
-            player = ExoPlayer.Builder(this@MainActivity).build().apply {
+
+            val loadControl = DefaultLoadControl.Builder()
+                .setBufferDurationsMs(
+                    30000, // Minimum buffer before playback can start or resume (in milliseconds)
+                    60000, // Maximum buffer to be retained in memory (in milliseconds)
+                    1500,  // Buffer required before starting playback (in milliseconds)
+                    3000   // Buffer required after a rebuffer (in milliseconds)
+                )
+                .build()
+
+            /*player = ExoPlayer.Builder(this@MainActivity).build().apply {
                 setMediaSource(mediaSource)
                 prepare()
                 playWhenReady = true
-            }
+            }*/
+            val player = ExoPlayer.Builder(this@MainActivity)
+                .setLoadControl(loadControl)
+                .build().apply {
+                    setMediaSource(mediaSource)
+                    prepare()
+                    playWhenReady = true
+                }
+
+
+            p2pServer.setExoPlayer(player)
 
             fun getCurrentPositionAndSpeed(): Pair<Float, Float> {
                 return Pair(player.currentPosition / 1000f, player.playbackParameters.speed)

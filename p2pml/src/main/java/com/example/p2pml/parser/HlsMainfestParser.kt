@@ -25,11 +25,14 @@ import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import com.example.p2pml.Constants.QueryParams
+import com.example.p2pml.ExoPlayerPlaybackCalculator
 
 @UnstableApi
 internal class HlsManifestParser(
+    private val exoPlayerPlaybackCalculator: ExoPlayerPlaybackCalculator,
     private val serverPort: Int
 ) {
+    private var isLastRequestedStreamLive = false
     private val okHttpClient: OkHttpClient = OkHttpClient()
     private val parser = HlsPlaylistParser()
     private val mutex = Mutex()
@@ -43,7 +46,13 @@ internal class HlsManifestParser(
         return mutex.withLock{ parseHlsManifest(manifestUrl, originalManifest) }
     }
 
-    private fun parseHlsManifest(manifestUrl: String, manifest: String): String {
+    suspend fun isLastRequestedStreamLive(): Boolean {
+        return mutex.withLock {
+            isLastRequestedStreamLive
+        }
+    }
+
+    private suspend fun parseHlsManifest(manifestUrl: String, manifest: String): String {
         val hlsPlaylist = parser.parse(manifestUrl.toUri(), manifest.byteInputStream())
 
         return when (hlsPlaylist) {
@@ -54,21 +63,40 @@ internal class HlsManifestParser(
     }
 
     //TODO: Implement correct live segments support
-    private fun parseMediaPlaylist(manifestUrl: String, mediaPlaylist: HlsMediaPlaylist,originalManifest: String): String
+    private suspend fun parseMediaPlaylist(
+        manifestUrl: String,
+        mediaPlaylist: HlsMediaPlaylist,
+        originalManifest: String
+    ): String
     {
+        isLastRequestedStreamLive = !mediaPlaylist.hasEndTag
         val updatedManifestBuilder = StringBuilder(originalManifest)
         val segmentsInPlaylist = mutableListOf<Segment>()
-        var startTime = 0.0
+        var startTime = if(isLastRequestedStreamLive) {
+            exoPlayerPlaybackCalculator.getAbsolutePlaybackPosition(manifestUrl, originalManifest)
+        } else {
+            0
+        }
+
 
         val initializationSegments = mutableSetOf<HlsMediaPlaylist.Segment>()
-        mediaPlaylist.segments.forEachIndexed { index, segment ->
+        var startSegmentIndex = mediaPlaylist.mediaSequence
+        mediaPlaylist.segments.forEach{ segment ->
             if (segment.initializationSegment != null) {
                 initializationSegments.add(segment.initializationSegment!!)
             }
 
-            val newSegment = processSegment(segment, manifestUrl, index, startTime, updatedManifestBuilder)
+            val newSegment = processSegment(
+                segment,
+                manifestUrl,
+                startSegmentIndex.toInt(),
+                startTime,
+                updatedManifestBuilder,
+                isLastRequestedStreamLive
+            )
             segmentsInPlaylist.add(newSegment)
-            startTime += segment.durationUs.toDouble() / MICROSECONDS_IN_SECOND
+            startSegmentIndex++
+            startTime += segment.durationUs
         }
 
         initializationSegments.forEach { initializationSegment ->
@@ -182,14 +210,22 @@ internal class HlsManifestParser(
         segment: HlsMediaPlaylist.Segment,
         variantUrl: String,
         index: Int,
-        startTime: Double,
-        manifestBuilder: StringBuilder
+        startTime: Long,
+        manifestBuilder: StringBuilder,
+        isLiveStream: Boolean
     ): Segment {
         val segmentUri = segment.url
-        val segmentUriInManifest = findUrlInManifest(manifestBuilder.toString(), segmentUri, variantUrl)
+        val segmentUriInManifest = findUrlInManifest(
+            manifestBuilder.toString(),
+            segmentUri,
+            variantUrl
+        )
         val absoluteSegmentUrl = getAbsoluteUrl(variantUrl, segmentUri)
         val encodedAbsoluteSegmentUrl = Utils.encodeUrlToBase64(absoluteSegmentUrl)
-        val newUrl = Utils.getUrl(serverPort, "${QueryParams.SEGMENT}$encodedAbsoluteSegmentUrl")
+        val newUrl = Utils.getUrl(
+            serverPort,
+            "${QueryParams.SEGMENT}$encodedAbsoluteSegmentUrl"
+        )
 
         val startIndex = manifestBuilder.indexOf(segmentUriInManifest)
             .takeIf { it != -1 }
@@ -204,16 +240,28 @@ internal class HlsManifestParser(
         val byteRange = segment.byteRangeLength.takeIf { it != -1L  }
             ?.let { ByteRange(segment.byteRangeOffset, segment.byteRangeOffset + it) }
 
-        val endTime = startTime + segment.durationUs.toDouble() / 1_000_000
+        if(!isLiveStream){
+            val endTime = startTime + segment.durationUs.toDouble() / 1_000_000
+            return Segment(
+                runtimeId = absoluteSegmentUrl,
+                externalId = index,
+                url = absoluteSegmentUrl,
+                byteRange = byteRange,
+                startTime = startTime / MICROSECONDS_IN_SECOND.toDouble(),
+                endTime = endTime
+            )
+        } else {
+            val endTime = startTime + segment.durationUs
+            return Segment(
+                runtimeId = absoluteSegmentUrl,
+                externalId = index,
+                url = absoluteSegmentUrl,
+                byteRange = byteRange,
+                startTime = startTime.toDouble(),
+                endTime = endTime.toDouble()
+            )
+        }
 
-        return Segment(
-            runtimeId = absoluteSegmentUrl,
-            externalId = index,
-            url = absoluteSegmentUrl,
-            byteRange = byteRange,
-            startTime = startTime,
-            endTime = endTime
-        )
     }
 
     private fun replaceUrlInManifest(

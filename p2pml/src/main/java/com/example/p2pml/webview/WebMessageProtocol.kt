@@ -26,7 +26,6 @@ internal class WebMessageProtocol(private val webView: WebView, private val coro
     private val mutex = Mutex()
     private var incomingSegmentRequest: String? = null
 
-
     init {
         setupWebMessageCallback()
     }
@@ -41,7 +40,7 @@ internal class WebMessageProtocol(private val webView: WebView, private val coro
                             handleSegmentIdBytes(message.arrayBuffer)
                         }
                         WebMessageCompat.TYPE_STRING -> {
-                            handleSegmentIdMessage(message.data!!)
+                            handleMessage(message.data!!)
                         }
                     }
                 }
@@ -68,6 +67,27 @@ internal class WebMessageProtocol(private val webView: WebView, private val coro
         }
     }
 
+    private fun handleMessage(message: String) {
+        if(message.contains("error"))
+            handleErrorMessage(message)
+        else
+            handleSegmentIdMessage(message)
+    }
+    private fun handleErrorMessage(message: String) {
+        coroutineScope.launch {
+            message.substringAfter("error|").let {
+                val deferred = getSegmentResponseCallback(it)
+                if (deferred != null) {
+                    deferred.completeExceptionally(Exception("Error occurred while fetching segment"))
+                    Log.d("CoreWebView", "Completed deferred with error for segment ID: $it")
+                } else {
+                    Log.d("CoreWebView", "Error: No deferred found for segment ID: $it")
+                }
+            }
+        }
+    }
+
+
     private fun handleSegmentIdMessage(segmentId: String) {
         Log.d("CoreWebView", "Received segment ID from  JS: $segmentId")
         incomingSegmentRequest = segmentId
@@ -90,17 +110,13 @@ internal class WebMessageProtocol(private val webView: WebView, private val coro
 
         addSegmentResponseCallback(segmentUrl, deferred)
 
-        withContext(Dispatchers.Main) {
-            sendSegmentRequest(jsonRequest)
-        }
+        sendSegmentRequest(jsonRequest)
 
         return deferred
     }
 
     private fun sendSegmentRequest(segmentUrl: String){
-        Utils.runOnUiThread {
-            webView.evaluateJavascript("javascript:window.p2p.requestSegment('$segmentUrl');", null)
-        }
+        webView.evaluateJavascript("javascript:window.p2p.requestSegment('$segmentUrl');", null)
     }
 
     private suspend fun addSegmentResponseCallback(segmentId: String, deferred: CompletableDeferred<ByteArray>) {

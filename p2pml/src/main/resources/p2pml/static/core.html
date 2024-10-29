@@ -75,7 +75,8 @@
 
           const onError = (error) => {
             // TODO: Implement error handling
-            console.error("error", error);
+            //console.error("error", error);
+            this.port.postMessage(`error|${segmentUrl}`);
           };
           console.log(">>> New request");
           this.core.loadSegment(segmentUrl, {

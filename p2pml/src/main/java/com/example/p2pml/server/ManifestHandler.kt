@@ -64,9 +64,8 @@ internal class ManifestHandler(
     }
 
     private suspend fun checkAndSetInitialProcessing(): Boolean = mutex.withLock {
-        if (isMasterManifestProcessed) {
-            return false
-        }
+        if (isMasterManifestProcessed) return false
+
         isMasterManifestProcessed = true
         return true
     }
