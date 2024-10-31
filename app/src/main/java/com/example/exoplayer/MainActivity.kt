@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
 
         WebView.setWebContentsDebuggingEnabled(true)
 
-        val streamUrl = "https://video-weaver.waw02.hls.live-video.net/v1/playlist/CrcFxsz4bdOgG-wDiZH3ER2CihuJZwtlbR2MrTk18HpIe3GwKGjqTk-OSwEtivZNm5g3Uoo6jyKdR4hbKtVdoki9zSto0DdwgffcA-Q-h7dvU-GLrK6rbOqLEy0U-ItDl0NF-bAdXaWoskhuxAIFVi8wd8Y0vYyTMt3EKW_S9VrlBoaHcenmpihSuXjsKYXm2GpU6EqXwdVHiENHl9efgPULPX-8-9dJ7jIxtg-Kuo7xZ20aCTlt-s3G3tfZ0ITZ3Z96PhfjLdXTu1YPQmLO5VEPyG7WBSprj5mYXRcV-_BoMxpLaRRrG5_5CfQkzoDueURXI30GM0NFC373hhCYdzQCWfrpq5Eu3QsdlbCs6_XyfAnjhNCFQsme_RYIWYiGyeR4nYRWKv9C66DB1YwrTLQ8_tR_zor11AZgfjmz5Sqar5i_GLS6VZs-Z0lwsAI-tnVKvzLNsIKJ-NPN1_RxvjKyYrN5aCUdL9_bzKHq2hQukAwlUyyfbUDxh1GAA6oKmvXlOCYfdc54bX3ph-8JJG-aWaa6YXaQGamgskaTIngwAxzf-yfo8pT8ugngrO33f8APWJQjAQfTC22FLpx-XdAV5usU67gG3kN1G7BHCHmGzUUfS0di_6hUFMxh9uU36vvdscPOikU9GABGTHCBdnfqh4LGXXOCUdZVf-i9-LLyV34Q4pmlqRwmHZJTgN3aoo1dlIpDLdM2zJLTPP59470FEsxVnx1OJK8IcWUfR_dqXeFOR-s31DIoHBXYAXTs4T87ActhWPqBGJbGU0BgWpEaX6h_W0AhV4UDSbX37bmLi2UI3Yy6T-1Tdzu6of0Un6DUOCG1BgjmoTjiMyvCuGDHPTaewRlE1f9tA-K5i5QUudKTR0lGomsWMyqImGoanRVs5679J6gaaYxWP84tU6M1CN1wIOJgJbQaDExCVzqPB70bTf9u-CABKglldS13ZXN0LTIw3wo.m3u8"
+        //val streamUrl = "https://video-weaver.waw02.hls.live-video.net/v1/playlist/CrcFxsz4bdOgG-wDiZH3ER2CihuJZwtlbR2MrTk18HpIe3GwKGjqTk-OSwEtivZNm5g3Uoo6jyKdR4hbKtVdoki9zSto0DdwgffcA-Q-h7dvU-GLrK6rbOqLEy0U-ItDl0NF-bAdXaWoskhuxAIFVi8wd8Y0vYyTMt3EKW_S9VrlBoaHcenmpihSuXjsKYXm2GpU6EqXwdVHiENHl9efgPULPX-8-9dJ7jIxtg-Kuo7xZ20aCTlt-s3G3tfZ0ITZ3Z96PhfjLdXTu1YPQmLO5VEPyG7WBSprj5mYXRcV-_BoMxpLaRRrG5_5CfQkzoDueURXI30GM0NFC373hhCYdzQCWfrpq5Eu3QsdlbCs6_XyfAnjhNCFQsme_RYIWYiGyeR4nYRWKv9C66DB1YwrTLQ8_tR_zor11AZgfjmz5Sqar5i_GLS6VZs-Z0lwsAI-tnVKvzLNsIKJ-NPN1_RxvjKyYrN5aCUdL9_bzKHq2hQukAwlUyyfbUDxh1GAA6oKmvXlOCYfdc54bX3ph-8JJG-aWaa6YXaQGamgskaTIngwAxzf-yfo8pT8ugngrO33f8APWJQjAQfTC22FLpx-XdAV5usU67gG3kN1G7BHCHmGzUUfS0di_6hUFMxh9uU36vvdscPOikU9GABGTHCBdnfqh4LGXXOCUdZVf-i9-LLyV34Q4pmlqRwmHZJTgN3aoo1dlIpDLdM2zJLTPP59470FEsxVnx1OJK8IcWUfR_dqXeFOR-s31DIoHBXYAXTs4T87ActhWPqBGJbGU0BgWpEaX6h_W0AhV4UDSbX37bmLi2UI3Yy6T-1Tdzu6of0Un6DUOCG1BgjmoTjiMyvCuGDHPTaewRlE1f9tA-K5i5QUudKTR0lGomsWMyqImGoanRVs5679J6gaaYxWP84tU6M1CN1wIOJgJbQaDExCVzqPB70bTf9u-CABKglldS13ZXN0LTIw3wo.m3u8"
         //val streamUrl = "https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.DmumNckWFTqz.m3u8"
 
         //var streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8"
@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
 
         //val streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8"
 
-        //val streamUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+        val streamUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
         //val streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/adv_dv_atmos/main.m3u8"
         lifecycleScope.launch {
             p2pServer = P2PML(this@MainActivity, lifecycleScope)

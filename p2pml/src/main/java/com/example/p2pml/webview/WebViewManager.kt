@@ -46,55 +46,55 @@ internal class WebViewManager
         this.playbackInfoCallback = callback
     }
 
-    suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray> = withContext(Dispatchers.Main) {
-        val currentPlaybackInfo = runCatching {
-            exoPlayerPlaybackCalculator.getPlaybackPositionAndSpeed()
-        }.onFailure { exception ->
-            Log.e("PlaybackError", "Error occurred: ${exception.message}", exception)
-        }.getOrNull() ?: run {
-            Log.e("PlaybackError", "Error getting playback position and speed")
-            throw IllegalStateException("Error getting playback position and speed")
-        }
+    suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray> =
+        withContext(Dispatchers.Main) {
+            val currentPlaybackInfo = runCatching {
+                exoPlayerPlaybackCalculator.getPlaybackPositionAndSpeed()
+            }.onFailure { exception ->
+                Log.e("PlaybackError", "Error occurred: ${exception.message}", exception)
+            }.getOrNull() ?: run {
+                Log.e("PlaybackError", "Error getting playback position and speed")
+                throw IllegalStateException("Error getting playback position and speed")
+            }
 
-        Log.d("CurrentPlayPosition", "Current position: ${currentPlaybackInfo.first}, Speed: ${currentPlaybackInfo.second}")
-        Log.d("CurrentPlayPosition", "CurrentTimeStamp: ${System.currentTimeMillis()}")
-        if (!manifestParser.isLastRequestedStreamLive()) {
-            return@withContext webMessageProtocol.requestSegmentBytes(segmentUrl, currentPlaybackInfo.first / 1_000f , currentPlaybackInfo.second)
+            if (!manifestParser.isLastRequestedStreamLive()) {
+                return@withContext webMessageProtocol.requestSegmentBytes(
+                    segmentUrl,
+                    currentPlaybackInfo.first / 1_000f,
+                    currentPlaybackInfo.second
+                )
+            }
+            return@withContext webMessageProtocol.requestSegmentBytes(
+                segmentUrl,
+                currentPlaybackInfo.first.toFloat(),
+                currentPlaybackInfo.second
+            )
         }
-        return@withContext webMessageProtocol.requestSegmentBytes(segmentUrl, currentPlaybackInfo.first.toFloat(), currentPlaybackInfo.second)
-    }
 
     fun sendInitialMessage() {
         webMessageProtocol.sendInitialMessage()
     }
 
     fun sendAllStreams(streamsJSON: String) {
-        Utils.runOnUiThread {
-            webView.evaluateJavascript(
-                "javascript:window.p2p.parseAllStreams('$streamsJSON');",
-                null
-            )
-        }
+        webView.evaluateJavascript(
+            "javascript:window.p2p.parseAllStreams('$streamsJSON');",
+            null
+        )
     }
 
     fun sendStream(streamJSON: String) {
-        Utils.runOnUiThread {
-            webView.evaluateJavascript(
-                "javascript:window.p2p.parseStream('$streamJSON');",
-                null
-            )
-        }
+        webView.evaluateJavascript(
+            "javascript:window.p2p.parseStream('$streamJSON');",
+            null
+        )
     }
 
     fun setManifestUrl(manifestUrl: String) {
-        Utils.runOnUiThread {
-            webView.evaluateJavascript(
-                "javascript:window.p2p.setManifestUrl('$manifestUrl');",
-                null
-            )
-        }
+        webView.evaluateJavascript(
+            "javascript:window.p2p.setManifestUrl('$manifestUrl');",
+            null
+        )
     }
-
 
     fun destroy() {
         webView.apply {

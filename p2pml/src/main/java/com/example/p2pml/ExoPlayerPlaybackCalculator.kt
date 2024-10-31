@@ -10,8 +10,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 private data class PlaybackSegment(
-    var startTime: Long,
-    var endTime: Long,
+    var startTime: Double,
+    var endTime: Double,
     val absoluteStartTime: Long,
     val absoluteEndTime: Long,
     val externalId: Long
@@ -33,7 +33,7 @@ class ExoPlayerPlaybackCalculator {
     }
 
     private fun removeObsoleteSegments(removeUntilId: Long) {
-        val obsoleteIds = currentSegmentIds.filter { it <= removeUntilId }
+        val obsoleteIds = currentSegmentIds.filter { it < removeUntilId }
 
         obsoleteIds.forEach { id ->
             currentSegments.remove(id)
@@ -47,8 +47,8 @@ class ExoPlayerPlaybackCalculator {
         val prevSegment = currentSegments[segmentId - 1]
         val currentSegment = currentSegments[segmentId]
 
-        val segmentDurationInMs = segment.durationUs / 1000
-        val relativeStartTime = prevSegment?.endTime ?: 0
+        val segmentDurationInMs = segment.durationUs / 1000.0
+        val relativeStartTime = prevSegment?.endTime ?: 0.0
         val relativeEndTime = relativeStartTime + segmentDurationInMs
 
         if(currentSegment == null) throw IllegalStateException("Current segment is null")
@@ -61,8 +61,8 @@ class ExoPlayerPlaybackCalculator {
         if(currentSegmentIds.contains(externalId)) return
 
         val prevSegment = currentSegments[externalId - 1]
-        val segmentDurationInMs = segment.durationUs / 1000
-        val relativeStartTime = prevSegment?.endTime ?: 0
+        val segmentDurationInMs = segment.durationUs / 1000.0
+        val relativeStartTime = prevSegment?.endTime ?: 0.0
         val absoluteStartTime = prevSegment?.absoluteEndTime ?: lastAbsolutePlayback!!
 
         val relativeEndTime = relativeStartTime + segmentDurationInMs
@@ -72,9 +72,10 @@ class ExoPlayerPlaybackCalculator {
             relativeStartTime,
             relativeEndTime,
             absoluteStartTime,
-            absoluteEndTime,
+            absoluteEndTime.toLong(),
             externalId
         )
+        currentSegmentIds.add(externalId)
     }
 
     suspend fun getAbsolutePlaybackPosition(
@@ -88,7 +89,7 @@ class ExoPlayerPlaybackCalculator {
                 }
 
             val newMediaSequence = parsedManifest!!.mediaSequence
-
+            removeObsoleteSegments(newMediaSequence)
             lastAbsolutePlayback = System.currentTimeMillis()
 
             parsedManifest!!.segments.forEachIndexed { index, segment ->
@@ -104,23 +105,24 @@ class ExoPlayerPlaybackCalculator {
         val playbackPositionInMs = exoPlayer.currentPosition
         val playbackSpeed = exoPlayer.playbackParameters.speed
 
-        if (parsedManifest?.hasEndTag == true) {
+        if (parsedManifest == null || parsedManifest?.hasEndTag == true) {
+            Log.d("ExoPlayerPlayback", "End of stream reached $playbackPositionInMs")
             return Pair(playbackPositionInMs, playbackSpeed)
         }
 
         val currentPlaybackInMs = if (playbackPositionInMs < 0) 0 else playbackPositionInMs
 
-        val currentSegment = currentSegments.values.firstOrNull {
-            currentPlaybackInMs in it.startTime..it.endTime
+        val currentSegment = currentSegments.values.find {
+            currentPlaybackInMs >= it.startTime && currentPlaybackInMs <= it.endTime
         } ?: run {
-            Log.e("ExoPlayerPlayback", "Current segment is null")
+            Log.e("ExoPlayerPlayback", "Current segment is null for playback position: $playbackPositionInMs")
             throw IllegalStateException("Current segment is null")
         }
 
         val segmentPlayTime = currentPlaybackInMs - currentSegment.startTime
         val segmentAbsolutePlayTime = currentSegment.absoluteStartTime + segmentPlayTime
-
-        return Pair(segmentAbsolutePlayTime, playbackSpeed)
+        Log.d("ExoPlayerPlayback", "CurrentPlayPositionMs: $playbackPositionInMs, Segment absolute play time: $segmentAbsolutePlayTime")
+        return Pair(currentSegment.absoluteStartTime, playbackSpeed)
     }
 
 }
