@@ -56,14 +56,12 @@ internal class WebViewManager
             throw IllegalStateException("Error getting playback position and speed")
         }
 
-        Log.d("PlaybackInfo", "Current position: ${currentPlaybackInfo.first}, Speed: ${currentPlaybackInfo.second}")
-
+        Log.d("CurrentPlayPosition", "Current position: ${currentPlaybackInfo.first}, Speed: ${currentPlaybackInfo.second}")
+        Log.d("CurrentPlayPosition", "CurrentTimeStamp: ${System.currentTimeMillis()}")
         if (!manifestParser.isLastRequestedStreamLive()) {
-            Log.d("PlaybackInfo", "Is not live")
-            return@withContext webMessageProtocol.requestSegmentBytes(segmentUrl, currentPlaybackInfo.first / 1_000_000f , currentPlaybackInfo.second)
+            return@withContext webMessageProtocol.requestSegmentBytes(segmentUrl, currentPlaybackInfo.first / 1_000f , currentPlaybackInfo.second)
         }
-        Log.d("PlaybackInfo", "Is live ${manifestParser.isLastRequestedStreamLive()}")
-        return@withContext webMessageProtocol.requestSegmentBytes(segmentUrl, currentPlaybackInfo.first / 1_000_000f, currentPlaybackInfo.second)
+        return@withContext webMessageProtocol.requestSegmentBytes(segmentUrl, currentPlaybackInfo.first.toFloat(), currentPlaybackInfo.second)
     }
 
     fun sendInitialMessage() {

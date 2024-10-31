@@ -1,5 +1,6 @@
 package com.example.p2pml.parser
 
+import android.util.Log
 import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
@@ -70,40 +71,61 @@ internal class HlsManifestParser(
     ): String
     {
         isLastRequestedStreamLive = !mediaPlaylist.hasEndTag
+        val newMediaSequence = mediaPlaylist.mediaSequence
         val updatedManifestBuilder = StringBuilder(originalManifest)
-        val segmentsInPlaylist = mutableListOf<Segment>()
+
+        val previousSegments = streamSegments[manifestUrl]
+        previousSegments?.removeAll { it.externalId < newMediaSequence }
+        val newSegmentsInPlaylist = mutableListOf<Segment>()
+
+       Log.d("CurrentPlayPosition", "MediaPlaylist: ${exoPlayerPlaybackCalculator.getAbsolutePlaybackPosition(
+           manifestUrl,
+           originalManifest
+       )}")
         var startTime = if(isLastRequestedStreamLive) {
-            exoPlayerPlaybackCalculator.getAbsolutePlaybackPosition(manifestUrl, originalManifest)
+            exoPlayerPlaybackCalculator.getAbsolutePlaybackPosition(
+                manifestUrl,
+                originalManifest
+            ).toDouble()
         } else {
-            0
+            0.0
         }
 
 
         val initializationSegments = mutableSetOf<HlsMediaPlaylist.Segment>()
-        var startSegmentIndex = mediaPlaylist.mediaSequence
+        var startSegmentIndex = newMediaSequence
         mediaPlaylist.segments.forEach{ segment ->
             if (segment.initializationSegment != null) {
                 initializationSegments.add(segment.initializationSegment!!)
+            }
+            if(previousSegments != null && startSegmentIndex <= previousSegments.lastOrNull()!!.externalId) {
+                return@forEach
             }
 
             val newSegment = processSegment(
                 segment,
                 manifestUrl,
-                startSegmentIndex.toInt(),
+                startSegmentIndex,
                 startTime,
                 updatedManifestBuilder,
                 isLastRequestedStreamLive
             )
-            segmentsInPlaylist.add(newSegment)
+            newSegmentsInPlaylist.add(newSegment)
             startSegmentIndex++
-            startTime += segment.durationUs
+            startTime += segment.durationUs / 1000.0
         }
 
         initializationSegments.forEach { initializationSegment ->
-            replaceUrlInManifest(originalManifest, manifestUrl, initializationSegment.url, updatedManifestBuilder)
+            replaceUrlInManifest(
+                originalManifest,
+                manifestUrl,
+                initializationSegment.url,
+                updatedManifestBuilder
+            )
         }
 
-        updateStreamData(manifestUrl, segmentsInPlaylist)
+
+        updateStreamData(manifestUrl, newSegmentsInPlaylist)
 
         val stream = findStreamByRuntimeId(manifestUrl)
         // This should be fired if there is no master manifest
@@ -135,31 +157,68 @@ internal class HlsManifestParser(
         val updatedManifestBuilder = StringBuilder(originalManifest)
 
         hlsPlaylist.variants.forEachIndexed { index, variant ->
-            processVariant(variant, index, originalManifest, manifestUrl, updatedManifestBuilder)
+            processVariant(
+                variant,
+                index,
+                originalManifest,
+                manifestUrl,
+                updatedManifestBuilder
+            )
         }
 
         hlsPlaylist.audios.forEachIndexed { index, audio ->
-            processRendition(audio, index, originalManifest, manifestUrl, updatedManifestBuilder)
+            processRendition(
+                audio,
+                index,
+                originalManifest,
+                manifestUrl,
+                updatedManifestBuilder
+            )
         }
 
         hlsPlaylist.subtitles.forEach{ subtitle ->
-            replaceUrlInManifest(originalManifest, manifestUrl, subtitle.url.toString(), updatedManifestBuilder)
+            replaceUrlInManifest(
+                originalManifest,
+                manifestUrl,
+                subtitle.url.toString(),
+                updatedManifestBuilder
+            )
         }
 
         hlsPlaylist.closedCaptions.forEach{ caption ->
-            replaceUrlInManifest(originalManifest, manifestUrl, caption.url.toString(), updatedManifestBuilder)
+            replaceUrlInManifest(
+                originalManifest,
+                manifestUrl,
+                caption.url.toString(),
+                updatedManifestBuilder
+            )
         }
         return updatedManifestBuilder.toString()
     }
 
-    private fun updateStreamData(variantUrl: String, newSegments: List<Segment>) {
+    private fun updateStreamData(variantUrl: String, allSegmentInPlaylist: List<Segment>) {
         val previousSegments = streamSegments[variantUrl]
-        val updateStream = if (previousSegments != null) {
-            val addedSegments = newSegments.filter { newSegment ->
+
+        val updateStream = if (previousSegments !== null) {
+            previousSegments.addAll(allSegmentInPlaylist)
+            UpdateStreamParams(
+                streamRuntimeId = variantUrl,
+                addSegments = previousSegments,
+                removeSegmentsIds = emptyList()
+            )
+        } else
+            UpdateStreamParams(
+                streamRuntimeId = variantUrl,
+                addSegments = allSegmentInPlaylist,
+                removeSegmentsIds = emptyList()
+            )
+
+        /*val updateStream = if (previousSegments != null) {
+            val addedSegments = allSegmentInPlaylist.filter { newSegment ->
                 previousSegments.none { it.runtimeId == newSegment.runtimeId }
             }
             val removedSegments = previousSegments.filter { oldSegment ->
-                newSegments.none { it.runtimeId == oldSegment.runtimeId }
+                allSegmentInPlaylist.none { it.runtimeId == oldSegment.runtimeId }
             }
             UpdateStreamParams(
                 streamRuntimeId = variantUrl,
@@ -169,12 +228,10 @@ internal class HlsManifestParser(
         } else {
             UpdateStreamParams(
                 streamRuntimeId = variantUrl,
-                addSegments = newSegments,
+                addSegments = allSegmentInPlaylist,
                 removeSegmentsIds = emptyList()
             )
-        }
-
-        streamSegments[variantUrl] = newSegments.toMutableList()
+        }*/
         updateStreamParams[variantUrl] = updateStream
     }
 
@@ -209,8 +266,8 @@ internal class HlsManifestParser(
     private fun processSegment(
         segment: HlsMediaPlaylist.Segment,
         variantUrl: String,
-        index: Int,
-        startTime: Long,
+        index: Long,
+        startTime: Double,
         manifestBuilder: StringBuilder,
         isLiveStream: Boolean
     ): Segment {
@@ -240,18 +297,18 @@ internal class HlsManifestParser(
         val byteRange = segment.byteRangeLength.takeIf { it != -1L  }
             ?.let { ByteRange(segment.byteRangeOffset, segment.byteRangeOffset + it) }
 
+        val segmentDurationInMs = segment.durationUs / 1_000.0
+        val endTime = startTime + segmentDurationInMs
         if(!isLiveStream){
-            val endTime = startTime + segment.durationUs.toDouble() / 1_000_000
             return Segment(
                 runtimeId = absoluteSegmentUrl,
                 externalId = index,
                 url = absoluteSegmentUrl,
                 byteRange = byteRange,
-                startTime = startTime / MICROSECONDS_IN_SECOND.toDouble(),
-                endTime = endTime
+                startTime = startTime / 1_000.0,
+                endTime = endTime / 1_000.0
             )
         } else {
-            val endTime = startTime + segment.durationUs
             return Segment(
                 runtimeId = absoluteSegmentUrl,
                 externalId = index,

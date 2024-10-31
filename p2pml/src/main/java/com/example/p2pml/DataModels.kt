@@ -12,7 +12,7 @@ internal data class Stream(
 @Serializable
 internal data class Segment(
     val runtimeId: String,
-    val externalId: Int,
+    val externalId: Long,
     val url: String,
     val byteRange: ByteRange?,
     val startTime: Double,
