@@ -103,13 +103,13 @@ class ExoPlayerPlaybackCalculator {
         return@withLock currentAbsoluteTime!!
     }
 
-    fun getPlaybackPositionAndSpeed(): Pair<Long, Float>  {
+    fun getPlaybackPositionAndSpeed(): Pair<Double, Float>  {
         val playbackPositionInMs = exoPlayer.currentPosition
         val playbackSpeed = exoPlayer.playbackParameters.speed
 
         if (parsedManifest == null || parsedManifest?.hasEndTag == true) {
             Log.d("ExoPlayerPlayback", "End of stream reached $playbackPositionInMs")
-            return Pair(playbackPositionInMs, playbackSpeed)
+            return Pair(playbackPositionInMs / 1000.0, playbackSpeed)
         }
 
         val currentPlaybackInMs = if (playbackPositionInMs < 0) 0 else playbackPositionInMs
@@ -124,7 +124,7 @@ class ExoPlayerPlaybackCalculator {
         val segmentPlayTime = currentPlaybackInMs - currentSegment.startTime
         val segmentAbsolutePlayTime = currentSegment.absoluteStartTime + segmentPlayTime
         Log.d("==ExoPlayerPlayback", "CurrentPlayPositionMs: $playbackPositionInMs, Segment absolute play time: ${currentSegment.absoluteStartTime}")
-        return Pair(currentSegment.absoluteStartTime, playbackSpeed)
+        return Pair(segmentAbsolutePlayTime, playbackSpeed)
     }
 
 }

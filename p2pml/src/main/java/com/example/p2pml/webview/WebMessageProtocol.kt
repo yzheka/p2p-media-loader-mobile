@@ -103,7 +103,7 @@ internal class WebMessageProtocol(private val webView: WebView, private val coro
         )
     }
 
-    suspend fun requestSegmentBytes(segmentUrl: String, currentPlayPosition: Float, currentPlaySpeed: Float): CompletableDeferred<ByteArray>{
+    suspend fun requestSegmentBytes(segmentUrl: String, currentPlayPosition: Double, currentPlaySpeed: Float): CompletableDeferred<ByteArray>{
         val deferred = CompletableDeferred<ByteArray>()
         val segmentRequest = SegmentRequest(segmentUrl, currentPlayPosition, currentPlaySpeed)
         val jsonRequest = Json.encodeToString(segmentRequest)

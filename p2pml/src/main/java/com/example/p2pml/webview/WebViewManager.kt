@@ -23,7 +23,6 @@ internal class WebViewManager
     context: Context,
     coroutineScope: CoroutineScope,
     private val exoPlayerPlaybackCalculator: ExoPlayerPlaybackCalculator,
-    private val manifestParser: HlsManifestParser,
     onPageLoadFinished: () -> Unit
 ) {
     @SuppressLint("SetJavaScriptEnabled")
@@ -57,16 +56,9 @@ internal class WebViewManager
                 throw IllegalStateException("Error getting playback position and speed")
             }
 
-            if (!manifestParser.isLastRequestedStreamLive()) {
-                return@withContext webMessageProtocol.requestSegmentBytes(
-                    segmentUrl,
-                    currentPlaybackInfo.first / 1_000f,
-                    currentPlaybackInfo.second
-                )
-            }
             return@withContext webMessageProtocol.requestSegmentBytes(
                 segmentUrl,
-                currentPlaybackInfo.first.toFloat(),
+                currentPlaybackInfo.first,
                 currentPlaybackInfo.second
             )
         }

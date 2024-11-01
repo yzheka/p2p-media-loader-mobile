@@ -35,6 +35,6 @@ internal data class UpdateStreamParams(
 @Serializable
 internal data class SegmentRequest(
     val segmentUrl: String,
-    val currentPlayPosition: Float,
+    val currentPlayPosition: Double,
     val currentPlaySpeed: Float
 )

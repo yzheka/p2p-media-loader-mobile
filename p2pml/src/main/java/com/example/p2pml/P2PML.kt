@@ -26,7 +26,6 @@ class P2PML(
         context,
         coroutineScope,
         exoPlayerPlaybackCalculator,
-        manifestParser
     ) {
         webViewLoadDeferred.complete(Unit)
     }
