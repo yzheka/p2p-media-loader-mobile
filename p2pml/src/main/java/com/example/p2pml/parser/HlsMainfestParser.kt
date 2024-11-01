@@ -51,7 +51,11 @@ internal class HlsManifestParser(
 
         return when (hlsPlaylist) {
             is HlsMediaPlaylist -> parseMediaPlaylist(manifestUrl, hlsPlaylist, manifest)
-            is HlsMultivariantPlaylist -> parseMultivariantPlaylist(manifestUrl, hlsPlaylist, manifest)
+            is HlsMultivariantPlaylist -> parseMultivariantPlaylist(
+                manifestUrl,
+                hlsPlaylist,
+                manifest
+            )
             else -> throw IllegalStateException("Unsupported playlist type")
         }
     }

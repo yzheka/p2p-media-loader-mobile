@@ -18,8 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @OptIn(UnstableApi::class)
-internal class WebViewManager
-    (
+internal class WebViewManager(
     context: Context,
     coroutineScope: CoroutineScope,
     private val exoPlayerPlaybackCalculator: ExoPlayerPlaybackCalculator,
@@ -45,46 +44,52 @@ internal class WebViewManager
         this.playbackInfoCallback = callback
     }
 
-    suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray> =
-        withContext(Dispatchers.Main) {
-            val currentPlaybackInfo = exoPlayerPlaybackCalculator.getPlaybackPositionAndSpeed()
+    suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray> {
+        val currentPlaybackInfo = exoPlayerPlaybackCalculator.getPlaybackPositionAndSpeed()
 
-            return@withContext webMessageProtocol.requestSegmentBytes(
-                segmentUrl,
-                currentPlaybackInfo.first,
-                currentPlaybackInfo.second
-            )
-        }
+        return webMessageProtocol.requestSegmentBytes(
+            segmentUrl,
+            currentPlaybackInfo.first,
+            currentPlaybackInfo.second
+        )
+    }
 
-    fun sendInitialMessage() {
+
+    suspend fun sendInitialMessage() {
         webMessageProtocol.sendInitialMessage()
     }
 
-    fun sendAllStreams(streamsJSON: String) {
-        webView.evaluateJavascript(
-            "javascript:window.p2p.parseAllStreams('$streamsJSON');",
-            null
-        )
+    suspend fun sendAllStreams(streamsJSON: String) {
+        withContext(Dispatchers.Main) {
+            webView.evaluateJavascript(
+                "javascript:window.p2p.parseAllStreams('$streamsJSON');",
+                null
+            )
+        }
     }
 
-    fun sendStream(streamJSON: String) {
-        webView.evaluateJavascript(
-            "javascript:window.p2p.parseStream('$streamJSON');",
-            null
-        )
+    suspend fun sendStream(streamJSON: String) {
+        withContext(Dispatchers.Main) {
+            webView.evaluateJavascript(
+                "javascript:window.p2p.parseStream('$streamJSON');",
+                null
+            )
+        }
     }
 
-    fun setManifestUrl(manifestUrl: String) {
-        webView.evaluateJavascript(
-            "javascript:window.p2p.setManifestUrl('$manifestUrl');",
-            null
-        )
+    suspend fun setManifestUrl(manifestUrl: String) {
+        withContext(Dispatchers.Main) {
+            webView.evaluateJavascript(
+                "javascript:window.p2p.setManifestUrl('$manifestUrl');",
+                null
+            )
+        }
     }
 
     fun destroy() {
         webView.apply {
-            parent?.let { (it as ViewGroup).removeView(this) }
-            destroy()
-        }
+                parent?.let { (it as ViewGroup).removeView(this) }
+                destroy()
+            }
     }
 }

@@ -6,8 +6,10 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
 import androidx.media3.exoplayer.hls.playlist.HlsPlaylistParser
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 private data class PlaybackSegment(
     var startTime: Double,
@@ -98,8 +100,8 @@ class ExoPlayerPlaybackCalculator {
     }
 
     suspend fun getPlaybackPositionAndSpeed(): Pair<Double, Float> = mutex.withLock {
-        val playbackPositionInMs = exoPlayer.currentPosition
-        val playbackSpeed = exoPlayer.playbackParameters.speed
+        val playbackPositionInMs = withContext(Dispatchers.Main) { exoPlayer.currentPosition }
+        val playbackSpeed = withContext(Dispatchers.Main) { exoPlayer.playbackParameters.speed }
 
         if (parsedManifest == null || parsedManifest?.hasEndTag == true)
             return Pair(playbackPositionInMs / 1000.0, playbackSpeed)

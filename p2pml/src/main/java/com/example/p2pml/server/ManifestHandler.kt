@@ -50,15 +50,14 @@ internal class ManifestHandler(
 
         if (needsInitialSetup) {
             val streamsJSON = manifestParser.getStreamsJSON()
-            Utils.runOnUiThread {
-                webViewManager.sendInitialMessage()
-                webViewManager.setManifestUrl(manifestUrl)
-                webViewManager.sendAllStreams(streamsJSON)
-                updateStreamJSON?.let { webViewManager.sendStream(it) }
-            }
+            webViewManager.sendInitialMessage()
+            webViewManager.setManifestUrl(manifestUrl)
+            webViewManager.sendAllStreams(streamsJSON)
+            updateStreamJSON?.let { webViewManager.sendStream(it) }
+
         } else {
             updateStreamJSON?.let { json ->
-                Utils.runOnUiThread { webViewManager.sendStream(json) }
+                webViewManager.sendStream(json)
             } ?: throw IOException("updateStreamJSON is null")
         }
     }

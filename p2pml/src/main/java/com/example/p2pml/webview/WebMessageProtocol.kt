@@ -19,7 +19,10 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 
-internal class WebMessageProtocol(private val webView: WebView, private val coroutineScope: CoroutineScope) {
+internal class WebMessageProtocol(
+    private val webView: WebView,
+    private val coroutineScope: CoroutineScope
+) {
     @SuppressLint("RequiresFeature")
     private val channels: Array<WebMessagePortCompat> = WebViewCompat.createWebMessageChannel(webView)
     private val segmentResponseCallbacks = mutableMapOf<String, CompletableDeferred<ByteArray>>()
@@ -73,6 +76,7 @@ internal class WebMessageProtocol(private val webView: WebView, private val coro
         else
             handleSegmentIdMessage(message)
     }
+
     private fun handleErrorMessage(message: String) {
         coroutineScope.launch {
             message.substringAfter("error|").let {
@@ -94,16 +98,19 @@ internal class WebMessageProtocol(private val webView: WebView, private val coro
     }
 
     @SuppressLint("RequiresFeature")
-    fun sendInitialMessage() {
-        val initialMessage = WebMessageCompat("", arrayOf(channels[1]))
-        WebViewCompat.postWebMessage(
-            webView,
-            initialMessage,
-            Uri.parse("*")
-        )
+    suspend fun sendInitialMessage() {
+        withContext(Dispatchers.Main) {
+            val initialMessage = WebMessageCompat("", arrayOf(channels[1]))
+            WebViewCompat.postWebMessage(
+                webView,
+                initialMessage,
+                Uri.parse("*")
+            )
+        }
     }
 
-    suspend fun requestSegmentBytes(segmentUrl: String, currentPlayPosition: Double, currentPlaySpeed: Float): CompletableDeferred<ByteArray>{
+    suspend fun requestSegmentBytes(segmentUrl: String, currentPlayPosition: Double,
+                                    currentPlaySpeed: Float): CompletableDeferred<ByteArray>{
         val deferred = CompletableDeferred<ByteArray>()
         val segmentRequest = SegmentRequest(segmentUrl, currentPlayPosition, currentPlaySpeed)
         val jsonRequest = Json.encodeToString(segmentRequest)
@@ -115,17 +122,27 @@ internal class WebMessageProtocol(private val webView: WebView, private val coro
         return deferred
     }
 
-    private fun sendSegmentRequest(segmentUrl: String){
-        webView.evaluateJavascript("javascript:window.p2p.enqueueRequest('$segmentUrl');", null)
+    private suspend fun sendSegmentRequest(segmentUrl: String){
+        withContext(Dispatchers.Main) {
+            webView.evaluateJavascript(
+                "javascript:window.p2p.enqueueRequest('$segmentUrl');",
+                null
+            )
+        }
     }
 
-    private suspend fun addSegmentResponseCallback(segmentId: String, deferred: CompletableDeferred<ByteArray>) {
+    private suspend fun addSegmentResponseCallback(
+        segmentId: String,
+        deferred: CompletableDeferred<ByteArray>
+    ) {
         mutex.withLock {
             segmentResponseCallbacks[segmentId] = deferred
         }
     }
 
-    private suspend fun getSegmentResponseCallback(segmentId: String): CompletableDeferred<ByteArray>? {
+    private suspend fun getSegmentResponseCallback(
+        segmentId: String
+    ): CompletableDeferred<ByteArray>? {
         return mutex.withLock {
             segmentResponseCallbacks[segmentId]
         }
