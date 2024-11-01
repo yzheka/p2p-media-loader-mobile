@@ -4,11 +4,10 @@ import android.annotation.SuppressLint
 import android.net.Uri
 import android.util.Log
 import android.webkit.WebView
+import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebMessagePortCompat
 import androidx.webkit.WebViewCompat
-import androidx.webkit.WebMessageCompat
 import com.example.p2pml.SegmentRequest
-import com.example.p2pml.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,14 +16,15 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
 
 internal class WebMessageProtocol(
     private val webView: WebView,
     private val coroutineScope: CoroutineScope
 ) {
     @SuppressLint("RequiresFeature")
-    private val channels: Array<WebMessagePortCompat> = WebViewCompat.createWebMessageChannel(webView)
+    private val channels: Array<WebMessagePortCompat> =
+        WebViewCompat.createWebMessageChannel(webView)
     private val segmentResponseCallbacks = mutableMapOf<String, CompletableDeferred<ByteArray>>()
     private val mutex = Mutex()
     private var incomingSegmentRequest: String? = null
@@ -42,6 +42,7 @@ internal class WebMessageProtocol(
                         WebMessageCompat.TYPE_ARRAY_BUFFER -> {
                             handleSegmentIdBytes(message.arrayBuffer)
                         }
+
                         WebMessageCompat.TYPE_STRING -> {
                             handleMessage(message.data!!)
                         }
@@ -52,7 +53,7 @@ internal class WebMessageProtocol(
     }
 
     private fun handleSegmentIdBytes(arrayBuffer: ByteArray) {
-        if(incomingSegmentRequest == null) {
+        if (incomingSegmentRequest == null) {
             throw IllegalStateException("Received segment bytes without a segment ID")
         }
 
@@ -62,7 +63,10 @@ internal class WebMessageProtocol(
                 deferred.complete(arrayBuffer)
                 Log.d("CoreWebView", "Completed deferred for segment ID: $incomingSegmentRequest")
             } else {
-                Log.d("CoreWebView", "Error: No deferred found for segment ID: $incomingSegmentRequest")
+                Log.d(
+                    "CoreWebView",
+                    "Error: No deferred found for segment ID: $incomingSegmentRequest"
+                )
             }
 
             removeSegmentResponseCallback(incomingSegmentRequest!!)
@@ -71,7 +75,7 @@ internal class WebMessageProtocol(
     }
 
     private fun handleMessage(message: String) {
-        if(message.contains("error"))
+        if (message.contains("error"))
             handleErrorMessage(message)
         else
             handleSegmentIdMessage(message)
@@ -109,8 +113,10 @@ internal class WebMessageProtocol(
         }
     }
 
-    suspend fun requestSegmentBytes(segmentUrl: String, currentPlayPosition: Double,
-                                    currentPlaySpeed: Float): CompletableDeferred<ByteArray>{
+    suspend fun requestSegmentBytes(
+        segmentUrl: String, currentPlayPosition: Double,
+        currentPlaySpeed: Float
+    ): CompletableDeferred<ByteArray> {
         val deferred = CompletableDeferred<ByteArray>()
         val segmentRequest = SegmentRequest(segmentUrl, currentPlayPosition, currentPlaySpeed)
         val jsonRequest = Json.encodeToString(segmentRequest)
@@ -122,7 +128,7 @@ internal class WebMessageProtocol(
         return deferred
     }
 
-    private suspend fun sendSegmentRequest(segmentUrl: String){
+    private suspend fun sendSegmentRequest(segmentUrl: String) {
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.enqueueRequest('$segmentUrl');",

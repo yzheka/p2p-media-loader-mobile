@@ -1,13 +1,13 @@
 package com.example.p2pml.server
 
 import androidx.media3.common.util.UnstableApi
-import com.example.p2pml.webview.WebViewManager
 import com.example.p2pml.parser.HlsManifestParser
+import com.example.p2pml.webview.WebViewManager
 import io.ktor.server.application.ApplicationStarted
-import io.ktor.server.cio.CIO
-import io.ktor.server.engine.embeddedServer
 import io.ktor.server.application.install
+import io.ktor.server.cio.CIO
 import io.ktor.server.engine.ApplicationEngine
+import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.routing.routing
 
@@ -20,7 +20,7 @@ internal class ServerModule(
     private var server: ApplicationEngine? = null
 
     fun startServer(port: Int = 8080) {
-        if (server != null)  return
+        if (server != null) return
 
         val manifestHandler = ManifestHandler(manifestParser, webViewManager)
         val segmentHandler = SegmentHandler(webViewManager)

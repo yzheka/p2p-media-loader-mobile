@@ -3,9 +3,8 @@ package com.example.p2pml.server
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import com.example.p2pml.Constants.MPEGURL_CONTENT_TYPE
-import com.example.p2pml.utils.Utils
-import com.example.p2pml.webview.WebViewManager
 import com.example.p2pml.parser.HlsManifestParser
+import com.example.p2pml.webview.WebViewManager
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.decodeURLQueryComponent
@@ -68,7 +67,6 @@ internal class ManifestHandler(
         isMasterManifestProcessed = true
         return true
     }
-
 
 
 }

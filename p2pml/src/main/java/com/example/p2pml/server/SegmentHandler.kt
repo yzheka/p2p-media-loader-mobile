@@ -8,7 +8,6 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondText
 
-
 internal class SegmentHandler(private val webViewManager: WebViewManager) {
     suspend fun handleSegmentRequest(call: ApplicationCall) {
         val segmentUrlParam = call.request.queryParameters["segment"]

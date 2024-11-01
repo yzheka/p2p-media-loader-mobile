@@ -43,7 +43,10 @@ class ExoPlayerPlaybackCalculator {
         }
     }
 
-    private fun updateExistingSegmentRelativeTime(segmentId: Long, segment: HlsMediaPlaylist.Segment) {
+    private fun updateExistingSegmentRelativeTime(
+        segmentId: Long,
+        segment: HlsMediaPlaylist.Segment
+    ) {
         val prevSegment = currentSegments[segmentId - 1]
         val currentSegment = currentSegments[segmentId]
             ?: throw IllegalStateException("Current segment is null")
@@ -79,22 +82,26 @@ class ExoPlayerPlaybackCalculator {
         manifestUrl: String,
         manifest: String
     ): Long = mutex.withLock {
-            parsedManifest = parser.parse(manifestUrl.toUri(), manifest.byteInputStream()) as? HlsMediaPlaylist
+        parsedManifest =
+            parser.parse(manifestUrl.toUri(), manifest.byteInputStream()) as? HlsMediaPlaylist
                 ?: throw IllegalStateException("Parsed manifest is null")
 
-            val newMediaSequence = parsedManifest!!.mediaSequence
-            removeObsoleteSegments(newMediaSequence)
-            currentAbsoluteTime = System.currentTimeMillis()
+        val newMediaSequence = parsedManifest!!.mediaSequence
+        removeObsoleteSegments(newMediaSequence)
+        currentAbsoluteTime = System.currentTimeMillis()
 
-            parsedManifest!!.segments.forEachIndexed { index, segment ->
-                val segmentIndex = newMediaSequence + index
-                if(!currentSegmentIds.contains(segmentIndex))
-                    addSegment(segment, segmentIndex)
-                else
-                    updateExistingSegmentRelativeTime(segmentIndex, segment)
-                Log.d("==ExoPlayerPlayback", "Segment: $segmentIndex, " +
-                        "Start: ${currentSegments[segmentIndex]?.absoluteStartTime}, End: ${currentSegments[segmentIndex]?.absoluteEndTime}")
-            }
+        parsedManifest!!.segments.forEachIndexed { index, segment ->
+            val segmentIndex = newMediaSequence + index
+            if (!currentSegmentIds.contains(segmentIndex))
+                addSegment(segment, segmentIndex)
+            else
+                updateExistingSegmentRelativeTime(segmentIndex, segment)
+            Log.d(
+                "==ExoPlayerPlayback", "Segment: $segmentIndex, " +
+                        "Start: ${currentSegments[segmentIndex]?.absoluteStartTime}," +
+                        " End: ${currentSegments[segmentIndex]?.absoluteEndTime}"
+            )
+        }
 
         return@withLock currentAbsoluteTime!!
     }
