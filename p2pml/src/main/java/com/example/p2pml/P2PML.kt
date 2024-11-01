@@ -20,7 +20,8 @@ class P2PML(
     private val serverPort: Int = Constants.DEFAULT_SERVER_PORT
 ) {
     private val exoPlayerPlaybackCalculator = ExoPlayerPlaybackCalculator()
-    private val manifestParser: HlsManifestParser = HlsManifestParser(exoPlayerPlaybackCalculator, serverPort)
+    private val manifestParser: HlsManifestParser = HlsManifestParser(
+        exoPlayerPlaybackCalculator, serverPort)
 
     private val webViewManager: WebViewManager = WebViewManager(
         context,

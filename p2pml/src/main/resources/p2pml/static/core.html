@@ -47,12 +47,14 @@
 
         parseStream(jsonData) {
           const playlist = JSON.parse(jsonData);
-          const { streamRuntimeId, addSegments, removeSegmentsIds } = playlist;
+          const { streamRuntimeId, addSegments, removeSegmentsIds, isLive } =
+            playlist;
           this.core.updateStream(
             streamRuntimeId,
             addSegments,
             removeSegmentsIds
           );
+          this.core.setIsLive(isLive);
           //console.log(">>> updateStream", playlist);
           addSegments.forEach((segment) => {
             console.log(

@@ -32,7 +32,6 @@ internal class HlsManifestParser(
     private val exoPlayerPlaybackCalculator: ExoPlayerPlaybackCalculator,
     private val serverPort: Int
 ) {
-    private var isLastRequestedStreamLive = false
     private val okHttpClient: OkHttpClient = OkHttpClient()
     private val parser = HlsPlaylistParser()
     private val mutex = Mutex()
@@ -45,12 +44,6 @@ internal class HlsManifestParser(
     suspend fun getModifiedManifest(call: ApplicationCall, manifestUrl: String): String {
         val originalManifest = fetchManifest(call, manifestUrl)
         return mutex.withLock{ parseHlsManifest(manifestUrl, originalManifest) }
-    }
-
-    suspend fun isLastRequestedStreamLive(): Boolean {
-        return mutex.withLock {
-            isLastRequestedStreamLive
-        }
     }
 
     private suspend fun parseHlsManifest(manifestUrl: String, manifest: String): String {
@@ -90,13 +83,12 @@ internal class HlsManifestParser(
             null
         }
 
-        val segmentDurationInMs = segment.durationUs / 1000.0
+        val segmentDurationInMs = segment.durationUs / if (isStreamLive) 1000.0 else 1_000_000.0
         val startTime = prevSegment?.endTime ?: initialStartTime
         val endTime = startTime + segmentDurationInMs
 
         val absoluteUrl = getAbsoluteUrl(variantUrl, segment.url)
-        val newSegment = if (isStreamLive){
-            Segment(
+        val newSegment = Segment(
             runtimeId = absoluteUrl,
             externalId = segmentId,
             url = absoluteUrl,
@@ -104,18 +96,7 @@ internal class HlsManifestParser(
                 ?.let { ByteRange(segment.byteRangeOffset, segment.byteRangeOffset + it) },
             startTime = startTime,
             endTime = endTime
-            )
-        } else {
-            Segment(
-                runtimeId = absoluteUrl,
-                externalId = segmentId,
-                url = absoluteUrl,
-                byteRange = segment.byteRangeLength.takeIf { it != -1L }
-                    ?.let { ByteRange(segment.byteRangeOffset, segment.byteRangeOffset + it) },
-                startTime = startTime / 1_000.0,
-                endTime = endTime / 1_000.0
-            )
-        }
+        )
 
         val streamSegmentsList = streamSegments[variantUrl]
         if(streamSegmentsList != null) {
@@ -128,18 +109,17 @@ internal class HlsManifestParser(
         return newSegment
     }
 
-    //TODO: Implement correct live segments support
     private suspend fun parseMediaPlaylist(
         manifestUrl: String,
         mediaPlaylist: HlsMediaPlaylist,
         originalManifest: String
     ): String
     {
-        isLastRequestedStreamLive = !mediaPlaylist.hasEndTag
+        val isStreamLive = !mediaPlaylist.hasEndTag
         val newMediaSequence = mediaPlaylist.mediaSequence
         val updatedManifestBuilder = StringBuilder(originalManifest)
 
-        val startTime = if(isLastRequestedStreamLive) {
+        val initialStartTime = if(isStreamLive) {
             exoPlayerPlaybackCalculator.getAbsolutePlaybackPosition(
                 manifestUrl,
                 originalManifest
@@ -147,7 +127,7 @@ internal class HlsManifestParser(
         } else {
             0.0
         }
-        Log.d("+++HlsManifestParser", "startTime: $startTime")
+
         val segmentsToRemove = removeObsoleteSegments(manifestUrl, newMediaSequence)
         val initializationSegments = mutableSetOf<HlsMediaPlaylist.Segment>()
         val segmentsToAdd = mutableListOf<Segment>()
@@ -159,7 +139,7 @@ internal class HlsManifestParser(
 
             val segmentIndex = index + newMediaSequence
             processSegment(segment, manifestUrl, updatedManifestBuilder)
-            val newSegment = addNewSegment(manifestUrl, segmentIndex, startTime, segment, isLastRequestedStreamLive)
+            val newSegment = addNewSegment(manifestUrl, segmentIndex, initialStartTime, segment, isStreamLive)
             if(newSegment != null)
                 segmentsToAdd.add(newSegment)
         }
@@ -173,7 +153,7 @@ internal class HlsManifestParser(
             )
         }
 
-        updateStreamData(manifestUrl, segmentsToAdd, segmentsToRemove)
+        updateStreamData(manifestUrl, segmentsToAdd, segmentsToRemove, isStreamLive)
 
         val stream = findStreamByRuntimeId(manifestUrl)
         // This should be fired if there is no master manifest
@@ -247,12 +227,14 @@ internal class HlsManifestParser(
     private fun updateStreamData(
         variantUrl: String,
         newSegments: List<Segment>,
-        segmentsToRemove: List<String>
+        segmentsToRemove: List<String>,
+        isLive: Boolean
     ) {
         val updateStream = UpdateStreamParams(
             streamRuntimeId = variantUrl,
             addSegments = newSegments,
-            removeSegmentsIds = segmentsToRemove
+            removeSegmentsIds = segmentsToRemove,
+            isLive = isLive
         )
 
         updateStreamParams[variantUrl] = updateStream

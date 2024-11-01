@@ -41,25 +41,20 @@ class ExoPlayerPlaybackCalculator {
         }
     }
 
-    private fun updateSegmentRelativeTime(segmentId: Long, segment: HlsMediaPlaylist.Segment) {
-        if(!currentSegmentIds.contains(segmentId)) return
-
+    private fun updateExistingSegmentRelativeTime(segmentId: Long, segment: HlsMediaPlaylist.Segment) {
         val prevSegment = currentSegments[segmentId - 1]
         val currentSegment = currentSegments[segmentId]
+            ?: throw IllegalStateException("Current segment is null")
 
         val segmentDurationInMs = segment.durationUs / 1000.0
         val relativeStartTime = prevSegment?.endTime ?: 0.0
         val relativeEndTime = relativeStartTime + segmentDurationInMs
-
-        if(currentSegment == null) throw IllegalStateException("Current segment is null")
 
         currentSegment.startTime = relativeStartTime
         currentSegment.endTime = relativeEndTime
     }
 
     private fun addSegment(segment: HlsMediaPlaylist.Segment, externalId: Long) {
-        if(currentSegmentIds.contains(externalId)) return
-
         val prevSegment = currentSegments[externalId - 1]
         val segmentDurationInMs = segment.durationUs / 1000.0
         val relativeStartTime = prevSegment?.endTime ?: 0.0
@@ -94,8 +89,10 @@ class ExoPlayerPlaybackCalculator {
 
             parsedManifest!!.segments.forEachIndexed { index, segment ->
                 val segmentIndex = newMediaSequence + index
-                updateSegmentRelativeTime(segmentIndex, segment)
-                addSegment(segment, segmentIndex)
+                if(!currentSegmentIds.contains(segmentIndex))
+                    addSegment(segment, segmentIndex)
+                else
+                    updateExistingSegmentRelativeTime(segmentIndex, segment)
                 Log.d("==ExoPlayerPlayback", "Segment: $segmentIndex, " +
                         "Start: ${currentSegments[segmentIndex]?.absoluteStartTime}, End: ${currentSegments[segmentIndex]?.absoluteEndTime}")
             }

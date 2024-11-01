@@ -30,6 +30,7 @@ internal data class UpdateStreamParams(
     val streamRuntimeId: String,
     val addSegments: List<Segment>,
     val removeSegmentsIds: List<String>,
+    val isLive: Boolean,
 )
 
 @Serializable

@@ -47,14 +47,7 @@ internal class WebViewManager
 
     suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray> =
         withContext(Dispatchers.Main) {
-            val currentPlaybackInfo = runCatching {
-                exoPlayerPlaybackCalculator.getPlaybackPositionAndSpeed()
-            }.onFailure { exception ->
-                Log.e("PlaybackError", "Error occurred: ${exception.message}", exception)
-            }.getOrNull() ?: run {
-                Log.e("PlaybackError", "Error getting playback position and speed")
-                throw IllegalStateException("Error getting playback position and speed")
-            }
+            val currentPlaybackInfo = exoPlayerPlaybackCalculator.getPlaybackPositionAndSpeed()
 
             return@withContext webMessageProtocol.requestSegmentBytes(
                 segmentUrl,
