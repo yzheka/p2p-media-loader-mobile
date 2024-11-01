@@ -78,10 +78,7 @@ class ExoPlayerPlaybackCalculator {
         manifest: String
     ): Long = mutex.withLock {
             parsedManifest = parser.parse(manifestUrl.toUri(), manifest.byteInputStream()) as? HlsMediaPlaylist
-                ?: run {
-                    Log.e("ExoPlayerPlayback", "Parsed manifest is null for URL: $manifestUrl")
-                    throw IllegalStateException("Parsed manifest is null")
-                }
+                ?: throw IllegalStateException("Parsed manifest is null")
 
             val newMediaSequence = parsedManifest!!.mediaSequence
             removeObsoleteSegments(newMediaSequence)
@@ -100,27 +97,22 @@ class ExoPlayerPlaybackCalculator {
         return@withLock currentAbsoluteTime!!
     }
 
-    fun getPlaybackPositionAndSpeed(): Pair<Double, Float>  {
+    suspend fun getPlaybackPositionAndSpeed(): Pair<Double, Float> = mutex.withLock {
         val playbackPositionInMs = exoPlayer.currentPosition
         val playbackSpeed = exoPlayer.playbackParameters.speed
 
-        if (parsedManifest == null || parsedManifest?.hasEndTag == true) {
-            Log.d("ExoPlayerPlayback", "End of stream reached $playbackPositionInMs")
+        if (parsedManifest == null || parsedManifest?.hasEndTag == true)
             return Pair(playbackPositionInMs / 1000.0, playbackSpeed)
-        }
 
         val currentPlaybackInMs = if (playbackPositionInMs < 0) 0 else playbackPositionInMs
 
         val currentSegment = currentSegments.values.find {
             currentPlaybackInMs >= it.startTime && currentPlaybackInMs <= it.endTime
-        } ?: run {
-            Log.e("ExoPlayerPlayback", "Current segment is null for playback position: $playbackPositionInMs")
-            throw IllegalStateException("Current segment is null")
-        }
+        } ?: throw IllegalStateException("Current segment is null")
 
         val segmentPlayTime = currentPlaybackInMs - currentSegment.startTime
         val segmentAbsolutePlayTime = currentSegment.absoluteStartTime + segmentPlayTime
-        Log.d("==ExoPlayerPlayback", "CurrentPlayPositionMs: $playbackPositionInMs, Segment absolute play time: ${currentSegment.absoluteStartTime}")
+
         return Pair(segmentAbsolutePlayTime, playbackSpeed)
     }
 

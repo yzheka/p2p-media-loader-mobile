@@ -28,12 +28,12 @@ class P2PML(
         coroutineScope,
         exoPlayerPlaybackCalculator,
     ) {
-        webViewLoadDeferred.complete(Unit)
+        webViewLoadCompletion.complete(Unit)
     }
     private val serverModule: ServerModule = ServerModule(webViewManager, manifestParser) {
         onServerStarted()
     }
-    private val webViewLoadDeferred = CompletableDeferred<Unit>()
+    private val webViewLoadCompletion = CompletableDeferred<Unit>()
 
     init {
         startServer()
@@ -48,11 +48,12 @@ class P2PML(
     }
 
     private fun onServerStarted() {
-        webViewManager.loadWebView(Utils.getUrl(serverPort, CORE_FILE_PATH))
+        val urlPath = Utils.getUrl(serverPort, CORE_FILE_PATH)
+        webViewManager.loadWebView(urlPath)
     }
 
     suspend fun getServerManifestUrl(manifestUrl: String): String {
-        webViewLoadDeferred.await()
+        webViewLoadCompletion.await()
         val encodedManifestURL = manifestUrl.encodeURLQueryComponent()
         return Utils.getUrl(serverPort, "$MANIFEST$encodedManifestURL")
     }
