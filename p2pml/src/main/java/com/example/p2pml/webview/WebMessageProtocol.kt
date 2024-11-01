@@ -116,7 +116,7 @@ internal class WebMessageProtocol(private val webView: WebView, private val coro
     }
 
     private fun sendSegmentRequest(segmentUrl: String){
-        webView.evaluateJavascript("javascript:window.p2p.requestSegment('$segmentUrl');", null)
+        webView.evaluateJavascript("javascript:window.p2p.enqueueRequest('$segmentUrl');", null)
     }
 
     private suspend fun addSegmentResponseCallback(segmentId: String, deferred: CompletableDeferred<ByteArray>) {

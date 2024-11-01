@@ -20,13 +20,16 @@
           });
           this.port = null;
           this.listenPort();
+
+          this.requestQueue = [];
+          this.isProcessing = false;
         }
 
         listenPort() {
           window.addEventListener("message", (event) => {
             const port = event.ports[0];
-            console.log("port received", port);
-            console.log(window.postMessage);
+            //console.log("port received", port);
+            //console.log(window.postMessage);
             if (!port || this.port) {
               return;
             }
@@ -44,20 +47,26 @@
 
         parseStream(jsonData) {
           const playlist = JSON.parse(jsonData);
+          const { streamRuntimeId, addSegments, removeSegmentsIds } = playlist;
           this.core.updateStream(
-            playlist.streamRuntimeId,
-            playlist.addSegments,
-            playlist.removeSegmentsIds
+            streamRuntimeId,
+            addSegments,
+            removeSegmentsIds
           );
-          console.log(">>> updateStream", playlist);
+          //console.log(">>> updateStream", playlist);
+          addSegments.forEach((segment) => {
+            console.log(
+              `>>> segment added: ${segment.externalId} | startTime: ${segment.startTime} - endTime: ${segment.endTime}`
+            );
+          });
         }
 
-        requestSegment(segmentRequestJSON) {
+        processSegmentRequest(segmentRequestJSON) {
           const segmentRequest = JSON.parse(segmentRequestJSON);
-          console.log("segmentRequest", segmentRequest);
+          //console.log("segmentRequest", segmentRequest);
           const { segmentUrl, currentPlayPosition, currentPlaySpeed } =
             segmentRequest;
-
+          console.log(">>> currentPosition:", currentPlayPosition);
           this.core.updatePlayback(currentPlayPosition, currentPlaySpeed);
 
           const onSuccess = (response) => {
@@ -65,13 +74,15 @@
               const copyData = new ArrayBuffer(response.data.byteLength);
               new Uint8Array(copyData).set(new Uint8Array(response.data));
 
-              console.log("Response data:", response);
+              //console.log("Response data:", response);
 
               this.port.postMessage(segmentUrl);
               this.port.postMessage(copyData, [copyData]);
-              console.log(">>> response");
+              //console.log(">>> response");
             } catch (e) {
               console.error("Error in onSuccess:", e);
+            } finally {
+              this.processNextRequest();
             }
           };
 
@@ -79,19 +90,39 @@
             // TODO: Implement error handling
             //console.error("error", error);
             this.port.postMessage(`error|${segmentUrl}`);
+            this.processNextRequest();
           };
-          console.log(">>> New request");
+          //console.log(">>> New request");
           this.core.loadSegment(segmentUrl, {
             onSuccess,
             onError,
           });
 
-          console.log("requestSegment", segmentUrl);
+          //console.log("requestSegment", segmentUrl);
         }
 
         setManifestUrl(manifestUrl) {
           this.core.setManifestResponseUrl(manifestUrl);
           console.log("setManifestUrl", manifestUrl);
+        }
+
+        enqueueRequest(segmentRequestJSON) {
+          console.log(">>> enqueueRequest", segmentRequestJSON);
+          this.requestQueue.push(segmentRequestJSON);
+          if (!this.isProcessing) {
+            this.processNextRequest();
+          }
+        }
+
+        processNextRequest() {
+          if (this.requestQueue.length === 0) {
+            this.isProcessing = false;
+            return;
+          }
+
+          this.isProcessing = true;
+          const segmentRequestJSON = this.requestQueue.shift();
+          this.processSegmentRequest(segmentRequestJSON);
         }
       }
 

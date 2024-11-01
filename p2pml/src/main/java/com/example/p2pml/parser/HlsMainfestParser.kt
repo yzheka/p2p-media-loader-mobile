@@ -10,7 +10,6 @@ import com.example.p2pml.ByteRange
 import com.example.p2pml.Constants.StreamTypes
 import com.example.p2pml.Constants.HTTPS_PREFIX
 import com.example.p2pml.Constants.HTTP_PREFIX
-import com.example.p2pml.Constants.MICROSECONDS_IN_SECOND
 import com.example.p2pml.Segment
 import com.example.p2pml.Stream
 import com.example.p2pml.UpdateStreamParams
@@ -78,14 +77,21 @@ internal class HlsManifestParser(
     private fun addNewSegment(
         variantUrl: String,
         segmentId: Long,
-        startTime: Double,
+        initialStartTime: Double,
         segment: HlsMediaPlaylist.Segment,
         isStreamLive: Boolean
     ): Segment? {
         val previousSegmentIds = streamSegmentsIds.getOrPut(variantUrl) { mutableSetOf() }
         if(previousSegmentIds.contains(segmentId)) return null
 
+        val prevSegment = if(previousSegmentIds.contains(segmentId - 1)) {
+            streamSegments[variantUrl]?.find { it.externalId == segmentId - 1 }
+        } else {
+            null
+        }
+
         val segmentDurationInMs = segment.durationUs / 1000.0
+        val startTime = prevSegment?.endTime ?: initialStartTime
         val endTime = startTime + segmentDurationInMs
 
         val absoluteUrl = getAbsoluteUrl(variantUrl, segment.url)
@@ -133,7 +139,7 @@ internal class HlsManifestParser(
         val newMediaSequence = mediaPlaylist.mediaSequence
         val updatedManifestBuilder = StringBuilder(originalManifest)
 
-        var startTime = if(isLastRequestedStreamLive) {
+        val startTime = if(isLastRequestedStreamLive) {
             exoPlayerPlaybackCalculator.getAbsolutePlaybackPosition(
                 manifestUrl,
                 originalManifest
@@ -154,10 +160,8 @@ internal class HlsManifestParser(
             val segmentIndex = index + newMediaSequence
             processSegment(segment, manifestUrl, updatedManifestBuilder)
             val newSegment = addNewSegment(manifestUrl, segmentIndex, startTime, segment, isLastRequestedStreamLive)
-            if(newSegment != null) {
+            if(newSegment != null)
                 segmentsToAdd.add(newSegment)
-                startTime += segment.durationUs / 1000.0
-            }
         }
 
         initializationSegments.forEach { initializationSegment ->

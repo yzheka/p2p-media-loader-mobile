@@ -22,7 +22,7 @@ class ExoPlayerPlaybackCalculator {
     private val parser = HlsPlaylistParser()
     private lateinit var exoPlayer: ExoPlayer
     private var parsedManifest: HlsMediaPlaylist? = null
-    private var lastAbsolutePlayback: Long? = null
+    private var currentAbsoluteTime: Long? = null
 
     private var currentSegments = mutableMapOf<Long, PlaybackSegment>()
     private var currentSegmentIds = mutableSetOf<Long>()
@@ -63,7 +63,7 @@ class ExoPlayerPlaybackCalculator {
         val prevSegment = currentSegments[externalId - 1]
         val segmentDurationInMs = segment.durationUs / 1000.0
         val relativeStartTime = prevSegment?.endTime ?: 0.0
-        val absoluteStartTime = prevSegment?.absoluteEndTime ?: lastAbsolutePlayback!!
+        val absoluteStartTime = prevSegment?.absoluteEndTime ?: currentAbsoluteTime!!
 
         val relativeEndTime = relativeStartTime + segmentDurationInMs
         val absoluteEndTime = absoluteStartTime + segmentDurationInMs
@@ -90,18 +90,20 @@ class ExoPlayerPlaybackCalculator {
 
             val newMediaSequence = parsedManifest!!.mediaSequence
             removeObsoleteSegments(newMediaSequence)
-            lastAbsolutePlayback = System.currentTimeMillis()
+            currentAbsoluteTime = System.currentTimeMillis()
 
             parsedManifest!!.segments.forEachIndexed { index, segment ->
                 val segmentIndex = newMediaSequence + index
                 updateSegmentRelativeTime(segmentIndex, segment)
                 addSegment(segment, segmentIndex)
+                Log.d("==ExoPlayerPlayback", "Segment: $segmentIndex, " +
+                        "Start: ${currentSegments[segmentIndex]?.absoluteStartTime}, End: ${currentSegments[segmentIndex]?.absoluteEndTime}")
             }
 
-        return@withLock lastAbsolutePlayback!!
+        return@withLock currentAbsoluteTime!!
     }
 
-    suspend fun getPlaybackPositionAndSpeed(): Pair<Long, Float> = mutex.withLock {
+    fun getPlaybackPositionAndSpeed(): Pair<Long, Float>  {
         val playbackPositionInMs = exoPlayer.currentPosition
         val playbackSpeed = exoPlayer.playbackParameters.speed
 
@@ -121,7 +123,7 @@ class ExoPlayerPlaybackCalculator {
 
         val segmentPlayTime = currentPlaybackInMs - currentSegment.startTime
         val segmentAbsolutePlayTime = currentSegment.absoluteStartTime + segmentPlayTime
-        Log.d("ExoPlayerPlayback", "CurrentPlayPositionMs: $playbackPositionInMs, Segment absolute play time: $segmentAbsolutePlayTime")
+        Log.d("==ExoPlayerPlayback", "CurrentPlayPositionMs: $playbackPositionInMs, Segment absolute play time: ${currentSegment.absoluteStartTime}")
         return Pair(currentSegment.absoluteStartTime, playbackSpeed)
     }
 
