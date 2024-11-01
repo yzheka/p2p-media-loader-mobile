@@ -6,11 +6,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.annotation.OptIn
-import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.webkit.WebViewClientCompat
 import com.example.p2pml.ExoPlayerPlaybackCalculator
-import com.example.p2pml.parser.HlsManifestParser
 import com.example.p2pml.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
