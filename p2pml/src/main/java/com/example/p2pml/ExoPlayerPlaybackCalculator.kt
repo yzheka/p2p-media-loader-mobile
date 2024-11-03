@@ -27,7 +27,6 @@ class ExoPlayerPlaybackCalculator {
     private var currentAbsoluteTime: Long? = null
 
     private var currentSegments = mutableMapOf<Long, PlaybackSegment>()
-    private var currentSegmentIds = mutableSetOf<Long>()
     private val mutex = Mutex()
 
     fun setExoPlayer(exoPlayer: ExoPlayer) {
@@ -35,11 +34,10 @@ class ExoPlayerPlaybackCalculator {
     }
 
     private fun removeObsoleteSegments(removeUntilId: Long) {
-        val obsoleteIds = currentSegmentIds.filter { it < removeUntilId }
+        val obsoleteIds = currentSegments.keys.filter { it < removeUntilId }
 
         obsoleteIds.forEach { id ->
             currentSegments.remove(id)
-            currentSegmentIds.remove(id)
         }
     }
 
@@ -62,6 +60,7 @@ class ExoPlayerPlaybackCalculator {
     private fun addSegment(segment: HlsMediaPlaylist.Segment, externalId: Long) {
         val prevSegment = currentSegments[externalId - 1]
         val segmentDurationInMs = segment.durationUs / 1000.0
+
         val relativeStartTime = prevSegment?.endTime ?: 0.0
         val absoluteStartTime = prevSegment?.absoluteEndTime ?: currentAbsoluteTime!!
 
@@ -75,7 +74,6 @@ class ExoPlayerPlaybackCalculator {
             absoluteEndTime.toLong(),
             externalId
         )
-        currentSegmentIds.add(externalId)
     }
 
     suspend fun getAbsolutePlaybackPosition(
@@ -87,12 +85,13 @@ class ExoPlayerPlaybackCalculator {
                 ?: throw IllegalStateException("Parsed manifest is null")
 
         val newMediaSequence = parsedManifest!!.mediaSequence
-        removeObsoleteSegments(newMediaSequence)
         currentAbsoluteTime = System.currentTimeMillis()
+
+        removeObsoleteSegments(newMediaSequence)
 
         parsedManifest!!.segments.forEachIndexed { index, segment ->
             val segmentIndex = newMediaSequence + index
-            if (!currentSegmentIds.contains(segmentIndex))
+            if (!currentSegments.contains(segmentIndex))
                 addSegment(segment, segmentIndex)
             else
                 updateExistingSegmentRelativeTime(segmentIndex, segment)
