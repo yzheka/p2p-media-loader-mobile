@@ -14,8 +14,8 @@ import kotlinx.coroutines.withContext
 private data class PlaybackSegment(
     var startTime: Double,
     var endTime: Double,
-    val absoluteStartTime: Long,
-    val absoluteEndTime: Long,
+    val absoluteStartTime: Double,
+    val absoluteEndTime: Double,
     val externalId: Long
 )
 
@@ -24,7 +24,7 @@ class ExoPlayerPlaybackCalculator {
     private val parser = HlsPlaylistParser()
     private lateinit var exoPlayer: ExoPlayer
     private var parsedManifest: HlsMediaPlaylist? = null
-    private var currentAbsoluteTime: Long? = null
+    private var currentAbsoluteTime: Double? = null
 
     private var currentSegments = mutableMapOf<Long, PlaybackSegment>()
     private val mutex = Mutex()
@@ -49,9 +49,9 @@ class ExoPlayerPlaybackCalculator {
         val currentSegment = currentSegments[segmentId]
             ?: throw IllegalStateException("Current segment is null")
 
-        val segmentDurationInMs = segment.durationUs / 1000.0
+        val segmentDurationInSeconds = segment.durationUs / 1_000_000.0
         val relativeStartTime = prevSegment?.endTime ?: 0.0
-        val relativeEndTime = relativeStartTime + segmentDurationInMs
+        val relativeEndTime = relativeStartTime + segmentDurationInSeconds
 
         currentSegment.startTime = relativeStartTime
         currentSegment.endTime = relativeEndTime
@@ -59,19 +59,19 @@ class ExoPlayerPlaybackCalculator {
 
     private fun addSegment(segment: HlsMediaPlaylist.Segment, externalId: Long) {
         val prevSegment = currentSegments[externalId - 1]
-        val segmentDurationInMs = segment.durationUs / 1000.0
+        val segmentDurationInSeconds = segment.durationUs / 1_000_000.0
 
         val relativeStartTime = prevSegment?.endTime ?: 0.0
         val absoluteStartTime = prevSegment?.absoluteEndTime ?: currentAbsoluteTime!!
 
-        val relativeEndTime = relativeStartTime + segmentDurationInMs
-        val absoluteEndTime = absoluteStartTime + segmentDurationInMs
+        val relativeEndTime = relativeStartTime + segmentDurationInSeconds
+        val absoluteEndTime = absoluteStartTime + segmentDurationInSeconds
 
         currentSegments[externalId] = PlaybackSegment(
             relativeStartTime,
             relativeEndTime,
             absoluteStartTime,
-            absoluteEndTime.toLong(),
+            absoluteEndTime,
             externalId
         )
     }
@@ -79,13 +79,13 @@ class ExoPlayerPlaybackCalculator {
     suspend fun getAbsolutePlaybackPosition(
         manifestUrl: String,
         manifest: String
-    ): Long = mutex.withLock {
+    ): Double = mutex.withLock {
         parsedManifest =
             parser.parse(manifestUrl.toUri(), manifest.byteInputStream()) as? HlsMediaPlaylist
                 ?: throw IllegalStateException("Parsed manifest is null")
 
         val newMediaSequence = parsedManifest!!.mediaSequence
-        currentAbsoluteTime = System.currentTimeMillis()
+        currentAbsoluteTime = System.currentTimeMillis() / 1000.0
 
         removeObsoleteSegments(newMediaSequence)
 
@@ -106,13 +106,16 @@ class ExoPlayerPlaybackCalculator {
     }
 
     suspend fun getPlaybackPositionAndSpeed(): Pair<Double, Float> = mutex.withLock {
-        val playbackPositionInMs = withContext(Dispatchers.Main) { exoPlayer.currentPosition }
+        val playbackPositionInSeconds = withContext(Dispatchers.Main) {
+            exoPlayer.currentPosition / 1000.0
+        }
         val playbackSpeed = withContext(Dispatchers.Main) { exoPlayer.playbackParameters.speed }
 
         if (parsedManifest == null || parsedManifest?.hasEndTag == true)
-            return Pair(playbackPositionInMs / 1000.0, playbackSpeed)
+            return Pair(playbackPositionInSeconds, playbackSpeed)
 
-        val currentPlaybackInMs = if (playbackPositionInMs < 0) 0 else playbackPositionInMs
+        val currentPlaybackInMs = if (playbackPositionInSeconds < 0) 0.0
+            else playbackPositionInSeconds
 
         val currentSegment = currentSegments.values.find {
             currentPlaybackInMs >= it.startTime && currentPlaybackInMs <= it.endTime
@@ -123,5 +126,4 @@ class ExoPlayerPlaybackCalculator {
 
         return Pair(segmentAbsolutePlayTime, playbackSpeed)
     }
-
 }

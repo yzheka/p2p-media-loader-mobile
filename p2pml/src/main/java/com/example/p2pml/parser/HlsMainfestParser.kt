@@ -75,15 +75,14 @@ internal class HlsManifestParser(
         segmentId: Long,
         initialStartTime: Double,
         segment: HlsMediaPlaylist.Segment,
-        isStreamLive: Boolean
     ): Segment? {
         val segmentsMap = streamSegments.getOrPut(variantUrl) { mutableMapOf() }
         if (segmentsMap.contains(segmentId)) return null
 
         val prevSegment = segmentsMap[segmentId - 1]
-        val segmentDurationInMs = segment.durationUs / if (isStreamLive) 1000.0 else 1_000_000.0
+        val segmentDurationInSeconds = segment.durationUs / 1_000_000.0
         val startTime = prevSegment?.endTime ?: initialStartTime
-        val endTime = startTime + segmentDurationInMs
+        val endTime = startTime + segmentDurationInSeconds
 
         val absoluteUrl = getAbsoluteUrl(variantUrl, segment.url)
         val newSegment = Segment(
@@ -113,7 +112,7 @@ internal class HlsManifestParser(
             exoPlayerPlaybackCalculator.getAbsolutePlaybackPosition(
                 manifestUrl,
                 originalManifest
-            ).toDouble()
+            )
         } else {
             0.0
         }
@@ -130,7 +129,7 @@ internal class HlsManifestParser(
             val segmentIndex = index + newMediaSequence
             processSegment(segment, manifestUrl, updatedManifestBuilder)
             val newSegment =
-                addNewSegment(manifestUrl, segmentIndex, initialStartTime, segment, isStreamLive)
+                addNewSegment(manifestUrl, segmentIndex, initialStartTime, segment)
             if (newSegment != null)
                 segmentsToAdd.add(newSegment)
         }
