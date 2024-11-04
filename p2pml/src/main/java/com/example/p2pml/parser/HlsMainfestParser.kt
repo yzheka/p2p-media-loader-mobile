@@ -36,8 +36,7 @@ internal class HlsManifestParser(
     private val mutex = Mutex()
 
     private val streams = mutableListOf<Stream>()
-    private val streamSegments = mutableMapOf<String, MutableList<Segment>>()
-    private val streamSegmentsIds = mutableMapOf<String, MutableSet<Long>>()
+    private val streamSegments = mutableMapOf<String, MutableMap<Long, Segment>>()
     private val updateStreamParams = mutableMapOf<String, UpdateStreamParams>()
 
     suspend fun getModifiedManifest(call: ApplicationCall, manifestUrl: String): String {
@@ -61,14 +60,14 @@ internal class HlsManifestParser(
     }
 
     private fun removeObsoleteSegments(variantUrl: String, removeUntilId: Long): List<String> {
-        val obsoleteSegment = streamSegments[variantUrl]?.filter { it.externalId < removeUntilId }
+        val segmentsMap = streamSegments[variantUrl] ?: return emptyList()
+        val obsoleteSegments = segmentsMap.filterKeys { it < removeUntilId }
 
-        obsoleteSegment?.forEach { segment ->
-            streamSegments[variantUrl]?.removeAll { it.externalId == segment.externalId }
-            streamSegmentsIds[variantUrl]?.remove(segment.externalId)
+        obsoleteSegments.forEach { (id, _) ->
+            segmentsMap.remove(id)
         }
 
-        return obsoleteSegment?.map { it.runtimeId } ?: emptyList()
+        return obsoleteSegments.values.map { it.runtimeId }
     }
 
     private fun addNewSegment(
@@ -78,15 +77,10 @@ internal class HlsManifestParser(
         segment: HlsMediaPlaylist.Segment,
         isStreamLive: Boolean
     ): Segment? {
-        val previousSegmentIds = streamSegmentsIds.getOrPut(variantUrl) { mutableSetOf() }
-        if (previousSegmentIds.contains(segmentId)) return null
+        val segmentsMap = streamSegments.getOrPut(variantUrl) { mutableMapOf() }
+        if (segmentsMap.contains(segmentId)) return null
 
-        val prevSegment = if (previousSegmentIds.contains(segmentId - 1)) {
-            streamSegments[variantUrl]?.find { it.externalId == segmentId - 1 }
-        } else {
-            null
-        }
-
+        val prevSegment = segmentsMap[segmentId - 1]
         val segmentDurationInMs = segment.durationUs / if (isStreamLive) 1000.0 else 1_000_000.0
         val startTime = prevSegment?.endTime ?: initialStartTime
         val endTime = startTime + segmentDurationInMs
@@ -102,14 +96,7 @@ internal class HlsManifestParser(
             endTime = endTime
         )
 
-        val streamSegmentsList = streamSegments[variantUrl]
-        if (streamSegmentsList != null) {
-            streamSegmentsList.add(newSegment)
-        } else {
-            streamSegments[variantUrl] = mutableListOf(newSegment)
-        }
-        previousSegmentIds.add(segmentId)
-
+        segmentsMap[segmentId] = newSegment
         return newSegment
     }
 
