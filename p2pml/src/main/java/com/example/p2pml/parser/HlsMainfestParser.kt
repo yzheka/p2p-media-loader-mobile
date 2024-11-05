@@ -1,6 +1,7 @@
 package com.example.p2pml.parser
 
 import androidx.core.net.toUri
+import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
 import androidx.media3.exoplayer.hls.playlist.HlsMultivariantPlaylist
@@ -75,6 +76,7 @@ internal class HlsManifestParser(
         segmentId: Long,
         initialStartTime: Double,
         segment: HlsMediaPlaylist.Segment,
+        byteRange: ByteRange? = null
     ): Segment? {
         val segmentsMap = streamSegments.getOrPut(variantUrl) { mutableMapOf() }
         if (segmentsMap.contains(segmentId)) return null
@@ -85,12 +87,16 @@ internal class HlsManifestParser(
         val endTime = startTime + segmentDurationInSeconds
 
         val absoluteUrl = getAbsoluteUrl(variantUrl, segment.url)
+        val runtimeUrl = if (byteRange != null)
+            "$absoluteUrl|${byteRange.start}-${byteRange.end}"
+        else
+            absoluteUrl
+        Log.d("HlsManifestParser", "addNewSegment: $runtimeUrl")
         val newSegment = Segment(
-            runtimeId = absoluteUrl,
+            runtimeId = runtimeUrl,
             externalId = segmentId,
             url = absoluteUrl,
-            byteRange = segment.byteRangeLength.takeIf { it != -1L }
-                ?.let { ByteRange(segment.byteRangeOffset, segment.byteRangeOffset + it) },
+            byteRange = byteRange,
             startTime = startTime,
             endTime = endTime
         )
@@ -127,9 +133,11 @@ internal class HlsManifestParser(
             }
 
             val segmentIndex = index + newMediaSequence
-            processSegment(segment, manifestUrl, updatedManifestBuilder)
+            val byteRange = segment.byteRangeLength.takeIf { it != -1L }
+                ?.let { ByteRange(segment.byteRangeOffset, segment.byteRangeOffset + it - 1) }
+            processSegment(segment, manifestUrl, updatedManifestBuilder, byteRange)
             val newSegment =
-                addNewSegment(manifestUrl, segmentIndex, initialStartTime, segment)
+                addNewSegment(manifestUrl, segmentIndex, initialStartTime, segment, byteRange)
             if (newSegment != null)
                 segmentsToAdd.add(newSegment)
         }
@@ -274,6 +282,7 @@ internal class HlsManifestParser(
         segment: HlsMediaPlaylist.Segment,
         variantUrl: String,
         manifestBuilder: StringBuilder,
+        byteRange: ByteRange? = null
     ) {
         val segmentUri = segment.url
         val segmentUriInManifest = findUrlInManifest(
@@ -282,7 +291,11 @@ internal class HlsManifestParser(
             variantUrl
         )
         val absoluteSegmentUrl = getAbsoluteUrl(variantUrl, segmentUri)
-        val encodedAbsoluteSegmentUrl = Utils.encodeUrlToBase64(absoluteSegmentUrl)
+        val encodedAbsoluteSegmentUrl = if (byteRange != null)
+            Utils.encodeUrlToBase64("$absoluteSegmentUrl|${byteRange.start}-${byteRange.end}")
+        else
+            Utils.encodeUrlToBase64(absoluteSegmentUrl)
+
         val newUrl = Utils.getUrl(serverPort, "${QueryParams.SEGMENT}$encodedAbsoluteSegmentUrl")
 
         val startIndex = manifestBuilder.indexOf(segmentUriInManifest)
