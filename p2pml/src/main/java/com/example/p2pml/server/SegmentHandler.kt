@@ -6,6 +6,7 @@ import com.example.p2pml.webview.WebViewManager
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.ByteArrayContent
+import io.ktor.http.content.OutgoingContent
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
@@ -25,16 +26,15 @@ internal class SegmentHandler(private val webViewManager: WebViewManager) {
             val deferredSegmentBytes = webViewManager.requestSegmentBytes(decodedSegmentUrl)
             val segmentBytes = deferredSegmentBytes.await()
 
-            if (byteRange != null) {
-                call.respond(
-                    ByteArrayContent(
-                        bytes = segmentBytes,
-                        contentType = ContentType.Application.OctetStream,
-                        status = HttpStatusCode.PartialContent
-                    )
-                )
-            }
-            else
+            if(byteRange != null) {
+                call.respond(object : OutgoingContent.ByteArrayContent() {
+                    override val contentType: ContentType = ContentType.Application.OctetStream
+                    override val contentLength: Long = segmentBytes.size.toLong()
+                    override val status: HttpStatusCode = HttpStatusCode.PartialContent
+
+                    override fun bytes(): ByteArray = segmentBytes
+                })
+            } else
                 call.respondBytes(segmentBytes, ContentType.Application.OctetStream)
         } catch (e: Exception) {
             call.respondText(

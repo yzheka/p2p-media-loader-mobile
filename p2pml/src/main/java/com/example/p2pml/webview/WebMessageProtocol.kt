@@ -131,7 +131,7 @@ internal class WebMessageProtocol(
     private suspend fun sendSegmentRequest(segmentUrl: String) {
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
-                "javascript:window.p2p.enqueueRequest('$segmentUrl');",
+                "javascript:window.p2p.processSegmentRequest('$segmentUrl');",
                 null
             )
         }
