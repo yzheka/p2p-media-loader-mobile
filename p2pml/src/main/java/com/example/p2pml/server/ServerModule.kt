@@ -9,7 +9,6 @@ import io.ktor.server.cio.CIO
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.cors.routing.CORS
-import io.ktor.server.plugins.partialcontent.PartialContent
 import io.ktor.server.routing.routing
 
 @UnstableApi
@@ -33,7 +32,7 @@ internal class ServerModule(
             install(CORS) {
                 anyHost()
             }
-            install(PartialContent)
+
 
             routing {
                 routingModule.setup(this)

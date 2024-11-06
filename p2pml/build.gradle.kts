@@ -37,7 +37,6 @@ dependencies {
     implementation("io.ktor:ktor-server-core:2.3.12")
     implementation("io.ktor:ktor-server-cio:2.3.12")
     implementation("io.ktor:ktor-server-cors:2.3.12")
-    implementation("io.ktor:ktor-server-partial-content:2.3.12")
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
     implementation ("androidx.media3:media3-exoplayer-hls:1.4.1")
     implementation ("androidx.media3:media3-exoplayer:1.4.1")
