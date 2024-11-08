@@ -2,6 +2,7 @@ package com.example.p2pml.webview
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -67,6 +68,7 @@ internal class WebViewManager(
     }
 
     suspend fun sendStream(streamJSON: String) {
+        Log.d("WebViewManager", "Sending stream JSON: $streamJSON")
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.parseStream('$streamJSON');",

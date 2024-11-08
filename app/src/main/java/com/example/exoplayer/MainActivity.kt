@@ -31,6 +31,7 @@ import androidx.media3.datasource.TransferListener
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
 import com.example.p2pml.P2PML
 //import com.example.p2pml.P2PMLServer
@@ -80,10 +81,10 @@ class MainActivity : ComponentActivity() {
         WebView.setWebContentsDebuggingEnabled(true)
 
         //val streamUrl = "https://video-weaver.waw02.hls.live-video.net/v1/playlist/CrcFLQHweNhMdaIHaP2Z_OxBWlITFHLnLpydpyhQE0B8URdt2hKrl9C_o94IAG3trj47_AxhBFwo4ILUdt__yLnlVaTu4m9bgZbP_-RUOhX6huPei6e9PuHGM5VB0QjzyH67vUblWu7J5peaLO0D7uO8RwI9lTqgbxNIrkzTCPg8v6yLWPonktjZ-mv_gG1hx_zcwPZtKyZ58_ZBnB3_6bTjPXwGRAtr3Wnh1geBAbRHwPQMuYXA1XYw5Yqj3lwd4cPZNduuDcFkVnsUfSLqSGVmQU95i-ciOU9Rz-nUUffo5woMgxdEjVc8aZbvdgCErrCzGgxedb6_4uTA85JlzNM-d9GZvqhatSOZwBVMyetYFTIcAl9PRaQPmYCzHIJa15hADhCy2T0mnDIHzbrfdKguZLc_sPX6yduST1hHMJkihjkOdekQIFUtA5AigcIQiAtupbVSMMvb1-CLOK2qyX4HV5aX2SY7c_fhFcy3VTcMSaRj5jQzOGIYRbUkwIaLoexHJ4SgeHnhvo1rhdUV2djX4iKYFgn20Mf3Yh3Bg5Dwj2o7bBds34L5bJPVEKuqGqdK-hcIAUbE7pXIWOt2IiJukdXsHnGk8guCWmBOPddGF78ycfXQrTfYmuEL_kazNChwHvYLYFYJTOvF50qwA1J0BKdPMoHKIMcA59YJZ9HjgX32BMV1EHBHA9zdou7MRFzmdYS1g38M4zdJ7UtVH33s9mpFdjRxk7549bG3iwMmHprg67B2ShxC5ctlxtwrCqcQU7uZ7ec1soXBYzh_x9VLDyKbWGCPcJvCFT_LSq6WHn8pOxMCsyQcBMkcx9gAm3g-nrgrNqCp9a_9jafq-IWJ6y07n2rSs0vYqO7MZBxIr9yDb5QP7fDs5ASDyTIBqRWSNxLHKmOCtvEeoIJZLXUzp4halzaeKG0aDFugHL8phVbBiOwCsCABKglldS13ZXN0LTIw4Qo.m3u8"
-        //val streamUrl = "https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.DmumNckWFTqz.m3u8"
+        val streamUrl = "https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.DmumNckWFTqz.m3u8"
 
         //var streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8"
-        val streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/gear1/prog_index.m3u8"
+        //val streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/gear1/prog_index.m3u8"
         //val streamUrl = "https://test-streams.mux.dev/x36xhzz/url_0/193039199_mp4_h264_aac_hd_7.m3u8"
 
         //val streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8"
@@ -100,6 +101,14 @@ class MainActivity : ComponentActivity() {
                 MediaItem.fromUri(manifest)
             )
 
+            val trackSelector = DefaultTrackSelector(this@MainActivity).apply {
+                val parameters = buildUponParameters()
+                    .setMaxVideoSizeSd()
+                    .setMaxVideoSize(Integer.MAX_VALUE, Integer.MAX_VALUE)
+                    .setForceHighestSupportedBitrate(true)
+                    .build()
+                setParameters(parameters)
+            }
 
             val loadControl = DefaultLoadControl.Builder()
                 .setBufferDurationsMs(
@@ -109,19 +118,23 @@ class MainActivity : ComponentActivity() {
                     3000   // Buffer required after a rebuffer (in milliseconds)
                 )
                 .build()
+            //val loadControl = DefaultLoadControl.Builder().setLi
+
 
             /*player = ExoPlayer.Builder(this@MainActivity).build().apply {
                 setMediaSource(mediaSource)
                 prepare()
                 playWhenReady = true
             }*/
-            val player = ExoPlayer.Builder(this@MainActivity)
+            player = ExoPlayer.Builder(this@MainActivity)
+                //.setTrackSelector(trackSelector)
                 .setLoadControl(loadControl)
                 .build().apply {
                     setMediaSource(mediaSource)
                     prepare()
                     playWhenReady = true
                 }
+
 
 
             p2pServer.setExoPlayer(player)

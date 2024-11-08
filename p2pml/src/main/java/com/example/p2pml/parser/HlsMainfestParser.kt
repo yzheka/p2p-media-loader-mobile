@@ -40,9 +40,19 @@ internal class HlsManifestParser(
     private val streamSegments = mutableMapOf<String, MutableMap<Long, Segment>>()
     private val updateStreamParams = mutableMapOf<String, UpdateStreamParams>()
 
+    private val currentSegmentRuntimeIds = mutableSetOf<String>()
+
+    var lastRequestedStreamSegments: MutableMap<Long, Segment> = mutableMapOf()
+    var lastMediSequence: Long = 0
     suspend fun getModifiedManifest(call: ApplicationCall, manifestUrl: String): String {
         val originalManifest = fetchManifest(call, manifestUrl)
         return mutex.withLock { parseHlsManifest(manifestUrl, originalManifest) }
+    }
+
+    suspend fun isCurrentSegment(segmentUrl: String): Boolean {
+        return mutex.withLock {
+            currentSegmentRuntimeIds.contains(segmentUrl)
+        }
     }
 
     private suspend fun parseHlsManifest(manifestUrl: String, manifest: String): String {
@@ -91,7 +101,7 @@ internal class HlsManifestParser(
             "$absoluteUrl|${byteRange.start}-${byteRange.end}"
         else
             absoluteUrl
-        Log.d("HlsManifestParser", "addNewSegment: $runtimeUrl")
+        Log.d("HlsManifestParser", "addNewSegment: $segmentId $runtimeUrl")
         val newSegment = Segment(
             runtimeId = runtimeUrl,
             externalId = segmentId,
@@ -126,7 +136,8 @@ internal class HlsManifestParser(
         val segmentsToRemove = removeObsoleteSegments(manifestUrl, newMediaSequence)
         val initializationSegments = mutableSetOf<HlsMediaPlaylist.Segment>()
         val segmentsToAdd = mutableListOf<Segment>()
-
+        Log.d("SegmentHandler", "Start $newMediaSequence")
+        currentSegmentRuntimeIds.clear()
         mediaPlaylist.segments.forEachIndexed { index, segment ->
             if (segment.initializationSegment != null) {
                 initializationSegments.add(segment.initializationSegment!!)
@@ -135,12 +146,20 @@ internal class HlsManifestParser(
             val segmentIndex = index + newMediaSequence
             val byteRange = segment.byteRangeLength.takeIf { it != -1L }
                 ?.let { ByteRange(segment.byteRangeOffset, segment.byteRangeOffset + it - 1) }
+
+            val absoluteSegmentUrl = getAbsoluteUrl(manifestUrl, segment.url)
+            currentSegmentRuntimeIds.add(absoluteSegmentUrl)
+
             processSegment(segment, manifestUrl, updatedManifestBuilder, byteRange)
+
             val newSegment =
                 addNewSegment(manifestUrl, segmentIndex, initialStartTime, segment, byteRange)
-            if (newSegment != null)
+            if (newSegment != null){
                 segmentsToAdd.add(newSegment)
+                Log.d("SegmentHandler", "Segment: $segmentIndex - ${newSegment.runtimeId}")
+            }
         }
+        Log.d("SegmentHandler", "End")
 
         initializationSegments.forEach { initializationSegment ->
             replaceUrlInManifest(
@@ -151,6 +170,9 @@ internal class HlsManifestParser(
             )
         }
 
+        segmentsToAdd.forEach {
+            Log.d("Segments to add:", "Before update:: ${it.externalId} -  ${it.runtimeId}")
+        }
         updateStreamData(manifestUrl, segmentsToAdd, segmentsToRemove, isStreamLive)
 
         val stream = findStreamByRuntimeId(manifestUrl)
@@ -158,14 +180,22 @@ internal class HlsManifestParser(
         if (stream == null)
             streams.add(Stream(runtimeId = manifestUrl, type = StreamTypes.MAIN, index = 0))
 
+        lastRequestedStreamSegments = streamSegments[manifestUrl] ?: mutableMapOf()
+        lastMediSequence = newMediaSequence
         return updatedManifestBuilder.toString()
     }
 
     suspend fun getUpdateStreamParamsJSON(variantUrl: String): String? {
         mutex.withLock {
+            Log.d("HlsManifestParser", ">>>>> getUpdateStreamParamsJSON: $variantUrl")
             val updateStream = updateStreamParams[variantUrl]
                 ?: return null
-            return Json.encodeToString(updateStream)
+            updateStream.addSegments.forEach {
+                Log.d("HlsManifestParser", "add segment: ${it.externalId} -  ${it.runtimeId}")
+            }
+            val json = Json.encodeToString(updateStream)
+            Log.d("HlsManifestParser", ">>>>> ${updateStream.addSegments.size} = getUpdateStreamParamsJSON: $json")
+            return json
         }
     }
 
@@ -234,7 +264,11 @@ internal class HlsManifestParser(
             removeSegmentsIds = segmentsToRemove,
             isLive = isLive
         )
-
+        Log.d("HlsManifestParser", ">>>>> updateStreamData: $variantUrl")
+        Log.d("Segments to add in val:", "Count: ${updateStream.addSegments.size}")
+        newSegments.forEach {
+            Log.d("Segments to add:", "After update:: ${it.externalId} -  ${it.runtimeId}")
+        }
         updateStreamParams[variantUrl] = updateStream
     }
 

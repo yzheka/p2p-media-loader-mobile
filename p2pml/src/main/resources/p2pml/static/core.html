@@ -16,7 +16,7 @@
       class P2P {
         constructor() {
           this.core = new Core({
-            highDemandTimeWindow: 30,
+            highDemandTimeWindow: 10,
           });
           this.port = null;
           this.listenPort();
@@ -50,9 +50,13 @@
             removeSegmentsIds
           );
           this.core.setIsLive(isLive);
+          console.log("+++ updateStream:", streamRuntimeId);
+          removeSegmentsIds.forEach((segmentId) => {
+            console.log(`--- segment removed: ${segmentId}`);
+          });
           addSegments.forEach((segment) => {
             console.log(
-              `>>> segment added: ${segment.externalId} | ${segment.runtimeId} | startTime: ${segment.startTime} - endTime: ${segment.endTime}`
+              `+++ segment added: ${segment.externalId} | ${segment.runtimeId} | startTime: ${segment.startTime} - endTime: ${segment.endTime}`
             );
           });
         }
@@ -61,8 +65,7 @@
           const segmentRequest = JSON.parse(segmentRequestJSON);
           const { segmentUrl, currentPlayPosition, currentPlaySpeed } =
             segmentRequest;
-          console.log(">>> currentPosition:", currentPlayPosition);
-          this.core.updatePlayback(currentPlayPosition, currentPlaySpeed);
+          // console.log(">>> currentPosition:", currentPlayPosition);
 
           const onSuccess = (response) => {
             try {
@@ -85,6 +88,7 @@
             onSuccess,
             onError,
           });
+          this.core.updatePlayback(currentPlayPosition, currentPlaySpeed);
         }
 
         setManifestUrl(manifestUrl) {

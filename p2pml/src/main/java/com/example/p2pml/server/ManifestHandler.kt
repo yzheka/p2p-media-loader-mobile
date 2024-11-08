@@ -1,6 +1,7 @@
 package com.example.p2pml.server
 
 import androidx.annotation.OptIn
+import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import com.example.p2pml.Constants.MPEGURL_CONTENT_TYPE
 import com.example.p2pml.parser.HlsManifestParser
@@ -45,21 +46,31 @@ internal class ManifestHandler(
     }
 
     private suspend fun handleUpdate(manifestUrl: String, needsInitialSetup: Boolean) {
-        val updateStreamJSON = manifestParser.getUpdateStreamParamsJSON(manifestUrl)
+        try {
+            val updateStreamJSON = manifestParser.getUpdateStreamParamsJSON(manifestUrl)
 
-        if (needsInitialSetup) {
-            val streamsJSON = manifestParser.getStreamsJSON()
-            webViewManager.sendInitialMessage()
-            webViewManager.setManifestUrl(manifestUrl)
-            webViewManager.sendAllStreams(streamsJSON)
-            updateStreamJSON?.let { webViewManager.sendStream(it) }
+            if (needsInitialSetup) {
+                val streamsJSON = manifestParser.getStreamsJSON()
+                webViewManager.sendInitialMessage()
+                webViewManager.setManifestUrl(manifestUrl)
+                webViewManager.sendAllStreams(streamsJSON)
+                updateStreamJSON?.let { webViewManager.sendStream(it) }
 
-        } else {
-            updateStreamJSON?.let { json ->
-                webViewManager.sendStream(json)
-            } ?: throw IOException("updateStreamJSON is null")
+            } else {
+                updateStreamJSON?.let { json ->
+                    webViewManager.sendStream(json)
+                } ?: throw IOException("updateStreamJSON is null")
+            }
+        } catch (e: IOException) {
+            // Handle IOException specifically
+            Log.e("handleUpdate", "IOException occurred: ${e.message}")
+        } catch (e: Exception) {
+            // Handle other exceptions
+            Log.e("handleUpdate", "Unexpected error occurred: ${e.message}")
         }
+
     }
+
 
     private suspend fun checkAndSetInitialProcessing(): Boolean = mutex.withLock {
         if (isMasterManifestProcessed) return false

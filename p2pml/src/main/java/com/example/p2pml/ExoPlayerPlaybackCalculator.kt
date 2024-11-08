@@ -124,6 +124,10 @@ class ExoPlayerPlaybackCalculator {
         val segmentPlayTime = currentPlaybackInMs - currentSegment.startTime
         val segmentAbsolutePlayTime = currentSegment.absoluteStartTime + segmentPlayTime
 
+        Log.d(
+            "==Current segment", "Current segment: ${currentSegment.externalId}, " +
+                    "Start: ${currentSegment.absoluteStartTime}" + "current playtime: $segmentAbsolutePlayTime"
+        )
         return Pair(segmentAbsolutePlayTime, playbackSpeed)
     }
 }

@@ -23,16 +23,14 @@ internal class ServerModule(
         if (server != null) return
 
         val manifestHandler = ManifestHandler(manifestParser, webViewManager)
-        val segmentHandler = SegmentHandler(webViewManager)
+        val segmentHandler = SegmentHandler(webViewManager, manifestParser)
 
         val routingModule = ServerRoutes(manifestHandler, segmentHandler)
 
         server = embeddedServer(CIO, port) {
-
             install(CORS) {
                 anyHost()
             }
-
 
             routing {
                 routingModule.setup(this)
