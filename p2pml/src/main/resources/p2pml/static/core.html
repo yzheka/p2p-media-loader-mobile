@@ -63,9 +63,7 @@
 
         async processSegmentRequest(segmentRequestJSON) {
           const segmentRequest = JSON.parse(segmentRequestJSON);
-          const { segmentUrl, currentPlayPosition, currentPlaySpeed } =
-            segmentRequest;
-          // console.log(">>> currentPosition:", currentPlayPosition);
+          const { segmentUrl } = segmentRequest;
 
           const onSuccess = (response) => {
             try {
@@ -80,7 +78,6 @@
           };
 
           const onError = (error) => {
-            //console.error("error", error);
             this.port.postMessage(`error|${segmentUrl}`);
           };
 
@@ -88,12 +85,17 @@
             onSuccess,
             onError,
           });
-          this.core.updatePlayback(currentPlayPosition, currentPlaySpeed);
         }
 
         setManifestUrl(manifestUrl) {
           this.core.setManifestResponseUrl(manifestUrl);
-          console.log("setManifestUrl", manifestUrl);
+        }
+
+        updatePlaybackInfo(playbackInfoJSON) {
+          const playbackInfo = JSON.parse(playbackInfoJSON);
+          const { currentPlayPosition, currentPlaySpeed } = playbackInfo;
+          console.log(">> currentPlayback:", currentPlayPosition);
+          this.core.updatePlayback(currentPlayPosition, currentPlaySpeed);
         }
       }
 

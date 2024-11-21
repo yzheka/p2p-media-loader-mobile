@@ -92,6 +92,7 @@ internal class HlsManifestParser(
         if (segmentsMap.contains(segmentId)) return null
 
         val prevSegment = segmentsMap[segmentId - 1]
+
         val segmentDurationInSeconds = segment.durationUs / 1_000_000.0
         val startTime = prevSegment?.endTime ?: initialStartTime
         val endTime = startTime + segmentDurationInSeconds
@@ -102,6 +103,7 @@ internal class HlsManifestParser(
         else
             absoluteUrl
         Log.d("HlsManifestParser", "addNewSegment: $segmentId $runtimeUrl")
+
         val newSegment = Segment(
             runtimeId = runtimeUrl,
             externalId = segmentId,
@@ -112,6 +114,7 @@ internal class HlsManifestParser(
         )
 
         segmentsMap[segmentId] = newSegment
+
         return newSegment
     }
 

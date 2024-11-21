@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         WebView.setWebContentsDebuggingEnabled(true)
-
+        //val customStream = "http://192.168.1.111:8000/hls/stream.m3u8"
         //val streamUrl = "https://video-weaver.waw02.hls.live-video.net/v1/playlist/CrcFLQHweNhMdaIHaP2Z_OxBWlITFHLnLpydpyhQE0B8URdt2hKrl9C_o94IAG3trj47_AxhBFwo4ILUdt__yLnlVaTu4m9bgZbP_-RUOhX6huPei6e9PuHGM5VB0QjzyH67vUblWu7J5peaLO0D7uO8RwI9lTqgbxNIrkzTCPg8v6yLWPonktjZ-mv_gG1hx_zcwPZtKyZ58_ZBnB3_6bTjPXwGRAtr3Wnh1geBAbRHwPQMuYXA1XYw5Yqj3lwd4cPZNduuDcFkVnsUfSLqSGVmQU95i-ciOU9Rz-nUUffo5woMgxdEjVc8aZbvdgCErrCzGgxedb6_4uTA85JlzNM-d9GZvqhatSOZwBVMyetYFTIcAl9PRaQPmYCzHIJa15hADhCy2T0mnDIHzbrfdKguZLc_sPX6yduST1hHMJkihjkOdekQIFUtA5AigcIQiAtupbVSMMvb1-CLOK2qyX4HV5aX2SY7c_fhFcy3VTcMSaRj5jQzOGIYRbUkwIaLoexHJ4SgeHnhvo1rhdUV2djX4iKYFgn20Mf3Yh3Bg5Dwj2o7bBds34L5bJPVEKuqGqdK-hcIAUbE7pXIWOt2IiJukdXsHnGk8guCWmBOPddGF78ycfXQrTfYmuEL_kazNChwHvYLYFYJTOvF50qwA1J0BKdPMoHKIMcA59YJZ9HjgX32BMV1EHBHA9zdou7MRFzmdYS1g38M4zdJ7UtVH33s9mpFdjRxk7549bG3iwMmHprg67B2ShxC5ctlxtwrCqcQU7uZ7ec1soXBYzh_x9VLDyKbWGCPcJvCFT_LSq6WHn8pOxMCsyQcBMkcx9gAm3g-nrgrNqCp9a_9jafq-IWJ6y07n2rSs0vYqO7MZBxIr9yDb5QP7fDs5ASDyTIBqRWSNxLHKmOCtvEeoIJZLXUzp4halzaeKG0aDFugHL8phVbBiOwCsCABKglldS13ZXN0LTIw4Qo.m3u8"
         val streamUrl = "https://fcc3ddae59ed.us-west-2.playback.live-video.net/api/video/v1/us-west-2.893648527354.channel.DmumNckWFTqz.m3u8"
 
