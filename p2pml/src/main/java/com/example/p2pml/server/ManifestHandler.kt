@@ -55,22 +55,15 @@ internal class ManifestHandler(
                 webViewManager.setManifestUrl(manifestUrl)
                 webViewManager.sendAllStreams(streamsJSON)
                 updateStreamJSON?.let { webViewManager.sendStream(it) }
-
             } else {
                 updateStreamJSON?.let { json ->
                     webViewManager.sendStream(json)
                 } ?: throw IOException("updateStreamJSON is null")
             }
         } catch (e: IOException) {
-            // Handle IOException specifically
-            Log.e("handleUpdate", "IOException occurred: ${e.message}")
-        } catch (e: Exception) {
-            // Handle other exceptions
             Log.e("handleUpdate", "Unexpected error occurred: ${e.message}")
         }
-
     }
-
 
     private suspend fun checkAndSetInitialProcessing(): Boolean = mutex.withLock {
         if (isMasterManifestProcessed) return false

@@ -59,6 +59,7 @@ internal class WebMessageProtocol(
 
         coroutineScope.launch {
             val deferred = getSegmentResponseCallback(incomingSegmentRequest!!)
+
             if (deferred != null) {
                 deferred.complete(arrayBuffer)
                 Log.d("CoreWebView", "Completed deferred for segment ID: $incomingSegmentRequest")

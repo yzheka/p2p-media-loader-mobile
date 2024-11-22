@@ -19,6 +19,7 @@ class P2PML(
     coroutineScope: LifecycleCoroutineScope,
     private val serverPort: Int = Constants.DEFAULT_SERVER_PORT
 ) {
+    private val p2pEngineStateManager = P2PStateManager()
     private val exoPlayerPlaybackCalculator = ExoPlayerPlaybackCalculator()
     private val manifestParser: HlsManifestParser = HlsManifestParser(
         exoPlayerPlaybackCalculator, serverPort
@@ -27,11 +28,16 @@ class P2PML(
     private val webViewManager: WebViewManager = WebViewManager(
         context,
         coroutineScope,
+        p2pEngineStateManager,
         exoPlayerPlaybackCalculator,
     ) {
         webViewLoadCompletion.complete(Unit)
     }
-    private val serverModule: ServerModule = ServerModule(webViewManager, manifestParser) {
+    private val serverModule: ServerModule = ServerModule(
+        webViewManager,
+        manifestParser,
+        p2pEngineStateManager
+    ) {
         onServerStarted()
     }
     private val webViewLoadCompletion = CompletableDeferred<Unit>()

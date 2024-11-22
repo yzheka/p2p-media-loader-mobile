@@ -10,6 +10,7 @@ import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.webkit.WebViewClientCompat
 import com.example.p2pml.ExoPlayerPlaybackCalculator
+import com.example.p2pml.P2PStateManager
 import com.example.p2pml.PlaybackInfo
 import com.example.p2pml.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
@@ -28,6 +29,7 @@ import kotlinx.serialization.json.Json
 internal class WebViewManager(
     context: Context,
     private val coroutineScope: CoroutineScope,
+    private val p2pEngineStateManager: P2PStateManager,
     private val exoPlayerPlaybackCalculator: ExoPlayerPlaybackCalculator,
     onPageLoadFinished: () -> Unit
 ) {
@@ -49,6 +51,13 @@ internal class WebViewManager(
         playbackInfoJob = coroutineScope.launch {
             while (isActive) {
                 try {
+                    if(!p2pEngineStateManager.isP2PEngineEnabled()) {
+                        Log.d("WebViewManager", "P2P Engine disabled, stopping playback info update.")
+                        playbackInfoJob?.cancel()
+                        playbackInfoJob = null
+                        break
+                    }
+
                     val currentPlaybackInfo =
                         exoPlayerPlaybackCalculator.getPlaybackPositionAndSpeed()
                     val playbackInfoJSON = Json.encodeToString(currentPlaybackInfo)
@@ -73,16 +82,22 @@ internal class WebViewManager(
         this.playbackInfoCallback = callback
     }
 
-    suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray> {
+    suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray>? {
+        if(!p2pEngineStateManager.isP2PEngineEnabled()) return null
+
         startPlaybackInfoUpdate()
         return webMessageProtocol.requestSegmentBytes(segmentUrl)
     }
 
     suspend fun sendInitialMessage() {
+        if(!p2pEngineStateManager.isP2PEngineEnabled()) return
+
         webMessageProtocol.sendInitialMessage()
     }
 
     private suspend fun sendPlaybackInfo(playbackInfoJSON: String) {
+        if(!p2pEngineStateManager.isP2PEngineEnabled()) return
+
         withContext(Dispatchers.Main){
             webView.evaluateJavascript(
                 "javascript:window.p2p.updatePlaybackInfo('$playbackInfoJSON');",
@@ -92,6 +107,8 @@ internal class WebViewManager(
     }
 
     suspend fun sendAllStreams(streamsJSON: String) {
+        if(!p2pEngineStateManager.isP2PEngineEnabled()) return
+
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.parseAllStreams('$streamsJSON');",
@@ -101,6 +118,8 @@ internal class WebViewManager(
     }
 
     suspend fun sendStream(streamJSON: String) {
+        if(!p2pEngineStateManager.isP2PEngineEnabled()) return
+
         Log.d("WebViewManager", "Sending stream JSON: $streamJSON")
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
@@ -111,6 +130,8 @@ internal class WebViewManager(
     }
 
     suspend fun setManifestUrl(manifestUrl: String) {
+        if(!p2pEngineStateManager.isP2PEngineEnabled()) return
+
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.setManifestUrl('$manifestUrl');",
@@ -120,6 +141,8 @@ internal class WebViewManager(
     }
 
     fun destroy() {
+        playbackInfoJob?.cancel()
+        playbackInfoJob = null
         coroutineScope.cancel()
         webView.apply {
                 parent?.let { (it as ViewGroup).removeView(this) }
