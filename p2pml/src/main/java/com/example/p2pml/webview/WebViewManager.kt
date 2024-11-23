@@ -120,7 +120,6 @@ internal class WebViewManager(
     suspend fun sendStream(streamJSON: String) {
         if(!p2pEngineStateManager.isP2PEngineEnabled()) return
 
-        Log.d("WebViewManager", "Sending stream JSON: $streamJSON")
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.parseStream('$streamJSON');",

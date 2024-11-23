@@ -91,15 +91,11 @@ internal class ExoPlayerPlaybackCalculator {
 
         parsedManifest!!.segments.forEachIndexed { index, segment ->
             val segmentIndex = newMediaSequence + index
+
             if (!currentSegments.contains(segmentIndex))
                 addSegment(segment, segmentIndex)
             else
                 updateExistingSegmentRelativeTime(segmentIndex, segment)
-            Log.d(
-                "==ExoPlayerPlayback", "Segment: $segmentIndex, " +
-                        "Start: ${currentSegments[segmentIndex]?.absoluteStartTime}," +
-                        " End: ${currentSegments[segmentIndex]?.absoluteEndTime}"
-            )
         }
 
         return@withLock currentAbsoluteTime!!
@@ -124,10 +120,6 @@ internal class ExoPlayerPlaybackCalculator {
         val segmentPlayTime = currentPlaybackInMs - currentSegment.startTime
         val segmentAbsolutePlayTime = currentSegment.absoluteStartTime + segmentPlayTime
 
-        Log.d(
-            "==Current segment", "Current segment: ${currentSegment.externalId}, " +
-                    "Start: ${currentSegment.absoluteStartTime}" + "current playtime: $segmentAbsolutePlayTime"
-        )
         return PlaybackInfo(segmentAbsolutePlayTime, playbackSpeed)
     }
 }

@@ -33,8 +33,6 @@ internal class HlsManifestParser(
 
     private val currentSegmentRuntimeIds = mutableSetOf<String>()
 
-    var lastRequestedStreamSegments: MutableMap<Long, Segment> = mutableMapOf()
-    var lastMediSequence: Long = 0
     suspend fun getModifiedManifest(originalManifest: String, manifestUrl: String): String {
         return mutex.withLock { parseHlsManifest(manifestUrl, originalManifest) }
     }
@@ -125,8 +123,6 @@ internal class HlsManifestParser(
         val initializationSegments = mutableSetOf<HlsMediaPlaylist.Segment>()
         val segmentsToAdd = mutableListOf<Segment>()
 
-        Log.d("SegmentHandler", "Start $newMediaSequence")
-
         currentSegmentRuntimeIds.clear()
         mediaPlaylist.segments.forEachIndexed { index, segment ->
             if (segment.initializationSegment != null) {
@@ -157,9 +153,6 @@ internal class HlsManifestParser(
             )
         }
 
-        segmentsToAdd.forEach {
-            Log.d("Segments to add:", "Before update:: ${it.externalId} -  ${it.runtimeId}")
-        }
         updateStreamData(manifestUrl, segmentsToAdd, segmentsToRemove, isStreamLive)
 
         val stream = findStreamByRuntimeId(manifestUrl)
@@ -167,22 +160,15 @@ internal class HlsManifestParser(
         if (stream == null)
             streams.add(Stream(runtimeId = manifestUrl, type = StreamTypes.MAIN, index = 0))
 
-        lastRequestedStreamSegments = streamSegments[manifestUrl] ?: mutableMapOf()
-        lastMediSequence = newMediaSequence
         return updatedManifestBuilder.toString()
     }
 
     suspend fun getUpdateStreamParamsJSON(variantUrl: String): String? {
         mutex.withLock {
-            Log.d("HlsManifestParser", ">>>>> getUpdateStreamParamsJSON: $variantUrl")
             val updateStream = updateStreamParams[variantUrl]
                 ?: return null
-            updateStream.addSegments.forEach {
-                Log.d("HlsManifestParser", "add segment: ${it.externalId} -  ${it.runtimeId}")
-            }
-            val json = Json.encodeToString(updateStream)
-            Log.d("HlsManifestParser", ">>>>> ${updateStream.addSegments.size} = getUpdateStreamParamsJSON: $json")
-            return json
+
+            return Json.encodeToString(updateStream)
         }
     }
 
@@ -251,11 +237,7 @@ internal class HlsManifestParser(
             removeSegmentsIds = segmentsToRemove,
             isLive = isLive
         )
-        Log.d("HlsManifestParser", ">>>>> updateStreamData: $variantUrl")
-        Log.d("Segments to add in val:", "Count: ${updateStream.addSegments.size}")
-        newSegments.forEach {
-            Log.d("Segments to add:", "After update:: ${it.externalId} -  ${it.runtimeId}")
-        }
+
         updateStreamParams[variantUrl] = updateStream
     }
 
@@ -272,6 +254,7 @@ internal class HlsManifestParser(
     ) {
         val streamUrl = variant.url.toString()
         streams.add(Stream(runtimeId = streamUrl, type = StreamTypes.MAIN, index = index))
+
         replaceUrlInManifest(
             manifest,
             manifestUrl,
@@ -290,6 +273,7 @@ internal class HlsManifestParser(
     ) {
         val streamUrl = rendition.url.toString()
         streams.add(Stream(runtimeId = streamUrl, type = StreamTypes.SECONDARY, index = index))
+
         replaceUrlInManifest(
             manifest,
             manifestUrl,
