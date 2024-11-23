@@ -8,13 +8,10 @@ import com.example.p2pml.parser.HlsManifestParser
 import com.example.p2pml.utils.Utils
 import com.example.p2pml.webview.WebViewManager
 import io.ktor.http.ContentType
-import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
-import io.ktor.http.headersOf
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondText
@@ -47,7 +44,7 @@ internal class SegmentHandler(
             val isCurrentSegment = parser.isCurrentSegment(decodedSegmentUrl)
 
             if(!p2pEngineStateManager.isP2PEngineEnabled() || !isCurrentSegment) {
-                fetchSegment(call, decodedSegmentUrl, byteRange)
+                fetchAndRespondWithSegment(call, decodedSegmentUrl, byteRange)
                 return
             }
 
@@ -82,7 +79,7 @@ internal class SegmentHandler(
         call.respondBytes(segmentBytes, ContentType.Application.OctetStream)
     }
 
-    private suspend fun fetchSegment(
+    private suspend fun fetchAndRespondWithSegment(
         call: ApplicationCall,
         url: String,
         byteRange: String? = null
@@ -91,7 +88,7 @@ internal class SegmentHandler(
         val filteredUrl = url.substringBeforeLast("|")
         val requestBuilder = Request.Builder().url(filteredUrl)
 
-        copyHeaders(call, requestBuilder)
+        Utils.copyHeaders(call, requestBuilder)
 
         val request = requestBuilder.build()
         val response = okHttpClient.newCall(request).execute()
@@ -101,29 +98,5 @@ internal class SegmentHandler(
             respondByteArrayContent(call, segmentBytes)
         } else
             respondBytes(call, segmentBytes)
-    }
-
-    private fun copyHeaders(call: ApplicationCall, requestBuilder: Request.Builder) {
-        val excludedHeaders = setOf(
-            "Host",
-            "Connection",
-            "Transfer-Encoding",
-            "Expect",
-            "Upgrade",
-            "Proxy-Connection",
-            "Keep-Alive",
-            "Accept-Encoding"
-        )
-
-        for (headerName in call.request.headers.names()) {
-            if (headerName !in excludedHeaders) {
-                val headerValues = call.request.headers.getAll(headerName)
-                if (headerValues != null) {
-                    for (headerValue in headerValues) {
-                        requestBuilder.addHeader(headerName, headerValue)
-                    }
-                }
-            }
-        }
     }
 }

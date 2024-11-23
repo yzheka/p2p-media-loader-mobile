@@ -2,6 +2,7 @@ package com.example.p2pml.utils
 
 import android.os.Handler
 import android.os.Looper
+import com.example.p2pml.Constants
 import com.example.p2pml.Constants.HTTP_PREFIX
 import com.example.p2pml.Constants.LOCALHOST
 import io.ktor.http.decodeURLQueryComponent
@@ -12,6 +13,17 @@ import io.ktor.util.encodeBase64
 import okhttp3.Request
 
 internal object Utils {
+
+    fun getAbsoluteUrl(baseManifestUrl: String, mediaUri: String): String {
+        if (mediaUri.startsWith(HTTP_PREFIX) || mediaUri.startsWith(Constants.HTTPS_PREFIX))
+            return mediaUri
+
+        var baseUrl = baseManifestUrl.substringBeforeLast("/")
+        if (!baseUrl.endsWith("/"))
+            baseUrl += "/"
+
+        return "$baseUrl$mediaUri"
+    }
 
     fun encodeUrlToBase64(url: String): String {
         return url.encodeBase64().encodeURLParameter()
@@ -29,10 +41,10 @@ internal object Utils {
         Handler(Looper.getMainLooper()).post(action)
     }
 
+
     fun copyHeaders(call: ApplicationCall, requestBuilder: Request.Builder) {
         val excludedHeaders = setOf(
             "Host",
-            "Content-Length",
             "Connection",
             "Transfer-Encoding",
             "Expect",

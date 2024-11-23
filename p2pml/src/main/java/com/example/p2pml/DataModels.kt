@@ -20,7 +20,7 @@ internal data class Segment(
 )
 
 @Serializable
-internal data class ByteRange(
+data class ByteRange(
     val start: Long,
     val end: Long,
 )

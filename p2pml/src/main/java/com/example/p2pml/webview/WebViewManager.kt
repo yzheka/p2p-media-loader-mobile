@@ -11,7 +11,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.webkit.WebViewClientCompat
 import com.example.p2pml.ExoPlayerPlaybackCalculator
 import com.example.p2pml.P2PStateManager
-import com.example.p2pml.PlaybackInfo
 import com.example.p2pml.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope

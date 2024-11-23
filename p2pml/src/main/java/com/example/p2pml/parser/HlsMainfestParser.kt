@@ -6,9 +6,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
 import androidx.media3.exoplayer.hls.playlist.HlsMultivariantPlaylist
 import androidx.media3.exoplayer.hls.playlist.HlsPlaylistParser
-import com.example.p2pml.ByteRange
-import com.example.p2pml.Constants.HTTPS_PREFIX
-import com.example.p2pml.Constants.HTTP_PREFIX
 import com.example.p2pml.Constants.QueryParams
 import com.example.p2pml.Constants.StreamTypes
 import com.example.p2pml.ExoPlayerPlaybackCalculator
@@ -60,7 +57,7 @@ internal class HlsManifestParser(
 
         return when (hlsPlaylist) {
             is HlsMediaPlaylist -> parseMediaPlaylist(manifestUrl, hlsPlaylist, manifest)
-            is HlsMultivariantPlaylist -> parseMultivariantPlaylist(
+            is HlsMultivariantPlaylist -> parseMultiVariantPlaylist(
                 manifestUrl,
                 hlsPlaylist,
                 manifest
@@ -86,7 +83,6 @@ internal class HlsManifestParser(
         segmentId: Long,
         initialStartTime: Double,
         segment: HlsMediaPlaylist.Segment,
-        byteRange: ByteRange? = null
     ): Segment? {
         val segmentsMap = streamSegments.getOrPut(variantUrl) { mutableMapOf() }
         if (segmentsMap.contains(segmentId)) return null
@@ -97,18 +93,14 @@ internal class HlsManifestParser(
         val startTime = prevSegment?.endTime ?: initialStartTime
         val endTime = startTime + segmentDurationInSeconds
 
-        val absoluteUrl = getAbsoluteUrl(variantUrl, segment.url)
-        val runtimeUrl = if (byteRange != null)
-            "$absoluteUrl|${byteRange.start}-${byteRange.end}"
-        else
-            absoluteUrl
-        Log.d("HlsManifestParser", "addNewSegment: $segmentId $runtimeUrl")
+        val absoluteUrl = segment.getAbsoluteUrl(variantUrl)
+        val runtimeUrl = segment.getRuntimeUrl(variantUrl)
 
         val newSegment = Segment(
             runtimeId = runtimeUrl,
             externalId = segmentId,
             url = absoluteUrl,
-            byteRange = byteRange,
+            byteRange = segment.byteRange,
             startTime = startTime,
             endTime = endTime
         )
@@ -149,27 +141,19 @@ internal class HlsManifestParser(
             }
 
             val segmentIndex = index + newMediaSequence
-            val byteRange = segment.byteRangeLength.takeIf { it != -1L }
-                ?.let { ByteRange(segment.byteRangeOffset, segment.byteRangeOffset + it - 1) }
 
-            val absoluteSegmentUrl = getAbsoluteUrl(manifestUrl, segment.url)
-            val runtimeUrl = if (byteRange != null)
-                "$absoluteSegmentUrl|${byteRange.start}-${byteRange.end}"
-            else
-                absoluteSegmentUrl
-
+            val runtimeUrl = segment.getRuntimeUrl(manifestUrl)
             currentSegmentRuntimeIds.add(runtimeUrl)
 
-            processSegment(segment, manifestUrl, updatedManifestBuilder, byteRange)
+            processSegment(segment, manifestUrl, updatedManifestBuilder)
 
             val newSegment =
-                addNewSegment(manifestUrl, segmentIndex, initialStartTime, segment, byteRange)
+                addNewSegment(manifestUrl, segmentIndex, initialStartTime, segment)
             if (newSegment != null){
                 segmentsToAdd.add(newSegment)
                 Log.d("SegmentHandler", "Segment: $segmentIndex - ${newSegment.runtimeId}")
             }
         }
-        Log.d("SegmentHandler", "End")
 
         initializationSegments.forEach { initializationSegment ->
             replaceUrlInManifest(
@@ -215,7 +199,7 @@ internal class HlsManifestParser(
         }
     }
 
-    private fun parseMultivariantPlaylist(
+    private fun parseMultiVariantPlaylist(
         manifestUrl: String,
         hlsPlaylist: HlsMultivariantPlaylist,
         originalManifest: String
@@ -326,15 +310,14 @@ internal class HlsManifestParser(
         segment: HlsMediaPlaylist.Segment,
         variantUrl: String,
         manifestBuilder: StringBuilder,
-        byteRange: ByteRange? = null
     ) {
-        val segmentUri = segment.url
         val segmentUriInManifest = findUrlInManifest(
             manifestBuilder.toString(),
-            segmentUri,
+            segment.url,
             variantUrl
         )
-        val absoluteSegmentUrl = getAbsoluteUrl(variantUrl, segmentUri)
+        val absoluteSegmentUrl = segment.getAbsoluteUrl(variantUrl)
+        val byteRange = segment.byteRange
         val encodedAbsoluteSegmentUrl = if (byteRange != null)
             Utils.encodeUrlToBase64("$absoluteSegmentUrl|${byteRange.start}-${byteRange.end}")
         else
@@ -344,8 +327,9 @@ internal class HlsManifestParser(
 
         val startIndex = manifestBuilder.indexOf(segmentUriInManifest)
             .takeIf { it != -1 }
-            ?: throw IllegalStateException("URL not found in manifest: $segmentUri")
+            ?: throw IllegalStateException("URL not found in manifest: $segment.url")
         val endIndex = startIndex + segmentUriInManifest.length
+
         manifestBuilder.replace(
             startIndex,
             endIndex,
@@ -361,7 +345,7 @@ internal class HlsManifestParser(
         queryParam: String? = null
     ) {
         val urlToFind = findUrlInManifest(manifest, originalUrl, baseManifestUrl)
-        val absoluteUrl = getAbsoluteUrl(baseManifestUrl, originalUrl).encodeURLQueryComponent()
+        val absoluteUrl = Utils.getAbsoluteUrl(baseManifestUrl, originalUrl).encodeURLQueryComponent()
         val newUrl = if (queryParam != null) {
             Utils.getUrl(serverPort, "$queryParam$absoluteUrl")
         } else {
@@ -391,17 +375,6 @@ internal class HlsManifestParser(
                         "$urlToFind, manifestUrl: $manifestUrl"
             )
         }
-    }
-
-    private fun getAbsoluteUrl(baseManifestUrl: String, mediaUri: String): String {
-        if (mediaUri.startsWith(HTTP_PREFIX) || mediaUri.startsWith(HTTPS_PREFIX))
-            return mediaUri
-
-        var baseUrl = baseManifestUrl.substringBeforeLast("/")
-        if (!baseUrl.endsWith("/"))
-            baseUrl += "/"
-
-        return "$baseUrl$mediaUri"
     }
 
     private suspend fun fetchManifest(
