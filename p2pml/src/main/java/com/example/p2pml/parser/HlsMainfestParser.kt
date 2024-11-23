@@ -139,7 +139,9 @@ internal class HlsManifestParser(
         val segmentsToRemove = removeObsoleteSegments(manifestUrl, newMediaSequence)
         val initializationSegments = mutableSetOf<HlsMediaPlaylist.Segment>()
         val segmentsToAdd = mutableListOf<Segment>()
+
         Log.d("SegmentHandler", "Start $newMediaSequence")
+
         currentSegmentRuntimeIds.clear()
         mediaPlaylist.segments.forEachIndexed { index, segment ->
             if (segment.initializationSegment != null) {
@@ -151,7 +153,12 @@ internal class HlsManifestParser(
                 ?.let { ByteRange(segment.byteRangeOffset, segment.byteRangeOffset + it - 1) }
 
             val absoluteSegmentUrl = getAbsoluteUrl(manifestUrl, segment.url)
-            currentSegmentRuntimeIds.add(absoluteSegmentUrl)
+            val runtimeUrl = if (byteRange != null)
+                "$absoluteSegmentUrl|${byteRange.start}-${byteRange.end}"
+            else
+                absoluteSegmentUrl
+
+            currentSegmentRuntimeIds.add(runtimeUrl)
 
             processSegment(segment, manifestUrl, updatedManifestBuilder, byteRange)
 

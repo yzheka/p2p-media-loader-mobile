@@ -34,7 +34,6 @@ import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
 import com.example.p2pml.P2PML
-//import com.example.p2pml.P2PMLServer
 import kotlinx.coroutines.launch
 
 
@@ -43,12 +42,21 @@ class LoggingDataSource(private val wrappedDataSource: DataSource) : DataSource 
     @OptIn(UnstableApi::class)
     override fun open(dataSpec: DataSpec): Long {
         Log.d("HLSSegmentLogger", "Requesting: ${dataSpec.uri}")
-
-        return wrappedDataSource.open(dataSpec)
+        return try {
+            wrappedDataSource.open(dataSpec)
+        } catch (e: Exception) {
+            Log.e("HLSSegmentLogger", "Error opening data source: ${e.message}", e)
+            throw e
+        }
     }
 
     override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
-        return wrappedDataSource.read(buffer, offset, length)
+        return try {
+            wrappedDataSource.read(buffer, offset, length)
+        } catch (e: Exception) {
+            Log.e("HLSSegmentLogger", "Error reading data source: ${e.message}", e)
+            throw e
+        }
     }
 
     override fun addTransferListener(transferListener: TransferListener) {
@@ -57,7 +65,13 @@ class LoggingDataSource(private val wrappedDataSource: DataSource) : DataSource 
 
     override fun getUri(): Uri? = wrappedDataSource.uri
 
-    override fun close() = wrappedDataSource.close()
+    override fun close() {
+        try {
+            wrappedDataSource.close()
+        } catch (e: Exception) {
+            Log.e("HLSSegmentLogger", "Error closing data source: ${e.message}", e)
+        }
+    }
 }
 
 @UnstableApi

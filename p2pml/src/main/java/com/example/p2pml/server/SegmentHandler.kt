@@ -14,6 +14,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.headersOf
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondText
@@ -43,14 +44,10 @@ internal class SegmentHandler(
             "Received segment request for $decodedSegmentUrl with byte range $byteRange")
 
         try {
-            //val isCurrentSegment = parser.isCurrentSegment(decodedSegmentUrl)
+            val isCurrentSegment = parser.isCurrentSegment(decodedSegmentUrl)
 
-            //Log.d("isCurrentSegment", "$isCurrentSegment")
-
-
-            if(!p2pEngineStateManager.isP2PEngineEnabled()){
-                Log.d("SegmentHandler++", "!isCurrentSegment!")
-                fetchSegment(call, decodedSegmentUrl)
+            if(!p2pEngineStateManager.isP2PEngineEnabled() || !isCurrentSegment) {
+                fetchSegment(call, decodedSegmentUrl, byteRange)
                 return
             }
 
@@ -58,8 +55,12 @@ internal class SegmentHandler(
                 ?: throw IllegalStateException("Deferred segment bytes are null. P2P engine might be disabled.")
             val segmentBytes = deferredSegmentBytes.await()
 
-            respondWithBytes(call, segmentBytes, byteRange)
+            if(byteRange != null)
+                respondByteArrayContent(call, segmentBytes)
+            else
+                respondBytes(call, segmentBytes)
         } catch (e: Exception) {
+            Log.d("SegmentHandler error", "SegmentDownloadError $e")
             call.respondText(
                 "Error fetching segment",
                 status = HttpStatusCode.InternalServerError
@@ -67,30 +68,24 @@ internal class SegmentHandler(
         }
     }
 
-    private suspend fun respondWithBytes(
-        call: ApplicationCall,
-        segmentBytes: ByteArray,
-        byteRange: String?
-    ){
-        if(byteRange != null) {
-            Log.d("SegmentHandler++", "range != null")
-            call.respond(object : OutgoingContent.ByteArrayContent() {
-                override val contentType: ContentType = ContentType.Application.OctetStream
-                override val contentLength: Long = segmentBytes.size.toLong()
-                override val status: HttpStatusCode = HttpStatusCode.PartialContent
+    private suspend fun respondByteArrayContent(call: ApplicationCall, segmentBytes: ByteArray) {
+        call.respond(object : OutgoingContent.ByteArrayContent() {
+            override val contentType: ContentType = ContentType.Application.OctetStream
+            override val contentLength: Long = segmentBytes.size.toLong()
+            override val status: HttpStatusCode = HttpStatusCode.PartialContent
 
-                override fun bytes(): ByteArray = segmentBytes
-            })
-            return
-        }
-        Log.d("SegmentHandler++", "range == null")
+            override fun bytes(): ByteArray = segmentBytes
+        })
+    }
+
+    private suspend fun respondBytes(call: ApplicationCall, segmentBytes: ByteArray){
         call.respondBytes(segmentBytes, ContentType.Application.OctetStream)
     }
 
-
     private suspend fun fetchSegment(
         call: ApplicationCall,
-        url: String
+        url: String,
+        byteRange: String? = null
     ) =  withContext(Dispatchers.IO)
     {
         val filteredUrl = url.substringBeforeLast("|")
@@ -99,23 +94,13 @@ internal class SegmentHandler(
         copyHeaders(call, requestBuilder)
 
         val request = requestBuilder.build()
-
         val response = okHttpClient.newCall(request).execute()
         val segmentBytes = response.body?.bytes() ?:  throw Exception("Empty response body")
-        val byteRange = response.headers[HttpHeaders.Range]
 
         if(byteRange !== null) {
-            call.respond(object : OutgoingContent.ByteArrayContent() {
-                override val contentType: ContentType = ContentType.Application.OctetStream
-                override val contentLength: Long = segmentBytes.size.toLong()
-                override val status: HttpStatusCode = HttpStatusCode.PartialContent
-
-                override fun bytes(): ByteArray = segmentBytes
-            })
+            respondByteArrayContent(call, segmentBytes)
         } else
-            call.respondBytes(segmentBytes, ContentType.Application.OctetStream)
-
-
+            respondBytes(call, segmentBytes)
     }
 
     private fun copyHeaders(call: ApplicationCall, requestBuilder: Request.Builder) {
