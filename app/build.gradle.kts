@@ -67,11 +67,11 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation ("androidx.media3:media3-exoplayer:1.4.1")
-    implementation ("androidx.media3:media3-exoplayer-hls:1.4.1")
-    implementation ("androidx.media3:media3-ui:1.4.1")
+    implementation (libs.androidx.media3.exoplayer)
+    implementation (libs.androidx.media3.exoplayer.hls)
+    implementation (libs.androidx.media3.ui)
 
     implementation(project(":p2pml"))
 
-    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+    implementation(libs.okhttp)
 }

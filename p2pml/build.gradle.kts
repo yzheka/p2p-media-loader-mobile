@@ -34,14 +34,14 @@ android {
 }
 
 dependencies {
-    implementation("io.ktor:ktor-server-core:2.3.12")
-    implementation("io.ktor:ktor-server-cio:2.3.12")
-    implementation("io.ktor:ktor-server-cors:2.3.12")
-    implementation("com.squareup.okhttp3:okhttp:4.9.3")
-    implementation ("androidx.media3:media3-exoplayer-hls:1.4.1")
-    implementation ("androidx.media3:media3-exoplayer:1.4.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-    implementation("androidx.webkit:webkit:1.9.0")
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.cio)
+    implementation(libs.ktor.server.cors)
+    implementation(libs.okhttp)
+    implementation (libs.androidx.media3.exoplayer.hls)
+    implementation (libs.androidx.media3.exoplayer)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.webkit)
 
 
     implementation(libs.androidx.core.ktx)
