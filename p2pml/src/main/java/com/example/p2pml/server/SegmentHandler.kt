@@ -49,13 +49,10 @@ internal class SegmentHandler(
             }
 
             val deferredSegmentBytes = webViewManager.requestSegmentBytes(decodedSegmentUrl)
-                ?: throw IllegalStateException("Deferred segment bytes are null. P2P engine might be disabled.")
+                ?: throw IllegalStateException("Deferred segment bytes are null")
             val segmentBytes = deferredSegmentBytes.await()
 
-            if(byteRange != null)
-                respondByteArrayContent(call, segmentBytes)
-            else
-                respondBytes(call, segmentBytes)
+            respondSegment(call, segmentBytes, byteRange != null)
         } catch (e: Exception) {
             Log.d("SegmentHandler error", "SegmentDownloadError $e")
             call.respondText(
@@ -65,18 +62,17 @@ internal class SegmentHandler(
         }
     }
 
-    private suspend fun respondByteArrayContent(call: ApplicationCall, segmentBytes: ByteArray) {
-        call.respond(object : OutgoingContent.ByteArrayContent() {
-            override val contentType: ContentType = ContentType.Application.OctetStream
-            override val contentLength: Long = segmentBytes.size.toLong()
-            override val status: HttpStatusCode = HttpStatusCode.PartialContent
-
-            override fun bytes(): ByteArray = segmentBytes
-        })
-    }
-
-    private suspend fun respondBytes(call: ApplicationCall, segmentBytes: ByteArray){
-        call.respondBytes(segmentBytes, ContentType.Application.OctetStream)
+    private suspend fun respondSegment(call: ApplicationCall, segmentBytes: ByteArray, isPartial: Boolean) {
+        if (isPartial) {
+            call.respond(object : OutgoingContent.ByteArrayContent() {
+                override val contentType: ContentType = ContentType.Application.OctetStream
+                override val contentLength: Long = segmentBytes.size.toLong()
+                override val status: HttpStatusCode = HttpStatusCode.PartialContent
+                override fun bytes(): ByteArray = segmentBytes
+            })
+        } else {
+            call.respondBytes(segmentBytes, ContentType.Application.OctetStream)
+        }
     }
 
     private suspend fun fetchAndRespondWithSegment(
@@ -94,9 +90,6 @@ internal class SegmentHandler(
         val response = okHttpClient.newCall(request).execute()
         val segmentBytes = response.body?.bytes() ?:  throw Exception("Empty response body")
 
-        if(byteRange !== null) {
-            respondByteArrayContent(call, segmentBytes)
-        } else
-            respondBytes(call, segmentBytes)
+        respondSegment(call, segmentBytes, byteRange != null)
     }
 }
