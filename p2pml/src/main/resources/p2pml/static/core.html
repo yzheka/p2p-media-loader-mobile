@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="">
-  <head>
-    <title>WebView Example</title>
-    <script type="importmap">
+
+<head>
+  <title>WebView Example</title>
+  <script type="importmap">
       {
         "imports": {
           "p2p-media-loader-core": "./js/p2p-media-loader-core.es.min.js"
@@ -10,105 +11,125 @@
       }
     </script>
 
-    <script type="module">
-      import { Core } from "p2p-media-loader-core";
+  <script type="module">
+    import { Core } from "p2p-media-loader-core"
 
-      class P2P {
-        constructor() {
-          this.core = new Core({
-            highDemandTimeWindow: 10,
-          });
-          this.port = null;
-          this.listenPort();
+    class P2P {
+      constructor() {
+        this.createP2PEngine()
+        this.port = null
+        this.listenPort()
+      }
+
+      destroyP2PEngine() {
+        this.core.destroy()
+        this.core = null
+      }
+
+      createP2PEngine() {
+        if (this.core) {
+          this.destroyP2PEngine()
         }
+        this.core = new Core()
+      }
 
-        listenPort() {
-          window.addEventListener("message", (event) => {
-            const port = event.ports[0];
-            if (!port || this.port) {
-              return;
-            }
-            this.port = port;
-          });
-        }
-
-        parseAllStreams(jsonData) {
-          const streams = JSON.parse(jsonData);
-          for (const stream of streams) {
-            this.core.addStreamIfNoneExists(stream);
-          }
-          console.log(">>> addStreamsIfNoneExist", streams);
-        }
-
-        parseStream(jsonData) {
-          const playlist = JSON.parse(jsonData);
-          const { streamRuntimeId, addSegments, removeSegmentsIds, isLive } =
-            playlist;
-          this.core.updateStream(
-            streamRuntimeId,
-            addSegments,
-            removeSegmentsIds
-          );
-          this.core.setIsLive(isLive);
-          console.log("+++ updateStream:", streamRuntimeId);
-          removeSegmentsIds.forEach((segmentId) => {
-            console.log(`--- segment removed: ${segmentId}`);
-          });
-          addSegments.forEach((segment) => {
-            console.log(
-              `+++ segment added: ${segment.externalId} | ${segment.runtimeId} | startTime: ${segment.startTime} - endTime: ${segment.endTime}`
-            );
-          });
-        }
-
-        async processSegmentRequest(segmentRequestJSON) {
-          const segmentRequest = JSON.parse(segmentRequestJSON);
-          const { segmentUrl } = segmentRequest;
-
-          const onSuccess = (response) => {
-            try {
-              const copyData = new ArrayBuffer(response.data.byteLength);
-              new Uint8Array(copyData).set(new Uint8Array(response.data));
-
-              this.port.postMessage(segmentUrl);
-              this.port.postMessage(copyData, [copyData]);
-            } catch (e) {
-              console.error("Error in onSuccess:", e);
-            }
-          };
-
-          const onError = (error) => {
-            this.port.postMessage(`error|${segmentUrl}`);
-          };
-
-          await this.core.loadSegment(segmentUrl, {
-            onSuccess,
-            onError,
-          });
-        }
-
-        setManifestUrl(manifestUrl) {
-          this.core.setManifestResponseUrl(manifestUrl);
-        }
-
-        updatePlaybackInfo(playbackInfoJSON) {
-          const playbackInfo = JSON.parse(playbackInfoJSON);
-          const { currentPlayPosition, currentPlaySpeed } = playbackInfo;
-          console.log(">> currentPlayback:", currentPlayPosition);
-          this.core.updatePlayback(currentPlayPosition, currentPlaySpeed);
+      manageP2PState(state) {
+        if (state) {
+          this.core.createP2PEngine()
+        } else {
+          this.core.destroyP2PEngine()
         }
       }
 
-      document.addEventListener("DOMContentLoaded", () => {
-        const p2p = new P2P();
-        window.p2p = p2p;
+      listenPort() {
+        window.addEventListener("message", (event) => {
+          const port = event.ports[0]
+          if (!port || this.port) {
+            return
+          }
+          this.port = port
+        })
+      }
 
-        Android.onWebViewLoaded();
-      });
+      parseAllStreams(jsonData) {
+        const streams = JSON.parse(jsonData)
+        for (const stream of streams) {
+          this.core.addStreamIfNoneExists(stream)
+        }
+        console.log(">>> addStreamsIfNoneExist", streams)
+      }
 
-      const p2p = new P2P();
-      window.p2p = p2p;
-    </script>
-  </head>
-  <body></body>
+      parseStream(jsonData) {
+        const playlist = JSON.parse(jsonData)
+        const { streamRuntimeId, addSegments, removeSegmentsIds, isLive } =
+          playlist
+        this.core.updateStream(
+          streamRuntimeId,
+          addSegments,
+          removeSegmentsIds
+        )
+        this.core.setIsLive(isLive)
+        console.log("+++ updateStream:", streamRuntimeId)
+        removeSegmentsIds.forEach((segmentId) => {
+          console.log(`--- segment removed: ${segmentId}`)
+        })
+        addSegments.forEach((segment) => {
+          console.log(
+            `+++ segment added: ${segment.externalId} | ${segment.runtimeId} | startTime: ${segment.startTime} - endTime: ${segment.endTime}`
+          )
+        })
+      }
+
+      async processSegmentRequest(segmentRequestJSON) {
+        const segmentRequest = JSON.parse(segmentRequestJSON)
+        const { segmentUrl } = segmentRequest
+
+        const onSuccess = (response) => {
+          try {
+            const copyData = new ArrayBuffer(response.data.byteLength)
+            new Uint8Array(copyData).set(new Uint8Array(response.data))
+
+            this.port.postMessage(segmentUrl)
+            this.port.postMessage(copyData, [copyData])
+          } catch (e) {
+            console.error("Error in onSuccess:", e)
+          }
+        }
+
+        const onError = (error) => {
+          this.port.postMessage(`error|${segmentUrl}`)
+        }
+
+        await this.core.loadSegment(segmentUrl, {
+          onSuccess,
+          onError,
+        })
+      }
+
+      setManifestUrl(manifestUrl) {
+        this.core.setManifestResponseUrl(manifestUrl)
+      }
+
+      updatePlaybackInfo(playbackInfoJSON) {
+        const playbackInfo = JSON.parse(playbackInfoJSON)
+        const { currentPlayPosition, currentPlaySpeed } = playbackInfo
+        console.log(">> currentPlayback:", currentPlayPosition)
+        this.core.updatePlayback(currentPlayPosition, currentPlaySpeed)
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const p2p = new P2P()
+      window.p2p = p2p
+
+      Android.onWebViewLoaded()
+    })
+
+    const p2p = new P2P()
+    window.p2p = p2p;
+  </script>
+</head>
+
+<body></body>
+
 </html>

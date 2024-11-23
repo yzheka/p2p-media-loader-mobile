@@ -149,14 +149,7 @@ class MainActivity : ComponentActivity() {
                     playWhenReady = true
                 }
 
-
-
             p2pServer.setExoPlayer(player)
-
-            fun getCurrentPositionAndSpeed(): Pair<Float, Float> {
-                return Pair(player.currentPosition / 1000f, player.playbackParameters.speed)
-            }
-            p2pServer.setUpPlaybackInfoCallback(::getCurrentPositionAndSpeed)
 
             setContent {
                 ExoPlayerScreen(player = player, videoTitle = "Test Stream")

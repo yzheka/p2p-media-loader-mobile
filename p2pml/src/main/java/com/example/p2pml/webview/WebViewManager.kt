@@ -40,9 +40,14 @@ internal class WebViewManager(
         addJavascriptInterface(JavaScriptInterface(onPageLoadFinished), "Android")
     }
     private val webMessageProtocol = WebMessageProtocol(webView, coroutineScope)
-    private var playbackInfoCallback: () -> Pair<Float, Float> = { Pair(0f, 1f) }
 
     private var playbackInfoJob: Job? = null
+
+    init {
+        p2pEngineStateManager.setOnP2PEngineStatusChange { isP2PEngineEnabled ->
+            changeP2PEngineStatus(isP2PEngineEnabled)
+        }
+    }
 
     private fun startPlaybackInfoUpdate() {
         if(playbackInfoJob !== null) return
@@ -75,10 +80,6 @@ internal class WebViewManager(
         Utils.runOnUiThread {
             webView.loadUrl(url)
         }
-    }
-
-    fun setUpPlaybackInfoCallback(callback: () -> Pair<Float, Float>) {
-        this.playbackInfoCallback = callback
     }
 
     suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray>? {
@@ -134,6 +135,15 @@ internal class WebViewManager(
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.setManifestUrl('$manifestUrl');",
+                null
+            )
+        }
+    }
+
+    private suspend fun changeP2PEngineStatus(isP2PEngineStatusEnabled: Boolean) {
+        withContext(Dispatchers.Main) {
+            webView.evaluateJavascript(
+                "javascript:window.p2p.manageP2PState($isP2PEngineStatusEnabled);",
                 null
             )
         }

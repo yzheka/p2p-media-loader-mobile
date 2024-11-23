@@ -69,8 +69,4 @@ class P2PML(
         serverModule.stopServer()
         webViewManager.destroy()
     }
-
-    fun setUpPlaybackInfoCallback(callback: () -> Pair<Float, Float>) {
-        webViewManager.setUpPlaybackInfoCallback(callback)
-    }
 }
