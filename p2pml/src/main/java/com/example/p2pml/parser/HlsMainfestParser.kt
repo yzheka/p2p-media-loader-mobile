@@ -14,22 +14,16 @@ import com.example.p2pml.Stream
 import com.example.p2pml.UpdateStreamParams
 import com.example.p2pml.utils.Utils
 import io.ktor.http.encodeURLQueryComponent
-import io.ktor.server.application.ApplicationCall
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import okhttp3.OkHttpClient
-import okhttp3.Request
 
 @UnstableApi
 internal class HlsManifestParser(
     private val exoPlayerPlaybackCalculator: ExoPlayerPlaybackCalculator,
     private val serverPort: Int
 ) {
-    private val okHttpClient: OkHttpClient = OkHttpClient()
     private val parser = HlsPlaylistParser()
     private val mutex = Mutex()
 
@@ -41,8 +35,7 @@ internal class HlsManifestParser(
 
     var lastRequestedStreamSegments: MutableMap<Long, Segment> = mutableMapOf()
     var lastMediSequence: Long = 0
-    suspend fun getModifiedManifest(call: ApplicationCall, manifestUrl: String): String {
-        val originalManifest = fetchManifest(call, manifestUrl)
+    suspend fun getModifiedManifest(originalManifest: String, manifestUrl: String): String {
         return mutex.withLock { parseHlsManifest(manifestUrl, originalManifest) }
     }
 
@@ -374,23 +367,6 @@ internal class HlsManifestParser(
                 "URL not found in manifest. urlToFind:" +
                         "$urlToFind, manifestUrl: $manifestUrl"
             )
-        }
-    }
-
-    private suspend fun fetchManifest(
-        call: ApplicationCall,
-        manifestUrl: String
-    ): String = withContext(Dispatchers.IO) {
-        val request = Request.Builder()
-            .url(manifestUrl)
-            .apply { Utils.copyHeaders(call, this) }
-            .build()
-
-        okHttpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw IllegalStateException("Failed to fetch manifest: $manifestUrl")
-            }
-            response.body?.string() ?: throw IllegalStateException("Empty response body")
         }
     }
 }

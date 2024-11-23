@@ -22,11 +22,11 @@ import okhttp3.Request
 
 @OptIn(UnstableApi::class)
 internal class SegmentHandler(
+    private val httpClient: OkHttpClient,
     private val webViewManager: WebViewManager,
     private val parser: HlsManifestParser,
     private val p2pEngineStateManager: P2PStateManager
 ) {
-    private val okHttpClient: OkHttpClient = OkHttpClient()
 
     suspend fun handleSegmentRequest(call: ApplicationCall) {
         val segmentUrlParam = call.request.queryParameters["segment"]
@@ -87,7 +87,7 @@ internal class SegmentHandler(
         Utils.copyHeaders(call, requestBuilder)
 
         val request = requestBuilder.build()
-        val response = okHttpClient.newCall(request).execute()
+        val response = httpClient.newCall(request).execute()
         val segmentBytes = response.body?.bytes() ?:  throw Exception("Empty response body")
 
         respondSegment(call, segmentBytes, byteRange != null)

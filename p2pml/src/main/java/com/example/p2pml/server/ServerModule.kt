@@ -11,6 +11,7 @@ import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.routing.routing
+import okhttp3.OkHttpClient
 
 @UnstableApi
 internal class ServerModule(
@@ -19,13 +20,15 @@ internal class ServerModule(
     private val p2pEngineStateManager: P2PStateManager,
     private val onServerStarted: () -> Unit
 ) {
+    private val httpClient: OkHttpClient = OkHttpClient()
     private var server: ApplicationEngine? = null
 
     fun startServer(port: Int = 8080) {
         if (server != null) return
 
-        val manifestHandler = ManifestHandler(manifestParser, webViewManager)
-        val segmentHandler = SegmentHandler(webViewManager, manifestParser, p2pEngineStateManager)
+        val manifestHandler = ManifestHandler(httpClient, manifestParser, webViewManager)
+        val segmentHandler = SegmentHandler(httpClient, webViewManager,
+            manifestParser, p2pEngineStateManager)
 
         val routingModule = ServerRoutes(manifestHandler, segmentHandler)
 
@@ -48,5 +51,4 @@ internal class ServerModule(
         server?.stop(1000, 1000)
         server = null
     }
-
 }
