@@ -1,7 +1,5 @@
 package com.example.p2pml
 
-import io.ktor.http.HttpHeaders
-
 
 object Constants {
     const val MPEGURL_CONTENT_TYPE = "application/vnd.apple.mpegurl"
@@ -20,5 +18,4 @@ object Constants {
         const val MAIN = "main"
         const val SECONDARY = "secondary"
     }
-
 }

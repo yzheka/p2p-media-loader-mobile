@@ -24,7 +24,7 @@
             this.createP2PEngine();
             return;
           }
-
+          console.log(">>> coreConfigJson:", coreConfigJson);
           this.coreConfig = JSON.parse(coreConfigJson);
           this.createP2PEngine();
         }

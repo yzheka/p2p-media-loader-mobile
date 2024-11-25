@@ -27,8 +27,10 @@ internal class ServerModule(
         if (server != null) return
 
         val manifestHandler = ManifestHandler(httpClient, manifestParser, webViewManager)
-        val segmentHandler = SegmentHandler(httpClient, webViewManager,
-            manifestParser, p2pEngineStateManager)
+        val segmentHandler = SegmentHandler(
+            httpClient, webViewManager,
+            manifestParser, p2pEngineStateManager
+        )
 
         val routingModule = ServerRoutes(manifestHandler, segmentHandler)
 

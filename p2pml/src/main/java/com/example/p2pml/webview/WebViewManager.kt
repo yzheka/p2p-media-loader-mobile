@@ -44,19 +44,24 @@ internal class WebViewManager(
     private var playbackInfoJob: Job? = null
 
     init {
-        p2pEngineStateManager.setOnP2PEngineStatusChange { isP2PEngineEnabled ->
-            changeP2PEngineStatus(isP2PEngineEnabled)
+        coroutineScope.launch {
+            p2pEngineStateManager.setOnP2PEngineStatusChange { isP2PEngineEnabled ->
+                changeP2PEngineStatus(isP2PEngineEnabled)
+            }
         }
     }
 
     private fun startPlaybackInfoUpdate() {
-        if(playbackInfoJob !== null) return
+        if (playbackInfoJob !== null) return
 
         playbackInfoJob = coroutineScope.launch {
             while (isActive) {
                 try {
-                    if(!p2pEngineStateManager.isP2PEngineEnabled()) {
-                        Log.d("WebViewManager", "P2P Engine disabled, stopping playback info update.")
+                    if (!p2pEngineStateManager.isP2PEngineEnabled()) {
+                        Log.d(
+                            "WebViewManager",
+                            "P2P Engine disabled, stopping playback info update."
+                        )
                         playbackInfoJob?.cancel()
                         playbackInfoJob = null
                         break
@@ -83,22 +88,22 @@ internal class WebViewManager(
     }
 
     suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray>? {
-        if(!p2pEngineStateManager.isP2PEngineEnabled()) return null
+        if (!p2pEngineStateManager.isP2PEngineEnabled()) return null
 
         startPlaybackInfoUpdate()
         return webMessageProtocol.requestSegmentBytes(segmentUrl)
     }
 
     suspend fun sendInitialMessage() {
-        if(!p2pEngineStateManager.isP2PEngineEnabled()) return
+        if (!p2pEngineStateManager.isP2PEngineEnabled()) return
 
         webMessageProtocol.sendInitialMessage()
     }
 
     private suspend fun sendPlaybackInfo(playbackInfoJSON: String) {
-        if(!p2pEngineStateManager.isP2PEngineEnabled()) return
+        if (!p2pEngineStateManager.isP2PEngineEnabled()) return
 
-        withContext(Dispatchers.Main){
+        withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.updatePlaybackInfo('$playbackInfoJSON');",
                 null
@@ -107,7 +112,7 @@ internal class WebViewManager(
     }
 
     suspend fun sendAllStreams(streamsJSON: String) {
-        if(!p2pEngineStateManager.isP2PEngineEnabled()) return
+        if (!p2pEngineStateManager.isP2PEngineEnabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
@@ -120,14 +125,14 @@ internal class WebViewManager(
     fun initP2P(coreConfigJson: String) {
         Utils.runOnUiThread {
             webView.evaluateJavascript(
-            "javascript:window.p2p.initP2P('$coreConfigJson');",
-            null
+                "javascript:window.p2p.initP2P('$coreConfigJson');",
+                null
             )
         }
     }
 
     suspend fun sendStream(streamJSON: String) {
-        if(!p2pEngineStateManager.isP2PEngineEnabled()) return
+        if (!p2pEngineStateManager.isP2PEngineEnabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
@@ -138,7 +143,7 @@ internal class WebViewManager(
     }
 
     suspend fun setManifestUrl(manifestUrl: String) {
-        if(!p2pEngineStateManager.isP2PEngineEnabled()) return
+        if (!p2pEngineStateManager.isP2PEngineEnabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
@@ -162,8 +167,8 @@ internal class WebViewManager(
         playbackInfoJob = null
         coroutineScope.cancel()
         webView.apply {
-                parent?.let { (it as ViewGroup).removeView(this) }
-                destroy()
-            }
+            parent?.let { (it as ViewGroup).removeView(this) }
+            destroy()
+        }
     }
 }

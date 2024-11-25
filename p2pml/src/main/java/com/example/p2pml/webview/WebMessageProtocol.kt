@@ -98,8 +98,10 @@ internal class WebMessageProtocol(
 
     private fun handleSegmentIdMessage(segmentId: String) {
         if (incomingSegmentRequest != null) {
-            Log.d("WebMessageProtocol",
-                "Error: Received segment ID while another request is pending")
+            Log.d(
+                "WebMessageProtocol",
+                "Error: Received segment ID while another request is pending"
+            )
         }
         incomingSegmentRequest = segmentId
     }

@@ -37,13 +37,15 @@ internal class SegmentHandler(
         val decodedSegmentUrl = Utils.decodeBase64Url(segmentUrlParam)
         val byteRange = call.request.headers[HttpHeaders.Range]
 
-        Log.d("SegmentHandler",
-            "Received segment request for $decodedSegmentUrl with byte range $byteRange")
+        Log.d(
+            "SegmentHandler",
+            "Received segment request for $decodedSegmentUrl with byte range $byteRange"
+        )
 
         try {
             val isCurrentSegment = parser.isCurrentSegment(decodedSegmentUrl)
 
-            if(!p2pEngineStateManager.isP2PEngineEnabled() || !isCurrentSegment) {
+            if (!p2pEngineStateManager.isP2PEngineEnabled() || !isCurrentSegment) {
                 fetchAndRespondWithSegment(call, decodedSegmentUrl, byteRange)
                 return
             }
@@ -62,7 +64,11 @@ internal class SegmentHandler(
         }
     }
 
-    private suspend fun respondSegment(call: ApplicationCall, segmentBytes: ByteArray, isPartial: Boolean) {
+    private suspend fun respondSegment(
+        call: ApplicationCall,
+        segmentBytes: ByteArray,
+        isPartial: Boolean
+    ) {
         if (isPartial) {
             call.respond(object : OutgoingContent.ByteArrayContent() {
                 override val contentType: ContentType = ContentType.Application.OctetStream
@@ -79,7 +85,7 @@ internal class SegmentHandler(
         call: ApplicationCall,
         url: String,
         byteRange: String? = null
-    ) =  withContext(Dispatchers.IO)
+    ) = withContext(Dispatchers.IO)
     {
         val filteredUrl = url.substringBeforeLast("|")
         val requestBuilder = Request.Builder().url(filteredUrl)
@@ -88,7 +94,7 @@ internal class SegmentHandler(
 
         val request = requestBuilder.build()
         val response = httpClient.newCall(request).execute()
-        val segmentBytes = response.body?.bytes() ?:  throw Exception("Empty response body")
+        val segmentBytes = response.body?.bytes() ?: throw Exception("Empty response body")
 
         respondSegment(call, segmentBytes, byteRange != null)
     }

@@ -138,7 +138,7 @@ internal class HlsManifestParser(
 
             val newSegment =
                 addNewSegment(manifestUrl, segmentIndex, initialStartTime, segment)
-            if (newSegment != null){
+            if (newSegment != null) {
                 segmentsToAdd.add(newSegment)
                 Log.d("SegmentHandler", "Segment: $segmentIndex - ${newSegment.runtimeId}")
             }
@@ -301,7 +301,10 @@ internal class HlsManifestParser(
         else
             Utils.encodeUrlToBase64(absoluteSegmentUrl)
 
-        val newUrl = Utils.getUrl(serverPort, "${QueryParams.SEGMENT}$encodedAbsoluteSegmentUrl")
+        val newUrl = Utils.getUrl(
+            serverPort,
+            "${QueryParams.SEGMENT}$encodedAbsoluteSegmentUrl"
+        )
 
         val startIndex = manifestBuilder.indexOf(segmentUriInManifest)
             .takeIf { it != -1 }
@@ -323,7 +326,8 @@ internal class HlsManifestParser(
         queryParam: String? = null
     ) {
         val urlToFind = findUrlInManifest(manifest, originalUrl, baseManifestUrl)
-        val absoluteUrl = Utils.getAbsoluteUrl(baseManifestUrl, originalUrl).encodeURLQueryComponent()
+        val absoluteUrl =
+            Utils.getAbsoluteUrl(baseManifestUrl, originalUrl).encodeURLQueryComponent()
         val newUrl = if (queryParam != null) {
             Utils.getUrl(serverPort, "$queryParam$absoluteUrl")
         } else {

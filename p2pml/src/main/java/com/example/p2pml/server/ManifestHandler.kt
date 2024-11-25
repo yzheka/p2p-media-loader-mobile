@@ -39,8 +39,10 @@ internal class ManifestHandler(
 
         try {
             val originalManifest = fetchManifest(call, decodedManifestUrl)
-            val modifiedManifest = manifestParser.getModifiedManifest(originalManifest,
-                decodedManifestUrl)
+            val modifiedManifest = manifestParser.getModifiedManifest(
+                originalManifest,
+                decodedManifestUrl
+            )
             val needsInitialSetup = checkAndSetInitialProcessing()
 
             handleUpdate(decodedManifestUrl, needsInitialSetup)

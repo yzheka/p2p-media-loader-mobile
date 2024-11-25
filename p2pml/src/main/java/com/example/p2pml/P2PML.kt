@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import com.example.p2pml.Constants.QueryParams.MANIFEST
 import com.example.p2pml.Constants.CORE_FILE_PATH
+import com.example.p2pml.Constants.QueryParams.MANIFEST
 import com.example.p2pml.parser.HlsManifestParser
 import com.example.p2pml.server.ServerModule
 import com.example.p2pml.utils.Utils
@@ -41,6 +41,7 @@ class P2PML(
     ) {
         onServerStarted()
     }
+
     private val webViewLoadCompletion = CompletableDeferred<Unit>()
 
     init {
