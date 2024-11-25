@@ -62,10 +62,9 @@ internal class WebMessageProtocol(
 
             if (deferred != null) {
                 deferred.complete(arrayBuffer)
-                Log.d("CoreWebView", "Completed deferred for segment ID: $incomingSegmentRequest")
             } else {
                 Log.d(
-                    "CoreWebView",
+                    "WebMessageProtocol",
                     "Error: No deferred found for segment ID: $incomingSegmentRequest"
                 )
             }
@@ -88,9 +87,9 @@ internal class WebMessageProtocol(
                 val deferred = getSegmentResponseCallback(it)
                 if (deferred != null) {
                     deferred.completeExceptionally(Exception("Error occurred while fetching segment"))
-                    Log.d("CoreWebView", "Completed deferred with error for segment ID: $it")
+                    Log.d("WebMessageProtocol", "Completed deferred with error for segment ID: $it")
                 } else {
-                    Log.d("CoreWebView", "Error: No deferred found for segment ID: $it")
+                    Log.d("WebMessageProtocol", "Error: No deferred found for segment ID: $it")
                 }
             }
         }
@@ -98,7 +97,10 @@ internal class WebMessageProtocol(
 
 
     private fun handleSegmentIdMessage(segmentId: String) {
-        Log.d("CoreWebView", "Received segment ID from  JS: $segmentId")
+        if (incomingSegmentRequest != null) {
+            Log.d("WebMessageProtocol",
+                "Error: Received segment ID while another request is pending")
+        }
         incomingSegmentRequest = segmentId
     }
 

@@ -4,7 +4,6 @@ import io.ktor.http.HttpHeaders
 
 
 object Constants {
-    const val MICROSECONDS_IN_SECOND = 1_000_000
     const val MPEGURL_CONTENT_TYPE = "application/vnd.apple.mpegurl"
     const val DEFAULT_SERVER_PORT = 8080
     const val LOCALHOST = "127.0.0.1"

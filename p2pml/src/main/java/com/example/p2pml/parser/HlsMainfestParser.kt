@@ -295,6 +295,7 @@ internal class HlsManifestParser(
         )
         val absoluteSegmentUrl = segment.getAbsoluteUrl(variantUrl)
         val byteRange = segment.byteRange
+
         val encodedAbsoluteSegmentUrl = if (byteRange != null)
             Utils.encodeUrlToBase64("$absoluteSegmentUrl|${byteRange.start}-${byteRange.end}")
         else

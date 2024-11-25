@@ -18,5 +18,4 @@ class P2PStateManager {
         isP2PEngineEnabled = isP2PEngineStatusEnabled
         onP2PEngineStatusChange?.invoke(isP2PEngineStatusEnabled)
     }
-
 }
