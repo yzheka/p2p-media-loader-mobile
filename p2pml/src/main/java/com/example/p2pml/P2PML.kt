@@ -17,6 +17,7 @@ import kotlinx.coroutines.CompletableDeferred
 class P2PML(
     context: Context,
     coroutineScope: LifecycleCoroutineScope,
+    private val coreConfigJson: String = "",
     private val serverPort: Int = Constants.DEFAULT_SERVER_PORT
 ) {
     private val p2pEngineStateManager = P2PStateManager()
@@ -31,7 +32,7 @@ class P2PML(
         p2pEngineStateManager,
         exoPlayerPlaybackCalculator,
     ) {
-        webViewLoadCompletion.complete(Unit)
+        onWebViewLoaded()
     }
     private val serverModule: ServerModule = ServerModule(
         webViewManager,
@@ -52,6 +53,11 @@ class P2PML(
 
     private fun startServer() {
         serverModule.startServer(serverPort)
+    }
+
+    private fun onWebViewLoaded() {
+        webViewManager.initP2P(coreConfigJson)
+        webViewLoadCompletion.complete(Unit)
     }
 
     private fun onServerStarted() {

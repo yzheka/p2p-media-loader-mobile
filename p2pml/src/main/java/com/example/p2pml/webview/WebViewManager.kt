@@ -117,6 +117,15 @@ internal class WebViewManager(
         }
     }
 
+    fun initP2P(coreConfigJson: String) {
+        Utils.runOnUiThread {
+            webView.evaluateJavascript(
+            "javascript:window.p2p.initP2P('$coreConfigJson');",
+            null
+            )
+        }
+    }
+
     suspend fun sendStream(streamJSON: String) {
         if(!p2pEngineStateManager.isP2PEngineEnabled()) return
 
