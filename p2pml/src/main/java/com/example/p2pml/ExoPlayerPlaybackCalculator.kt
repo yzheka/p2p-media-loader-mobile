@@ -109,14 +109,14 @@ internal class ExoPlayerPlaybackCalculator {
         if (parsedManifest == null || parsedManifest?.hasEndTag == true)
             return PlaybackInfo(playbackPositionInSeconds, playbackSpeed)
 
-        val currentPlaybackInMs = if (playbackPositionInSeconds < 0) 0.0
+        val currentPlayback = if (playbackPositionInSeconds < 0) 0.0
             else playbackPositionInSeconds
 
         val currentSegment = currentSegments.values.find {
-            currentPlaybackInMs >= it.startTime && currentPlaybackInMs <= it.endTime
+            currentPlayback >= it.startTime && currentPlayback <= it.endTime
         } ?: throw IllegalStateException("Current segment is null")
 
-        val segmentPlayTime = currentPlaybackInMs - currentSegment.startTime
+        val segmentPlayTime = currentPlayback - currentSegment.startTime
         val segmentAbsolutePlayTime = currentSegment.absoluteStartTime + segmentPlayTime
 
         return PlaybackInfo(segmentAbsolutePlayTime, playbackSpeed)
