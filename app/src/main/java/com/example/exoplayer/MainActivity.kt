@@ -85,8 +85,9 @@ class LoggingDataSourceFactory(context: Context) : DataSource.Factory {
 
 @UnstableApi
 class MainActivity : ComponentActivity() {
+    private var p2pServer = P2PML()
     private lateinit var player: ExoPlayer
-    private lateinit var p2pServer: P2PML
+
 
     @OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -107,7 +108,8 @@ class MainActivity : ComponentActivity() {
         //val streamUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
         //val streamUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/adv_dv_atmos/main.m3u8"
         lifecycleScope.launch {
-            p2pServer = P2PML(this@MainActivity, lifecycleScope)
+            p2pServer.initialize(this@MainActivity, lifecycleScope)
+
             val manifest =
                 p2pServer.getServerManifestUrl(streamUrl)
 

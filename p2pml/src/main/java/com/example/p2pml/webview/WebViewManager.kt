@@ -165,7 +165,7 @@ internal class WebViewManager(
     fun destroy() {
         playbackInfoJob?.cancel()
         playbackInfoJob = null
-        coroutineScope.cancel()
+
         webView.apply {
             parent?.let { (it as ViewGroup).removeView(this) }
             destroy()

@@ -15,45 +15,55 @@ import kotlinx.coroutines.CompletableDeferred
 
 @UnstableApi
 class P2PML(
-    context: Context,
-    coroutineScope: LifecycleCoroutineScope,
     private val coreConfigJson: String = "",
     private val serverPort: Int = Constants.DEFAULT_SERVER_PORT
 ) {
     private val p2pEngineStateManager = P2PStateManager()
     private val exoPlayerPlaybackCalculator = ExoPlayerPlaybackCalculator()
-    private val manifestParser: HlsManifestParser = HlsManifestParser(
+    private val manifestParser = HlsManifestParser(
         exoPlayerPlaybackCalculator, serverPort
     )
 
-    private val webViewManager: WebViewManager = WebViewManager(
-        context,
-        coroutineScope,
-        p2pEngineStateManager,
-        exoPlayerPlaybackCalculator,
-    ) {
-        onWebViewLoaded()
-    }
-    private val serverModule: ServerModule = ServerModule(
-        webViewManager,
-        manifestParser,
-        p2pEngineStateManager
-    ) {
-        onServerStarted()
-    }
+    private lateinit var webViewManager: WebViewManager
+    private lateinit var serverModule: ServerModule
 
     private val webViewLoadCompletion = CompletableDeferred<Unit>()
 
-    init {
-        startServer()
+    fun initialize(context: Context, coroutineScope: LifecycleCoroutineScope) {
+        webViewManager = WebViewManager(
+            context,
+            coroutineScope,
+            p2pEngineStateManager,
+            exoPlayerPlaybackCalculator
+        ) {
+            onWebViewLoaded()
+        }
+
+        serverModule = ServerModule(
+            webViewManager,
+            manifestParser,
+            p2pEngineStateManager
+        ) {
+            onServerStarted()
+        }
+
+        serverModule.startServer(serverPort)
     }
 
     fun setExoPlayer(exoPlayer: ExoPlayer) {
         exoPlayerPlaybackCalculator.setExoPlayer(exoPlayer)
     }
 
-    private fun startServer() {
-        serverModule.startServer(serverPort)
+    suspend fun getServerManifestUrl(manifestUrl: String): String {
+        webViewLoadCompletion.await()
+
+        val encodedManifestURL = manifestUrl.encodeURLQueryComponent()
+        return Utils.getUrl(serverPort, "$MANIFEST$encodedManifestURL")
+    }
+
+    fun stopServer() {
+        serverModule.stopServer()
+        webViewManager.destroy()
     }
 
     private fun onWebViewLoaded() {
@@ -64,16 +74,5 @@ class P2PML(
     private fun onServerStarted() {
         val urlPath = Utils.getUrl(serverPort, CORE_FILE_PATH)
         webViewManager.loadWebView(urlPath)
-    }
-
-    suspend fun getServerManifestUrl(manifestUrl: String): String {
-        webViewLoadCompletion.await()
-        val encodedManifestURL = manifestUrl.encodeURLQueryComponent()
-        return Utils.getUrl(serverPort, "$MANIFEST$encodedManifestURL")
-    }
-
-    fun stopServer() {
-        serverModule.stopServer()
-        webViewManager.destroy()
     }
 }

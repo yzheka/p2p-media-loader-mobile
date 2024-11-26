@@ -17,7 +17,6 @@ internal class ServerRoutes(
                     call.parameters["manifest"] != null -> manifestHandler.handleManifestRequest(
                         call
                     )
-
                     call.parameters["segment"] != null -> segmentHandler.handleSegmentRequest(call)
 
                     else -> call.respondText(
