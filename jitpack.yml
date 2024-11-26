@@ -1,0 +1,6 @@
+jdk:
+  - openjdk11
+
+publish:
+  target: p2pml
+
