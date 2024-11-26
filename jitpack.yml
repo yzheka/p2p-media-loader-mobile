@@ -1,5 +1,5 @@
 jdk:
-  - openjdk11
+  - openjdk17
 
 publish:
   target: p2pml
