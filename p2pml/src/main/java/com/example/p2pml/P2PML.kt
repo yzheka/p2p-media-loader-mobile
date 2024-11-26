@@ -52,6 +52,10 @@ class P2PML(
         serverModule.startServer(serverPort)
     }
 
+    suspend fun switchP2PEngineState(isDisabled: Boolean) {
+        p2pEngineStateManager.changeP2PEngineStatus(isDisabled)
+    }
+
     fun setExoPlayer(exoPlayer: ExoPlayer) {
         exoPlayerPlaybackCalculator.setExoPlayer(exoPlayer)
     }

@@ -21,8 +21,9 @@ private data class PlaybackSegment(
 
 @UnstableApi
 internal class ExoPlayerPlaybackCalculator {
-    private val parser = HlsPlaylistParser()
     private lateinit var exoPlayer: ExoPlayer
+
+    private val parser = HlsPlaylistParser()
     private var parsedManifest: HlsMediaPlaylist? = null
     private var currentAbsoluteTime: Double? = null
 
