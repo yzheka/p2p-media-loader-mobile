@@ -3,7 +3,7 @@ package com.example.p2pml.server
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
-import com.example.p2pml.P2PStateManager
+import com.example.p2pml.utils.P2PStateManager
 import com.example.p2pml.parser.HlsManifestParser
 import com.example.p2pml.utils.Utils
 import com.example.p2pml.webview.WebViewManager

@@ -9,14 +9,13 @@ import android.webkit.WebView
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.webkit.WebViewClientCompat
-import com.example.p2pml.ExoPlayerPlaybackCalculator
-import com.example.p2pml.P2PStateManager
+import com.example.p2pml.utils.ExoPlayerPlaybackCalculator
+import com.example.p2pml.utils.P2PStateManager
 import com.example.p2pml.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch

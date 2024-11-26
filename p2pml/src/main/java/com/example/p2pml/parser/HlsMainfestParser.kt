@@ -8,7 +8,7 @@ import androidx.media3.exoplayer.hls.playlist.HlsMultivariantPlaylist
 import androidx.media3.exoplayer.hls.playlist.HlsPlaylistParser
 import com.example.p2pml.Constants.QueryParams
 import com.example.p2pml.Constants.StreamTypes
-import com.example.p2pml.ExoPlayerPlaybackCalculator
+import com.example.p2pml.utils.ExoPlayerPlaybackCalculator
 import com.example.p2pml.Segment
 import com.example.p2pml.Stream
 import com.example.p2pml.UpdateStreamParams
