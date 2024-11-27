@@ -34,6 +34,7 @@ internal class WebViewManager(
     @SuppressLint("SetJavaScriptEnabled")
     private val webView = WebView(context).apply {
         settings.javaScriptEnabled = true
+        settings.domStorageEnabled = true
         webViewClient = WebViewClientCompat()
         visibility = View.GONE
         addJavascriptInterface(JavaScriptInterface(onPageLoadFinished), "Android")

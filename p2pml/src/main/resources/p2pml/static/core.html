@@ -121,7 +121,7 @@
         updatePlaybackInfo(playbackInfoJSON) {
           const playbackInfo = JSON.parse(playbackInfoJSON);
           const { currentPlayPosition, currentPlaySpeed } = playbackInfo;
-          console.log(">> currentPlayback:", currentPlayPosition);
+          // console.log(">> currentPlayback:", currentPlayPosition);
           this.core.updatePlayback(currentPlayPosition, currentPlaySpeed);
         }
       }

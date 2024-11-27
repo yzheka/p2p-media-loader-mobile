@@ -85,7 +85,7 @@ class LoggingDataSourceFactory(context: Context) : DataSource.Factory {
 
 @UnstableApi
 class MainActivity : ComponentActivity() {
-    private var p2pServer = P2PML()
+    private var p2pServer = P2PML("{\"swarmId\":\"TEST_KOTLIN\"}")
     private lateinit var player: ExoPlayer
 
 
@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
             p2pServer.initialize(this@MainActivity, lifecycleScope)
 
             val manifest =
-                p2pServer.getServerManifestUrl(Streams.HLS_LIVE_STREAM)
+                p2pServer.getServerManifestUrl(Streams.HLS_BIG_BUCK_BUNNY_QUALITY_4)
 
             val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
             val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory).createMediaSource(
