@@ -53,11 +53,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 }
 
-val sourcesJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("sources")
-    from(android.sourceSets["main"].java.srcDirs)
-}
-
 afterEvaluate {
     publishing {
         publications {
@@ -67,26 +62,6 @@ afterEvaluate {
                 groupId = "com.example.p2pml"
                 artifactId = "p2pml"
                 version = "0.0.1"
-
-                artifact(sourcesJar.get())
-
-                pom {
-                    name.set("P2P Media Loader")
-                    description.set("A P2P media loader library for Android.")
-                    url.set("https://github.com/DimaDemchenko/p2pml-kotlin")
-                    licenses {
-                        license {
-                            name.set("The MIT License")
-                            url.set("https://opensource.org/licenses/MIT")
-                        }
-                    }
-                    developers {
-                        developer {
-                            id.set("DimaDemchenko")
-                            name.set("Dmytro Demchenko")
-                        }
-                    }
-                }
             }
         }
     }
