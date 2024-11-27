@@ -95,14 +95,11 @@ class MainActivity : ComponentActivity() {
 
         WebView.setWebContentsDebuggingEnabled(true)
 
-        val streamUrl =
-            "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/gear1/prog_index.m3u8"
-
         lifecycleScope.launch {
             p2pServer.initialize(this@MainActivity, lifecycleScope)
 
             val manifest =
-                p2pServer.getServerManifestUrl(streamUrl)
+                p2pServer.getServerManifestUrl(Streams.HLS_LIVE_STREAM)
 
             val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
             val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory).createMediaSource(
