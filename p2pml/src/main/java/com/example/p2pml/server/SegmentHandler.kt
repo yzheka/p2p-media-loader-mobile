@@ -88,11 +88,11 @@ internal class SegmentHandler(
     ) = withContext(Dispatchers.IO)
     {
         val filteredUrl = url.substringBeforeLast("|")
-        val requestBuilder = Request.Builder().url(filteredUrl)
+        val request = Request.Builder()
+            .url(filteredUrl)
+            .apply { Utils.copyHeaders(call, this) }
+            .build()
 
-        Utils.copyHeaders(call, requestBuilder)
-
-        val request = requestBuilder.build()
         val response = httpClient.newCall(request).execute()
         val segmentBytes = response.body?.bytes() ?: throw Exception("Empty response body")
 

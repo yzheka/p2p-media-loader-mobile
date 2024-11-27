@@ -61,9 +61,11 @@ internal class ManifestHandler(
 
             if (needsInitialSetup) {
                 val streamsJSON = manifestParser.getStreamsJSON()
+
                 webViewManager.sendInitialMessage()
                 webViewManager.setManifestUrl(manifestUrl)
                 webViewManager.sendAllStreams(streamsJSON)
+
                 updateStreamJSON?.let { webViewManager.sendStream(it) }
             } else {
                 updateStreamJSON?.let { json ->
