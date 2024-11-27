@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
             p2pServer.initialize(this@MainActivity, lifecycleScope)
 
             val manifest =
-                p2pServer.getServerManifestUrl(Streams.HLS_ADVANCED_STREAM)
+                p2pServer.getServerManifestUrl(Streams.HLS_LIVE_STREAM)
 
             val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
             val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory).createMediaSource(
