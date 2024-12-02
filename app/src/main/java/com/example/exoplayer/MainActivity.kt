@@ -27,6 +27,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.TransferListener
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
@@ -74,7 +75,11 @@ class LoggingDataSource(private val wrappedDataSource: DataSource) : DataSource 
 
 @UnstableApi
 class LoggingDataSourceFactory(context: Context) : DataSource.Factory {
-    private val baseDataSourceFactory = DefaultDataSource.Factory(context)
+    private val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+        .setConnectTimeoutMs(30000)
+        .setReadTimeoutMs(30000)
+
+    private val baseDataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
 
     override fun createDataSource(): DataSource {
         return LoggingDataSource(baseDataSourceFactory.createDataSource())
@@ -97,7 +102,7 @@ class MainActivity : ComponentActivity() {
             p2pServer.initialize(this@MainActivity, lifecycleScope)
 
             val manifest =
-                p2pServer.getServerManifestUrl(Streams.HLS_BIG_BUCK_BUNNY_QUALITY_4)
+                p2pServer.getServerManifestUrl(Streams.HLS_LIVE_STREAM)
 
             val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
             val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory).createMediaSource(
