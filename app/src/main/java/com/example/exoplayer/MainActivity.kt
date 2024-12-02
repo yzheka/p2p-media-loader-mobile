@@ -28,10 +28,8 @@ import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.TransferListener
-import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
-import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
 import com.example.p2pml.P2PML
 import kotlinx.coroutines.launch
@@ -106,34 +104,7 @@ class MainActivity : ComponentActivity() {
                 MediaItem.fromUri(manifest)
             )
 
-            val trackSelector = DefaultTrackSelector(this@MainActivity).apply {
-                val parameters = buildUponParameters()
-                    .setMaxVideoSizeSd()
-                    .setMaxVideoSize(Integer.MAX_VALUE, Integer.MAX_VALUE)
-                    .setForceHighestSupportedBitrate(true)
-                    .build()
-                setParameters(parameters)
-            }
-
-            val loadControl = DefaultLoadControl.Builder()
-                .setBufferDurationsMs(
-                    30000, // Minimum buffer before playback can start or resume (in milliseconds)
-                    60000, // Maximum buffer to be retained in memory (in milliseconds)
-                    1500,  // Buffer required before starting playback (in milliseconds)
-                    3000   // Buffer required after a rebuffer (in milliseconds)
-                )
-                .build()
-            //val loadControl = DefaultLoadControl.Builder().setLi
-
-
-            /*player = ExoPlayer.Builder(this@MainActivity).build().apply {
-                setMediaSource(mediaSource)
-                prepare()
-                playWhenReady = true
-            }*/
             player = ExoPlayer.Builder(this@MainActivity)
-                //.setTrackSelector(trackSelector)
-                .setLoadControl(loadControl)
                 .build().apply {
                     setMediaSource(mediaSource)
                     prepare()
