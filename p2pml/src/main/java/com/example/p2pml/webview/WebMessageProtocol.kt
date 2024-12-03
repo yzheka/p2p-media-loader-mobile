@@ -86,10 +86,18 @@ internal class WebMessageProtocol(
             message.substringAfter("error|").let {
                 val deferred = getSegmentResponseCallback(it)
                 if (deferred != null) {
-                    deferred.completeExceptionally(Exception("Error occurred while fetching segment"))
-                    Log.d("WebMessageProtocol", "Completed deferred with error for segment ID: $it")
+                    deferred.completeExceptionally(
+                        Exception("Error occurred while fetching segment")
+                    )
+                    Log.d(
+                        "WebMessageProtocol",
+                        "Completed deferred with error for segment ID: $it"
+                    )
                 } else {
-                    Log.d("WebMessageProtocol", "Error: No deferred found for segment ID: $it")
+                    Log.d(
+                        "WebMessageProtocol",
+                        "Error: No deferred found for segment ID: $it"
+                    )
                 }
             }
         }

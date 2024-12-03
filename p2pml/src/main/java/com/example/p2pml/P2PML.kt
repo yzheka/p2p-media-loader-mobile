@@ -85,19 +85,8 @@ class P2PML(
         serverModule.startServer(serverPort)
     }
 
-
-    /**
-     * Toggles the state of the P2P engine between enabled and disabled.
-     *
-     * Use this method to manage the application's state, such as pausing or resuming playback.
-     * Disabling the P2P engine can be useful when the user pauses the media, conserving resources
-     * and preventing unnecessary network activity.
-     *
-     * @param isDisabled A boolean indicating whether to disable (`true`) or enable (`false`) the P2P engine.
-     *
-     */
-    suspend fun switchP2PEngineState(isDisabled: Boolean) {
-        p2pEngineStateManager.changeP2PEngineStatus(isDisabled)
+    fun applyP2PDynamicCoreConfig(dynamicP2PCoreConfigJson: String) {
+        webViewManager.applyDynamicP2PCoreConfig(dynamicP2PCoreConfigJson)
     }
 
     /**
@@ -152,7 +141,7 @@ class P2PML(
         webViewManager.destroy()
     }
 
-    private fun onWebViewLoaded() {
+    private suspend fun onWebViewLoaded() {
         webViewManager.initP2P(coreConfigJson)
         webViewLoadCompletion.complete(Unit)
     }

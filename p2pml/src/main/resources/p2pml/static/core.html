@@ -24,9 +24,16 @@
             this.createP2PEngine();
             return;
           }
-          console.log(">>> coreConfigJson:", coreConfigJson);
+
           this.coreConfig = JSON.parse(coreConfigJson);
           this.createP2PEngine();
+        }
+
+        applyDynamicP2PCoreConfig(dynamicCoreConfigJson) {
+          if (!dynamicCoreConfigJson) return;
+
+          const dynamicConfig = JSON.parse(dynamicCoreConfigJson);
+          this.core.applyConfig(dynamicConfig);
         }
 
         destroyP2PEngine() {
@@ -41,14 +48,6 @@
           this.core = new Core(this.coreConfig ?? {});
         }
 
-        manageP2PState(state) {
-          if (state) {
-            this.core.createP2PEngine();
-          } else {
-            this.core.destroyP2PEngine();
-          }
-        }
-
         listenPort() {
           window.addEventListener("message", (event) => {
             const port = event.ports[0];
@@ -61,31 +60,23 @@
 
         parseAllStreams(jsonData) {
           const streams = JSON.parse(jsonData);
+
           for (const stream of streams) {
             this.core.addStreamIfNoneExists(stream);
           }
-          console.log(">>> addStreamsIfNoneExist", streams);
         }
 
         parseStream(jsonData) {
           const playlist = JSON.parse(jsonData);
           const { streamRuntimeId, addSegments, removeSegmentsIds, isLive } =
             playlist;
+
           this.core.updateStream(
             streamRuntimeId,
             addSegments,
             removeSegmentsIds
           );
           this.core.setIsLive(isLive);
-          console.log("+++ updateStream:", streamRuntimeId);
-          removeSegmentsIds.forEach((segmentId) => {
-            console.log(`--- segment removed: ${segmentId}`);
-          });
-          addSegments.forEach((segment) => {
-            console.log(
-              `+++ segment added: ${segment.externalId} | ${segment.runtimeId} | startTime: ${segment.startTime} - endTime: ${segment.endTime}`
-            );
-          });
         }
 
         async processSegmentRequest(segmentRequestJSON) {
@@ -121,7 +112,7 @@
         updatePlaybackInfo(playbackInfoJSON) {
           const playbackInfo = JSON.parse(playbackInfoJSON);
           const { currentPlayPosition, currentPlaySpeed } = playbackInfo;
-          // console.log(">> currentPlayback:", currentPlayPosition);
+
           this.core.updatePlayback(currentPlayPosition, currentPlaySpeed);
         }
       }

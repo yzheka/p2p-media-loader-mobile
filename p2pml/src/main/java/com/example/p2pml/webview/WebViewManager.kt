@@ -9,9 +9,9 @@ import android.webkit.WebView
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.webkit.WebViewClientCompat
+import com.example.p2pml.DynamicP2PCoreConfig
 import com.example.p2pml.utils.ExoPlayerPlaybackCalculator
 import com.example.p2pml.utils.P2PStateManager
-import com.example.p2pml.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,7 +29,7 @@ internal class WebViewManager(
     private val coroutineScope: CoroutineScope,
     private val p2pEngineStateManager: P2PStateManager,
     private val exoPlayerPlaybackCalculator: ExoPlayerPlaybackCalculator,
-    onPageLoadFinished: () -> Unit
+    onPageLoadFinished: suspend () -> Unit
 ) {
     @SuppressLint("SetJavaScriptEnabled")
     private val webView = WebView(context).apply {
@@ -37,19 +37,13 @@ internal class WebViewManager(
         settings.domStorageEnabled = true
         webViewClient = WebViewClientCompat()
         visibility = View.GONE
-        addJavascriptInterface(JavaScriptInterface(onPageLoadFinished), "Android")
+        addJavascriptInterface(
+            JavaScriptInterface(coroutineScope, onPageLoadFinished), "Android"
+        )
     }
     private val webMessageProtocol = WebMessageProtocol(webView, coroutineScope)
 
     private var playbackInfoJob: Job? = null
-
-    init {
-        coroutineScope.launch {
-            p2pEngineStateManager.setOnP2PEngineStatusChange { isP2PEngineEnabled ->
-                changeP2PEngineStatus(isP2PEngineEnabled)
-            }
-        }
-    }
 
     private fun startPlaybackInfoUpdate() {
         if (playbackInfoJob !== null) return
@@ -82,8 +76,36 @@ internal class WebViewManager(
     }
 
     fun loadWebView(url: String) {
-        Utils.runOnUiThread {
+        coroutineScope.launch(Dispatchers.Main) {
             webView.loadUrl(url)
+        }
+    }
+
+    fun applyDynamicP2PCoreConfig(coreDynamicConfigJson: String) {
+        coroutineScope.launch(Dispatchers.Main) {
+            val isP2PDisabled = determineP2PDisabledStatus(coreDynamicConfigJson)
+            if(isP2PDisabled !== null)
+                p2pEngineStateManager.changeP2PEngineStatus(isP2PDisabled)
+
+            webView.evaluateJavascript(
+                "javascript:window.p2p.applyDynamicP2PCoreConfig('$coreDynamicConfigJson');",
+                null
+            )
+        }
+    }
+
+    private fun determineP2PDisabledStatus(coreDynamicConfigJson: String): Boolean? {
+        return try {
+            val config = Json.decodeFromString<DynamicP2PCoreConfig>(coreDynamicConfigJson)
+
+            config.isP2PDisabled
+                ?: if (config.mainStream?.isP2PDisabled == config.secondaryStream?.isP2PDisabled) {
+                    config.mainStream?.isP2PDisabled
+                } else {
+                    null
+                }
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -122,8 +144,8 @@ internal class WebViewManager(
         }
     }
 
-    fun initP2P(coreConfigJson: String) {
-        Utils.runOnUiThread {
+    suspend fun initP2P(coreConfigJson: String) {
+       withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.initP2P('$coreConfigJson');",
                 null
@@ -148,15 +170,6 @@ internal class WebViewManager(
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.setManifestUrl('$manifestUrl');",
-                null
-            )
-        }
-    }
-
-    private suspend fun changeP2PEngineStatus(isP2PEngineStatusEnabled: Boolean) {
-        withContext(Dispatchers.Main) {
-            webView.evaluateJavascript(
-                "javascript:window.p2p.manageP2PState($isP2PEngineStatusEnabled);",
                 null
             )
         }

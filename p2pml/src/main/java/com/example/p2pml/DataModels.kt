@@ -43,3 +43,15 @@ internal data class PlaybackInfo(
     val currentPlayPosition: Double,
     val currentPlaySpeed: Float
 )
+
+@Serializable
+data class StreamConfig(
+    val isP2PDisabled: Boolean? = null
+)
+
+@Serializable
+data class DynamicP2PCoreConfig(
+    val isP2PDisabled: Boolean? = null,
+    val mainStream: StreamConfig? = null,
+    val secondaryStream: StreamConfig? = null
+)
