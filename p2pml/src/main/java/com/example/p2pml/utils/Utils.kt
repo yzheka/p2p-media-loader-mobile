@@ -1,7 +1,5 @@
 package com.example.p2pml.utils
 
-import android.os.Handler
-import android.os.Looper
 import com.example.p2pml.Constants
 import com.example.p2pml.Constants.HTTP_PREFIX
 import com.example.p2pml.Constants.LOCALHOST
@@ -36,11 +34,6 @@ internal object Utils {
     fun getUrl(port: Int, path: String): String {
         return "$HTTP_PREFIX$LOCALHOST:$port/$path"
     }
-
-    fun runOnUiThread(action: () -> Unit) {
-        Handler(Looper.getMainLooper()).post(action)
-    }
-
 
     fun copyHeaders(call: ApplicationCall, requestBuilder: Request.Builder) {
         val excludedHeaders = setOf(

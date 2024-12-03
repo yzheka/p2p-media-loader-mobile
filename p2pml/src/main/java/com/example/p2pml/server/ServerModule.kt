@@ -18,6 +18,7 @@ internal class ServerModule(
     private val webViewManager: WebViewManager,
     private val manifestParser: HlsManifestParser,
     private val p2pEngineStateManager: P2PStateManager,
+    private val customP2pmlImplementationPath: String? = null,
     private val onServerStarted: () -> Unit
 ) {
     private val httpClient: OkHttpClient = OkHttpClient()
@@ -32,7 +33,11 @@ internal class ServerModule(
             manifestParser, p2pEngineStateManager
         )
 
-        val routingModule = ServerRoutes(manifestHandler, segmentHandler)
+        val routingModule = ServerRoutes(
+            manifestHandler,
+            segmentHandler,
+            customP2pmlImplementationPath
+        )
 
         server = embeddedServer(CIO, port) {
             install(CORS) {

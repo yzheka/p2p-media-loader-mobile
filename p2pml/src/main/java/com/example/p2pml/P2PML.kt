@@ -4,7 +4,8 @@ import android.content.Context
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import com.example.p2pml.Constants.CORE_FILE_PATH
+import com.example.p2pml.Constants.CORE_FILE_URL
+import com.example.p2pml.Constants.CUSTOM_FILE_URL
 import com.example.p2pml.Constants.QueryParams.MANIFEST
 import com.example.p2pml.parser.HlsManifestParser
 import com.example.p2pml.server.ServerModule
@@ -28,6 +29,18 @@ import kotlinx.coroutines.CompletableDeferred
  * @param serverPort The port number on which the internal server will run.
  *   Defaults to `8080`.
  *
+ * @param customP2pmlImplementationPath Optional relative path to a custom resource folder within the
+ *   application's resources directory (`src/main/resources`). By specifying this path, users can provide
+ *   their own `index.html` file with their own P2PML implementation. This allows users to serve their own
+ *   static files and customize the P2PML setup according to their needs.
+ *   Defaults to `null`
+ *
+ * **Note on Custom P2PML Implementation:**
+ *
+ * The path should be relative to your application's resources directory (`src/main/resources`).
+ * This allows you to provide your own `index.html` file with a custom P2PML implementation, enabling
+ * you to customize the P2PML setup according to your requirements.
+ *
  * **Example Usage:**
  * ```kotlin
  * val p2pml = P2PML(
@@ -38,7 +51,8 @@ import kotlinx.coroutines.CompletableDeferred
 @UnstableApi
 class P2PML(
     private val coreConfigJson: String = "",
-    private val serverPort: Int = Constants.DEFAULT_SERVER_PORT
+    private val serverPort: Int = Constants.DEFAULT_SERVER_PORT,
+    private val customP2pmlImplementationPath: String? = null
 ) {
     private val p2pEngineStateManager = P2PStateManager()
     private val exoPlayerPlaybackCalculator = ExoPlayerPlaybackCalculator()
@@ -77,7 +91,8 @@ class P2PML(
         serverModule = ServerModule(
             webViewManager,
             manifestParser,
-            p2pEngineStateManager
+            p2pEngineStateManager,
+            customP2pmlImplementationPath
         ) {
             onServerStarted()
         }
@@ -147,7 +162,12 @@ class P2PML(
     }
 
     private fun onServerStarted() {
-        val urlPath = Utils.getUrl(serverPort, CORE_FILE_PATH)
+        val urlPath = if(customP2pmlImplementationPath != null) {
+            Utils.getUrl(serverPort, CUSTOM_FILE_URL)
+        } else {
+            Utils.getUrl(serverPort, CORE_FILE_URL)
+        }
+
         webViewManager.loadWebView(urlPath)
     }
 }

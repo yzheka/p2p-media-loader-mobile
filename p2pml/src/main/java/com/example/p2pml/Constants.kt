@@ -8,6 +8,9 @@ object Constants {
     const val HTTP_PREFIX = "http://"
     const val HTTPS_PREFIX = "https://"
     const val CORE_FILE_PATH = "p2pml/static/"
+    const val CORE_FILE_URL = "static/core.html"
+    const val CUSTOM_FILE_PATH = "custom-static/"
+    const val CUSTOM_FILE_URL = "custom-static/index.html"
 
     object QueryParams {
         const val SEGMENT = "?segment="
