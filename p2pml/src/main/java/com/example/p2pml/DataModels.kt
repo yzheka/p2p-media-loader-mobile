@@ -35,6 +35,7 @@ internal data class UpdateStreamParams(
 
 @Serializable
 internal data class SegmentRequest(
+    val requestId: Int,
     val segmentUrl: String
 )
 

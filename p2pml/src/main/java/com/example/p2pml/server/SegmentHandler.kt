@@ -3,8 +3,10 @@ package com.example.p2pml.server
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
-import com.example.p2pml.utils.P2PStateManager
 import com.example.p2pml.parser.HlsManifestParser
+import com.example.p2pml.utils.P2PStateManager
+import com.example.p2pml.utils.SegmentAbortedException
+import com.example.p2pml.utils.SegmentNotFoundException
 import com.example.p2pml.utils.Utils
 import com.example.p2pml.webview.WebViewManager
 import io.ktor.http.ContentType
@@ -39,28 +41,39 @@ internal class SegmentHandler(
 
         Log.d(
             "SegmentHandler",
-            "Received segment request for $decodedSegmentUrl with byte range $byteRange"
+            "Received segment request for $decodedSegmentUrl"
         )
 
         try {
             val isCurrentSegment = parser.isCurrentSegment(decodedSegmentUrl)
-
             if (!p2pEngineStateManager.isP2PEngineEnabled() || !isCurrentSegment) {
                 fetchAndRespondWithSegment(call, decodedSegmentUrl, byteRange)
                 return
             }
 
             val deferredSegmentBytes = webViewManager.requestSegmentBytes(decodedSegmentUrl)
-                ?: throw IllegalStateException("Deferred segment bytes are null")
+                ?: throw IllegalStateException("P2P engine is disabled")
             val segmentBytes = deferredSegmentBytes.await()
 
             respondSegment(call, segmentBytes, byteRange != null)
-        } catch (e: Exception) {
-            Log.d("SegmentHandler error", "SegmentDownloadError $e")
+        } catch (e: SegmentAbortedException) {
+            Log.e("SegmentHandler", "Segment request aborted: ${e.message}")
             call.respondText(
-                "Error fetching segment",
-                status = HttpStatusCode.InternalServerError
+                "Segment aborted",
+                status = HttpStatusCode.RequestTimeout
             )
+        } catch (e: SegmentNotFoundException) {
+            Log.e(
+                "SegmentHandler",
+                "Segment not found: ${e.message}. Falling back to direct fetch."
+            )
+            fetchAndRespondWithSegment(call, decodedSegmentUrl, byteRange)
+        } catch (e: Exception) {
+            Log.e(
+                "SegmentHandler",
+                "Error fetching segment: ${e.message}. Falling back to direct fetch."
+            )
+            fetchAndRespondWithSegment(call, decodedSegmentUrl, byteRange)
         }
     }
 
@@ -93,9 +106,23 @@ internal class SegmentHandler(
             .apply { Utils.copyHeaders(call, this) }
             .build()
 
-        val response = httpClient.newCall(request).execute()
-        val segmentBytes = response.body?.bytes() ?: throw Exception("Empty response body")
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                Log.e(
+                    "SegmentHandler",
+                    "Error fetching segment through direct fetch: ${response.code}"
+                )
+                call.respondText(
+                    "Error fetching segment",
+                    status = HttpStatusCode.fromValue(response.code)
+                )
+                return@withContext
+            }
 
-        respondSegment(call, segmentBytes, byteRange != null)
+            val segmentBytes = response.body?.use { it.bytes() }
+                ?: throw Exception("Empty response body")
+
+            respondSegment(call, segmentBytes, byteRange != null)
+        }
     }
 }

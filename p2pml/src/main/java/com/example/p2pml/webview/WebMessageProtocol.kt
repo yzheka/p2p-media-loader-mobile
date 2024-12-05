@@ -8,6 +8,8 @@ import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebMessagePortCompat
 import androidx.webkit.WebViewCompat
 import com.example.p2pml.SegmentRequest
+import com.example.p2pml.utils.SegmentAbortedException
+import com.example.p2pml.utils.SegmentNotFoundException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +19,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.random.Random
 
 internal class WebMessageProtocol(
     private val webView: WebView,
@@ -25,9 +28,9 @@ internal class WebMessageProtocol(
     @SuppressLint("RequiresFeature")
     private val channels: Array<WebMessagePortCompat> =
         WebViewCompat.createWebMessageChannel(webView)
-    private val segmentResponseCallbacks = mutableMapOf<String, CompletableDeferred<ByteArray>>()
+    private val segmentResponseCallbacks = mutableMapOf<Int, CompletableDeferred<ByteArray>>()
     private val mutex = Mutex()
-    private var incomingSegmentRequest: String? = null
+    private var incomingRequestId: Int? = null
 
     init {
         setupWebMessageCallback()
@@ -53,29 +56,33 @@ internal class WebMessageProtocol(
     }
 
     private fun handleSegmentIdBytes(arrayBuffer: ByteArray) {
-        if (incomingSegmentRequest == null) {
-            throw IllegalStateException("Received segment bytes without a segment ID")
+        if (incomingRequestId == null) {
+            Log.d("WebMessageProtocol", "Error: Empty segment ID")
         }
+        val requestId = incomingRequestId
+            ?: throw IllegalStateException("Received segment bytes without a segment ID")
+
 
         coroutineScope.launch {
-            val deferred = getSegmentResponseCallback(incomingSegmentRequest!!)
+            val deferred = getSegmentResponseCallback(requestId)
 
-            if (deferred != null) {
-                deferred.complete(arrayBuffer)
-            } else {
+            if (deferred == null) {
                 Log.d(
                     "WebMessageProtocol",
-                    "Error: No deferred found for segment ID: $incomingSegmentRequest"
+                    "Error: No deferred found for segment ID: $requestId"
                 )
+                return@launch
             }
 
-            removeSegmentResponseCallback(incomingSegmentRequest!!)
-            incomingSegmentRequest = null
+            deferred.complete(arrayBuffer)
+            removeSegmentResponseCallback(requestId)
+
+            incomingRequestId = null
         }
     }
 
     private fun handleMessage(message: String) {
-        if (message.contains("error"))
+        if (message.contains("Error"))
             handleErrorMessage(message)
         else
             handleSegmentIdMessage(message)
@@ -83,35 +90,44 @@ internal class WebMessageProtocol(
 
     private fun handleErrorMessage(message: String) {
         coroutineScope.launch {
-            message.substringAfter("error|").let {
-                val deferred = getSegmentResponseCallback(it)
-                if (deferred != null) {
-                    deferred.completeExceptionally(
-                        Exception("Error occurred while fetching segment")
-                    )
-                    Log.d(
-                        "WebMessageProtocol",
-                        "Completed deferred with error for segment ID: $it"
-                    )
-                } else {
-                    Log.d(
-                        "WebMessageProtocol",
-                        "Error: No deferred found for segment ID: $it"
-                    )
-                }
+            val error = message.substringBefore("|")
+            val errorParts = error.split(":")
+            val requestId = errorParts[1].toInt()
+            val errorType = errorParts[2]
+            val segmentId = message.substringAfter("|")
+
+            val deferredSegmentBytes = getSegmentResponseCallback(requestId)
+            if (deferredSegmentBytes == null) {
+                Log.d(
+                    "WebMessageProtocol",
+                    "Error: No deferred found for segment ID: $segmentId"
+                )
+                return@launch
             }
+
+            val exception = when (errorType) {
+                "aborted" -> SegmentAbortedException("$segmentId request was aborted")
+                "not_found" -> SegmentNotFoundException("$segmentId not found in core engine")
+                "failed" -> Exception("Error occurred while fetching segment")
+                else -> Exception("Unknown error occurred while fetching segment")
+            }
+
+            deferredSegmentBytes.completeExceptionally(exception)
+            removeSegmentResponseCallback(requestId)
         }
     }
 
-
-    private fun handleSegmentIdMessage(segmentId: String) {
-        if (incomingSegmentRequest != null) {
+    private fun handleSegmentIdMessage(requestId: String) {
+        if (incomingRequestId != null) {
             Log.d(
                 "WebMessageProtocol",
-                "Error: Received segment ID while another request is pending"
+                "Received incorrect request ID: $requestId. Expected: $incomingRequestId"
             )
+
         }
-        incomingSegmentRequest = segmentId
+        val requestIdToInt =
+            requestId.toIntOrNull() ?: throw IllegalStateException("Invalid request ID")
+        incomingRequestId = requestIdToInt
     }
 
     @SuppressLint("RequiresFeature")
@@ -130,14 +146,18 @@ internal class WebMessageProtocol(
         segmentUrl: String,
     ): CompletableDeferred<ByteArray> {
         val deferred = CompletableDeferred<ByteArray>()
-        val segmentRequest = SegmentRequest(segmentUrl)
+        val requestId = generateRequestId()
+        val segmentRequest = SegmentRequest(requestId, segmentUrl)
         val jsonRequest = Json.encodeToString(segmentRequest)
 
-        addSegmentResponseCallback(segmentUrl, deferred)
-
+        addSegmentResponseCallback(requestId, deferred)
         sendSegmentRequest(jsonRequest)
 
         return deferred
+    }
+
+    private fun generateRequestId(): Int {
+        return Random.nextInt(0, 10000)
     }
 
     private suspend fun sendSegmentRequest(segmentUrl: String) {
@@ -150,25 +170,25 @@ internal class WebMessageProtocol(
     }
 
     private suspend fun addSegmentResponseCallback(
-        segmentId: String,
+        requestId: Int,
         deferred: CompletableDeferred<ByteArray>
     ) {
         mutex.withLock {
-            segmentResponseCallbacks[segmentId] = deferred
+            segmentResponseCallbacks[requestId] = deferred
         }
     }
 
     private suspend fun getSegmentResponseCallback(
-        segmentId: String
+        requestId: Int
     ): CompletableDeferred<ByteArray>? {
         return mutex.withLock {
-            segmentResponseCallbacks[segmentId]
+            segmentResponseCallbacks[requestId]
         }
     }
 
-    private suspend fun removeSegmentResponseCallback(segmentId: String) {
+    private suspend fun removeSegmentResponseCallback(requestId: Int) {
         mutex.withLock {
-            segmentResponseCallbacks.remove(segmentId)
+            segmentResponseCallbacks.remove(requestId)
         }
     }
 }

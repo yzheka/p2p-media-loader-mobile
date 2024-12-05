@@ -81,14 +81,14 @@
 
         async processSegmentRequest(segmentRequestJSON) {
           const segmentRequest = JSON.parse(segmentRequestJSON);
-          const { segmentUrl } = segmentRequest;
+          const { segmentUrl, requestId } = segmentRequest;
 
           const onSuccess = (response) => {
             try {
               const copyData = new ArrayBuffer(response.data.byteLength);
               new Uint8Array(copyData).set(new Uint8Array(response.data));
 
-              this.port.postMessage(segmentUrl);
+              this.port.postMessage(`${requestId}`);
               this.port.postMessage(copyData, [copyData]);
             } catch (e) {
               console.error("Error in onSuccess:", e);
@@ -96,13 +96,26 @@
           };
 
           const onError = (error) => {
-            this.port.postMessage(`error|${segmentUrl}`);
+            if (error.type === "aborted") {
+              this.port.postMessage(
+                `Error:${requestId}:${error.type}|${segmentUrl}`
+              );
+              return;
+            }
+            this.port.postMessage(
+              `Error:${requestId}:${error.type}|${segmentUrl}`
+            );
           };
 
-          await this.core.loadSegment(segmentUrl, {
-            onSuccess,
-            onError,
-          });
+          try {
+            await this.core.loadSegment(segmentUrl, {
+              onSuccess,
+              onError,
+            });
+          } catch (e) {
+            console.warn("Error in processSegmentRequest:", e);
+            this.port.postMessage(`Error:${requestId}:not_found|${segmentUrl}`);
+          }
         }
 
         setManifestUrl(manifestUrl) {
