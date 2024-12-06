@@ -100,6 +100,12 @@ class P2PML(
         serverModule.startServer(serverPort)
     }
 
+    /**
+     * Applies dynamic core configurations to the `P2PML` engine.
+     *
+     *  @param dynamicP2PCoreConfigJson A JSON string containing dynamic core configurations for the P2P engine.
+     *  Refer to the [DynamicCoreConfig Documentation](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.DynamicCoreConfig.html).
+     */
     fun applyP2PDynamicCoreConfig(dynamicP2PCoreConfigJson: String) {
         webViewManager.applyDynamicP2PCoreConfig(dynamicP2PCoreConfigJson)
     }
