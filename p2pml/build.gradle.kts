@@ -61,7 +61,41 @@ afterEvaluate {
 
                 groupId = "com.example.p2pml"
                 artifactId = "p2pml"
-                version = "0.0.1"
+                version = "0.0.1-SNAPSHOT"
+
+                pom {
+                    name.set("p2pml")
+                    description.set("A sample Kotlin/Android library for P2P media streaming")
+                    url.set("https://github.com/DimaDemchenko/p2pml-kotlin")
+                    licenses {
+                        license {
+                            name.set("MIT License")
+                            url.set("https://opensource.org/licenses/MIT")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:git://github.com/DimaDemchenko/p2pml-kotlin.git")
+                        developerConnection.set("scm:git:ssh://github.com:DimaDemchenko/p2pml-kotlin.git")
+                        url.set("https://github.com/DimaDemchenko/p2pml-kotlin")
+                    }
+                    developers {
+                        developer {
+                            id.set("DimaDemchenko")
+                            name.set("Dmytro Demchenko")
+                        }
+                    }
+                }
+            }
+        }
+
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/DimaDemchenko/p2pml-kotlin")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR") ?: ""
+                    password = System.getenv("GITHUB_TOKEN") ?: ""
+                }
             }
         }
     }
