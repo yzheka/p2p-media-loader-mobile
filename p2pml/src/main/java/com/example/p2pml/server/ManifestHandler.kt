@@ -104,9 +104,9 @@ internal class ManifestHandler(
 
             val body = response.body?.string()
                 ?: throw IllegalStateException("Empty response body for manifest: $manifestUrl")
-            val finalUrl = response.request.url.toString()
+            val responseUrl = response.request.url.toString()
 
-            ManifestFetchResult(body, finalUrl)
+            ManifestFetchResult(body, responseUrl)
         }
     }
 
