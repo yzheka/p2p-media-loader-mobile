@@ -1,8 +1,8 @@
 name: Publish p2pml to GitHub Packages
 
 on:
-  push:
-    branches: [ "main" ]
+  release:
+    types: [published] 
 
 jobs:
   build-and-publish:
