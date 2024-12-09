@@ -9,13 +9,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.OptIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
@@ -88,9 +92,10 @@ class LoggingDataSourceFactory(context: Context) : DataSource.Factory {
 
 @UnstableApi
 class MainActivity : ComponentActivity() {
-    private var p2pServer = P2PML("{\"swarmId\":\"TEST_KOTLIN\"}")
+    private var p2pml = P2PML("{\"swarmId\":\"TEST_KOTLIN\"}")
     private lateinit var player: ExoPlayer
 
+    private val loadingState = mutableStateOf(true)
 
     @OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -99,10 +104,10 @@ class MainActivity : ComponentActivity() {
         WebView.setWebContentsDebuggingEnabled(true)
 
         lifecycleScope.launch {
-            p2pServer.initialize(this@MainActivity, lifecycleScope)
+            p2pml.initialize(this@MainActivity, lifecycleScope)
 
             val manifest =
-                p2pServer.getServerManifestUrl(Streams.HLS_LIVE_STREAM)
+                p2pml.getServerManifestUrl(Streams.HLS_BIG_BUCK_BUNNY_QUALITY_4)
 
             val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
             val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory).createMediaSource(
@@ -114,25 +119,46 @@ class MainActivity : ComponentActivity() {
                     setMediaSource(mediaSource)
                     prepare()
                     playWhenReady = true
+                    addListener(object : Player.Listener {
+                        override fun onPlaybackStateChanged(playbackState: Int) {
+                            if (playbackState == Player.STATE_READY) {
+                                loadingState.value = false
+                            }
+                        }
+                    })
                 }
 
-            p2pServer.setExoPlayer(player)
+            p2pml.setExoPlayer(player)
 
             setContent {
-                ExoPlayerScreen(player = player, videoTitle = "Test Stream")
+                ExoPlayerScreen(player = player, videoTitle = "Test Stream", loadingState.value)
             }
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        p2pml.applyP2PDynamicCoreConfig("{\"isP2PDisabled\": true }")
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        p2pml.applyP2PDynamicCoreConfig("{\"isP2PDisabled\": false }")
     }
 
     override fun onDestroy() {
         super.onDestroy()
         player.release()
-        p2pServer.stopServer()
+        p2pml.stopServer()
     }
 }
 
 @Composable
-fun ExoPlayerScreen(player: ExoPlayer, videoTitle: String) {
+fun ExoPlayerScreen(
+    player: ExoPlayer,
+    videoTitle: String,
+    isLoading: Boolean
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -146,15 +172,24 @@ fun ExoPlayerScreen(player: ExoPlayer, videoTitle: String) {
             style = MaterialTheme.typography.headlineMedium
         )
 
-        AndroidView(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            factory = { context ->
-                PlayerView(context).apply {
-                    this.player = player
+            contentAlignment = Alignment.Center
+        ) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context ->
+                    PlayerView(context).apply {
+                        this.player = player
+                    }
                 }
+            )
+
+            if (isLoading) {
+                CircularProgressIndicator(color = Color.White)
             }
-        )
+        }
     }
 }
