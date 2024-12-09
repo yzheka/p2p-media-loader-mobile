@@ -63,9 +63,9 @@ internal class WebViewManager(
 
                     val currentPlaybackInfo =
                         exoPlayerPlaybackCalculator.getPlaybackPositionAndSpeed()
-                    val playbackInfoJSON = Json.encodeToString(currentPlaybackInfo)
+                    val playbackInfoJson = Json.encodeToString(currentPlaybackInfo)
 
-                    sendPlaybackInfo(playbackInfoJSON)
+                    sendPlaybackInfo(playbackInfoJson)
 
                     delay(400)
                 } catch (e: Exception) {
@@ -122,29 +122,29 @@ internal class WebViewManager(
         webMessageProtocol.sendInitialMessage()
     }
 
-    private suspend fun sendPlaybackInfo(playbackInfoJSON: String) {
+    private suspend fun sendPlaybackInfo(playbackInfoJson: String) {
         if (!p2pEngineStateManager.isP2PEngineEnabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
-                "javascript:window.p2p.updatePlaybackInfo('$playbackInfoJSON');",
+                "javascript:window.p2p.updatePlaybackInfo('$playbackInfoJson');",
                 null
             )
         }
     }
 
-    suspend fun sendAllStreams(streamsJSON: String) {
+    suspend fun sendAllStreams(streamsJson: String) {
         if (!p2pEngineStateManager.isP2PEngineEnabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
-                "javascript:window.p2p.parseAllStreams('$streamsJSON');",
+                "javascript:window.p2p.parseAllStreams('$streamsJson');",
                 null
             )
         }
     }
 
-    suspend fun initP2P(coreConfigJson: String) {
+    suspend fun initCoreEngine(coreConfigJson: String) {
        withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.initP2P('$coreConfigJson');",
@@ -153,12 +153,12 @@ internal class WebViewManager(
         }
     }
 
-    suspend fun sendStream(streamJSON: String) {
+    suspend fun sendStream(streamJson: String) {
         if (!p2pEngineStateManager.isP2PEngineEnabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
-                "javascript:window.p2p.parseStream('$streamJSON');",
+                "javascript:window.p2p.parseStream('$streamJson');",
                 null
             )
         }

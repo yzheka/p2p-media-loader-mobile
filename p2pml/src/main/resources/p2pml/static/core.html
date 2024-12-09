@@ -33,7 +33,7 @@
           if (!dynamicCoreConfigJson) return;
 
           const dynamicConfig = JSON.parse(dynamicCoreConfigJson);
-          this.core.applyConfig(dynamicConfig);
+          this.core.applyDynamicConfig(dynamicConfig);
         }
 
         destroyP2PEngine() {

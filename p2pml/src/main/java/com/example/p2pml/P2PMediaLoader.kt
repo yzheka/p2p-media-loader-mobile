@@ -161,7 +161,7 @@ class P2PMediaLoader private constructor(
     }
 
     private suspend fun onWebViewLoaded() {
-        webViewManager.initP2P(coreConfigJson)
+        webViewManager.initCoreEngine(coreConfigJson)
         webViewLoadCompletion.complete(Unit)
     }
 
