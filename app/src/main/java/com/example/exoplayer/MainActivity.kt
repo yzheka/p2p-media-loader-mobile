@@ -36,7 +36,7 @@ import androidx.media3.datasource.TransferListener
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
-import com.example.p2pml.P2PML
+import com.example.p2pml.P2PMediaLoader
 import kotlinx.coroutines.launch
 
 
@@ -92,7 +92,7 @@ class LoggingDataSourceFactory(context: Context) : DataSource.Factory {
 
 @UnstableApi
 class MainActivity : ComponentActivity() {
-    private var p2pml = P2PML("{\"swarmId\":\"TEST_KOTLIN\"}")
+    private lateinit var p2pml: P2PMediaLoader
     private lateinit var player: ExoPlayer
 
     private val loadingState = mutableStateOf(true)
@@ -104,31 +104,37 @@ class MainActivity : ComponentActivity() {
         WebView.setWebContentsDebuggingEnabled(true)
 
         lifecycleScope.launch {
-            p2pml.initialize(this@MainActivity, lifecycleScope)
+            p2pml = P2PMediaLoader.Builder()
+                .setCoreConfig("{\"swarmId\":\"TEST_KOTLIN\"}")
+                .setServerPort(8081)
+                .build()
+                .apply {
+                    start(this@MainActivity, lifecycleScope)
+                }
 
             val manifest =
-                p2pml.getServerManifestUrl(Streams.HLS_BIG_BUCK_BUNNY_QUALITY_4)
+                p2pml.getManifestUrl(Streams.HLS_BIG_BUCK_BUNNY_QUALITY_4)
 
             val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
-            val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory).createMediaSource(
-                MediaItem.fromUri(manifest)
-            )
+            val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory)
+                .createMediaSource(
+                    MediaItem.fromUri(manifest)
+                )
 
             player = ExoPlayer.Builder(this@MainActivity)
-                .build().apply {
+                .build()
+                .apply {
                     setMediaSource(mediaSource)
                     prepare()
                     playWhenReady = true
                     addListener(object : Player.Listener {
                         override fun onPlaybackStateChanged(playbackState: Int) {
-                            if (playbackState == Player.STATE_READY) {
-                                loadingState.value = false
-                            }
+                            if (playbackState != Player.STATE_READY) return
+                            loadingState.value = false
                         }
                     })
+                    p2pml.attachPlayer(this)
                 }
-
-            p2pml.setExoPlayer(player)
 
             setContent {
                 ExoPlayerScreen(player = player, videoTitle = "Test Stream", loadingState.value)
@@ -138,18 +144,18 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        p2pml.applyP2PDynamicCoreConfig("{\"isP2PDisabled\": true }")
+        p2pml.applyDynamicConfig("{ \"isP2PDisabled\": true }")
     }
 
     override fun onRestart() {
         super.onRestart()
-        p2pml.applyP2PDynamicCoreConfig("{\"isP2PDisabled\": false }")
+        p2pml.applyDynamicConfig("{ \"isP2PDisabled\": false }")
     }
 
     override fun onDestroy() {
         super.onDestroy()
         player.release()
-        p2pml.stopServer()
+        p2pml.stop()
     }
 }
 

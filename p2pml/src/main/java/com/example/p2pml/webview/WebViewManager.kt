@@ -81,14 +81,14 @@ internal class WebViewManager(
         }
     }
 
-    fun applyDynamicP2PCoreConfig(coreDynamicConfigJson: String) {
+    fun applyDynamicConfig(dynamicCoreConfigJson: String) {
         coroutineScope.launch(Dispatchers.Main) {
-            val isP2PDisabled = determineP2PDisabledStatus(coreDynamicConfigJson) ?: return@launch
+            val isP2PDisabled = determineP2PDisabledStatus(dynamicCoreConfigJson) ?: return@launch
 
             p2pEngineStateManager.changeP2PEngineStatus(isP2PDisabled)
 
             webView.evaluateJavascript(
-                "javascript:window.p2p.applyDynamicP2PCoreConfig('$coreDynamicConfigJson');",
+                "javascript:window.p2p.applyDynamicP2PCoreConfig('$dynamicCoreConfigJson');",
                 null
             )
         }
