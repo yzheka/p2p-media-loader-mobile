@@ -46,12 +46,12 @@ internal data class PlaybackInfo(
 )
 
 @Serializable
-data class StreamConfig(
+internal data class StreamConfig(
     val isP2PDisabled: Boolean? = null
 )
 
 @Serializable
-data class DynamicP2PCoreConfig(
+internal data class DynamicP2PCoreConfig(
     val isP2PDisabled: Boolean? = null,
     val mainStream: StreamConfig? = null,
     val secondaryStream: StreamConfig? = null

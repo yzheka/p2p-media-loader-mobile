@@ -46,7 +46,7 @@ internal class SegmentHandler(
 
         try {
             val isCurrentSegment = parser.isCurrentSegment(decodedSegmentUrl)
-            if (!p2pEngineStateManager.isP2PEngineEnabled() || !isCurrentSegment) {
+            if (p2pEngineStateManager.isEngineDisabled() || !isCurrentSegment) {
                 fetchAndRespondWithSegment(call, decodedSegmentUrl, byteRange)
                 return
             }

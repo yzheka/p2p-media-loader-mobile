@@ -20,6 +20,11 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
+internal data class ManifestFetchResult(
+    val manifestContent: String,
+    val responseUrl: String
+)
+
 @OptIn(UnstableApi::class)
 internal class ManifestHandler(
     private val httpClient: OkHttpClient,
@@ -38,10 +43,10 @@ internal class ManifestHandler(
         val decodedManifestUrl = manifestParam.decodeURLQueryComponent()
 
         try {
-            val originalManifest = fetchManifest(call, decodedManifestUrl)
+            val fetchResult = fetchManifest(call, decodedManifestUrl)
             val modifiedManifest = manifestParser.getModifiedManifest(
-                originalManifest,
-                decodedManifestUrl
+                fetchResult.manifestContent,
+                fetchResult.responseUrl
             )
             val needsInitialSetup = checkAndSetInitialProcessing()
 
@@ -49,7 +54,7 @@ internal class ManifestHandler(
             call.respondText(modifiedManifest, ContentType.parse(MPEGURL_CONTENT_TYPE))
         } catch (e: Exception) {
             call.respondText(
-                "Error fetching master manifest",
+                "Failed to process manifest: ${e.message}",
                 status = HttpStatusCode.InternalServerError
             )
         }
@@ -87,17 +92,21 @@ internal class ManifestHandler(
     private suspend fun fetchManifest(
         call: ApplicationCall,
         manifestUrl: String
-    ): String = withContext(Dispatchers.IO) {
+    ): ManifestFetchResult = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url(manifestUrl)
             .apply { Utils.copyHeaders(call, this) }
             .build()
 
         httpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
+            if (!response.isSuccessful)
                 throw IllegalStateException("Failed to fetch manifest: $manifestUrl")
-            }
-            response.body?.string() ?: throw IllegalStateException("Empty response body")
+
+            val body = response.body?.string()
+                ?: throw IllegalStateException("Empty response body for manifest: $manifestUrl")
+            val responseUrl = response.request.url.toString()
+
+            ManifestFetchResult(body, responseUrl)
         }
     }
 

@@ -4,18 +4,18 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class P2PStateManager {
-    private var isP2PEngineEnabled = true
+    private var isEngineDisabled = false
     private val mutex = Mutex()
 
-    suspend fun isP2PEngineEnabled(): Boolean {
+    suspend fun isEngineDisabled(): Boolean {
         return mutex.withLock {
-            isP2PEngineEnabled
+            isEngineDisabled
         }
     }
 
-    suspend fun changeP2PEngineStatus(isP2PEngineStatusEnabled: Boolean) = mutex.withLock {
-        if (isP2PEngineStatusEnabled == isP2PEngineEnabled) return@withLock
+    suspend fun changeP2PEngineStatus(isP2PDisabled: Boolean) = mutex.withLock {
+        if (isP2PDisabled == isEngineDisabled) return@withLock
 
-        isP2PEngineEnabled = isP2PEngineStatusEnabled
+        isEngineDisabled = isP2PDisabled
     }
 }

@@ -51,7 +51,7 @@ internal class WebViewManager(
         playbackInfoJob = coroutineScope.launch {
             while (isActive) {
                 try {
-                    if (!p2pEngineStateManager.isP2PEngineEnabled()) {
+                    if (p2pEngineStateManager.isEngineDisabled()) {
                         Log.d(
                             "WebViewManager",
                             "P2P Engine disabled, stopping playback info update."
@@ -63,9 +63,9 @@ internal class WebViewManager(
 
                     val currentPlaybackInfo =
                         exoPlayerPlaybackCalculator.getPlaybackPositionAndSpeed()
-                    val playbackInfoJSON = Json.encodeToString(currentPlaybackInfo)
+                    val playbackInfoJson = Json.encodeToString(currentPlaybackInfo)
 
-                    sendPlaybackInfo(playbackInfoJSON)
+                    sendPlaybackInfo(playbackInfoJson)
 
                     delay(400)
                 } catch (e: Exception) {
@@ -110,41 +110,41 @@ internal class WebViewManager(
     }
 
     suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray>? {
-        if (!p2pEngineStateManager.isP2PEngineEnabled()) return null
+        if (p2pEngineStateManager.isEngineDisabled()) return null
 
         startPlaybackInfoUpdate()
         return webMessageProtocol.requestSegmentBytes(segmentUrl)
     }
 
     suspend fun sendInitialMessage() {
-        if (!p2pEngineStateManager.isP2PEngineEnabled()) return
+        if (p2pEngineStateManager.isEngineDisabled()) return
 
         webMessageProtocol.sendInitialMessage()
     }
 
-    private suspend fun sendPlaybackInfo(playbackInfoJSON: String) {
-        if (!p2pEngineStateManager.isP2PEngineEnabled()) return
+    private suspend fun sendPlaybackInfo(playbackInfoJson: String) {
+        if (p2pEngineStateManager.isEngineDisabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
-                "javascript:window.p2p.updatePlaybackInfo('$playbackInfoJSON');",
+                "javascript:window.p2p.updatePlaybackInfo('$playbackInfoJson');",
                 null
             )
         }
     }
 
-    suspend fun sendAllStreams(streamsJSON: String) {
-        if (!p2pEngineStateManager.isP2PEngineEnabled()) return
+    suspend fun sendAllStreams(streamsJson: String) {
+        if (p2pEngineStateManager.isEngineDisabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
-                "javascript:window.p2p.parseAllStreams('$streamsJSON');",
+                "javascript:window.p2p.parseAllStreams('$streamsJson');",
                 null
             )
         }
     }
 
-    suspend fun initP2P(coreConfigJson: String) {
+    suspend fun initCoreEngine(coreConfigJson: String) {
        withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.initP2P('$coreConfigJson');",
@@ -153,19 +153,19 @@ internal class WebViewManager(
         }
     }
 
-    suspend fun sendStream(streamJSON: String) {
-        if (!p2pEngineStateManager.isP2PEngineEnabled()) return
+    suspend fun sendStream(streamJson: String) {
+        if (p2pEngineStateManager.isEngineDisabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
-                "javascript:window.p2p.parseStream('$streamJSON');",
+                "javascript:window.p2p.parseStream('$streamJson');",
                 null
             )
         }
     }
 
     suspend fun setManifestUrl(manifestUrl: String) {
-        if (!p2pEngineStateManager.isP2PEngineEnabled()) return
+        if (p2pEngineStateManager.isEngineDisabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
