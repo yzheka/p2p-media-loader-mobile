@@ -31,7 +31,7 @@ dependencyResolutionManagement {
 Add the following implementation line to your **`build.gradle`** (app module):
 
 ```kotlin
-implementation("com.github.DimaDemchenko:p2pml-kotlin:45d74e0a4c")
+implementation("com.github.DimaDemchenko:p2pml-kotlin:3d9bc106af")
 ```
 
 ### Step 3: Configure the AndroidManifest
