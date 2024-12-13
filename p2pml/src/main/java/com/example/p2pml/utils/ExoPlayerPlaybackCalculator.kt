@@ -21,7 +21,7 @@ private data class PlaybackSegment(
 
 @UnstableApi
 internal class ExoPlayerPlaybackCalculator {
-    private lateinit var exoPlayer: ExoPlayer
+    private var exoPlayer: ExoPlayer? = null
 
     private val parser = HlsPlaylistParser()
     private var parsedManifest: HlsMediaPlaylist? = null
@@ -103,10 +103,12 @@ internal class ExoPlayerPlaybackCalculator {
     }
 
     suspend fun getPlaybackPositionAndSpeed(): PlaybackInfo = mutex.withLock {
+        val player = exoPlayer ?: throw IllegalStateException("ExoPlayer instance is null")
+
         val playbackPositionInSeconds = withContext(Dispatchers.Main) {
-            exoPlayer.currentPosition / 1000.0
+            player.currentPosition / 1000.0
         }
-        val playbackSpeed = withContext(Dispatchers.Main) { exoPlayer.playbackParameters.speed }
+        val playbackSpeed = withContext(Dispatchers.Main) { player.playbackParameters.speed }
 
         if (parsedManifest == null || parsedManifest?.hasEndTag == true)
             return PlaybackInfo(playbackPositionInSeconds, playbackSpeed)
@@ -123,4 +125,12 @@ internal class ExoPlayerPlaybackCalculator {
 
         return PlaybackInfo(segmentAbsolutePlayTime, playbackSpeed)
     }
+
+    suspend fun reset() = mutex.withLock {
+        currentSegments.clear()
+        parsedManifest = null
+        currentAbsoluteTime = null
+        exoPlayer = null
+    }
+
 }

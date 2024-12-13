@@ -15,6 +15,7 @@ import com.example.p2pml.utils.Utils
 import com.example.p2pml.webview.WebViewManager
 import io.ktor.http.encodeURLQueryComponent
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
 
 /**
  * `P2PMediaLoader` facilitates peer-to-peer media streaming within an Android application.
@@ -27,16 +28,14 @@ class P2PMediaLoader private constructor(
     private val serverPort: Int,
     private val customEngineImplementationPath: String?
 ) {
-    private val p2pEngineStateManager = P2PStateManager()
-    private val exoPlayerPlaybackCalculator = ExoPlayerPlaybackCalculator()
-    private val manifestParser = HlsManifestParser(
-        exoPlayerPlaybackCalculator, serverPort
-    )
+    private val engineStateManager = P2PStateManager()
+    private val playbackCalculator = ExoPlayerPlaybackCalculator()
+    private val manifestParser = HlsManifestParser(playbackCalculator, serverPort)
 
-    private lateinit var webViewManager: WebViewManager
-    private lateinit var serverModule: ServerModule
-
-    private val webViewLoadCompletion = CompletableDeferred<Unit>()
+    private var appState = AppState.INITIALIZED
+    private var webViewManager: WebViewManager? = null
+    private var serverModule: ServerModule? = null
+    private var webViewLoadCompletion: CompletableDeferred<Unit>? = null
 
     /**
      * Initializes the `P2PMediaLoader` by setting up the WebView and starting the internal server.
@@ -47,25 +46,31 @@ class P2PMediaLoader private constructor(
      * @param coroutineScope The [LifecycleCoroutineScope] for managing coroutines within the lifecycle.
      */
     fun start(context: Context, coroutineScope: LifecycleCoroutineScope) {
+        if (appState != AppState.INITIALIZED && appState != AppState.STOPPED)
+            throw IllegalStateException("Cannot start P2PMediaLoader in state: $appState")
+
+        initializeComponents(context, coroutineScope)
+        appState = AppState.STARTED
+    }
+
+    private fun initializeComponents(context: Context, coroutineScope: LifecycleCoroutineScope) {
+        webViewLoadCompletion = CompletableDeferred()
+
         webViewManager = WebViewManager(
-            context,
-            coroutineScope,
-            p2pEngineStateManager,
-            exoPlayerPlaybackCalculator
-        ) {
-            onWebViewLoaded()
-        }
+            context = context,
+            coroutineScope = coroutineScope,
+            engineStateManager = engineStateManager,
+            playbackCalculator = playbackCalculator,
+            onPageLoadFinished = { onWebViewLoaded() }
+        )
 
         serverModule = ServerModule(
-            webViewManager,
-            manifestParser,
-            p2pEngineStateManager,
-            customEngineImplementationPath
-        ) {
-            onServerStarted()
-        }
-
-        serverModule.startServer(serverPort)
+            webViewManager = webViewManager!!,
+            manifestParser = manifestParser,
+            p2pEngineStateManager = engineStateManager,
+            customEngineImplementationPath = customEngineImplementationPath,
+            onServerStarted = { onServerStarted() }
+        ).apply { start(serverPort) }
     }
 
     /**
@@ -75,7 +80,9 @@ class P2PMediaLoader private constructor(
      *  Refer to the [DynamicCoreConfig Documentation](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.DynamicCoreConfig.html).
      */
     fun applyDynamicConfig(dynamicCoreConfigJson: String) {
-        webViewManager.applyDynamicConfig(dynamicCoreConfigJson)
+        ensureStarted()
+
+        webViewManager?.applyDynamicConfig(dynamicCoreConfigJson)
     }
 
     /**
@@ -88,7 +95,9 @@ class P2PMediaLoader private constructor(
      *
      */
     fun attachPlayer(exoPlayer: ExoPlayer) {
-        exoPlayerPlaybackCalculator.setExoPlayer(exoPlayer)
+        ensureStarted()
+
+        playbackCalculator.setExoPlayer(exoPlayer)
     }
 
     /**
@@ -98,10 +107,17 @@ class P2PMediaLoader private constructor(
      * @return A [String] representing the server-localized manifest URL.
      */
     suspend fun getManifestUrl(manifestUrl: String): String {
-        webViewLoadCompletion.await()
+        ensureStarted()
+
+        webViewLoadCompletion?.await()
 
         val encodedManifestURL = manifestUrl.encodeURLQueryComponent()
         return Utils.getUrl(serverPort, "$MANIFEST$encodedManifestURL")
+    }
+
+    private fun ensureStarted() {
+        if (appState != AppState.STARTED)
+            throw IllegalStateException("Operation not allowed in state: $appState")
     }
 
     /**
@@ -110,8 +126,37 @@ class P2PMediaLoader private constructor(
      * **Note:** After calling this method, P2P streaming functionalities will be unavailable until re-initialized.
      */
     fun stop() {
-        serverModule.stopServer()
-        webViewManager.destroy()
+        if (appState != AppState.STARTED)
+            throw IllegalStateException("Cannot stop P2PMediaLoader in state: $appState")
+
+        runBlocking {
+            webViewManager?.destroy()
+            webViewManager = null
+
+            serverModule?.stop()
+            serverModule = null
+
+            playbackCalculator.reset()
+            manifestParser.reset()
+            engineStateManager.reset()
+
+            appState = AppState.STOPPED
+        }
+    }
+
+    private suspend fun onWebViewLoaded() {
+        webViewManager?.initCoreEngine(coreConfigJson)
+        webViewLoadCompletion?.complete(Unit)
+    }
+
+    private fun onServerStarted() {
+        val urlPath = if (customEngineImplementationPath != null) {
+            Utils.getUrl(serverPort, CUSTOM_FILE_URL)
+        } else {
+            Utils.getUrl(serverPort, CORE_FILE_URL)
+        }
+
+        webViewManager?.loadWebView(urlPath)
     }
 
     /**
@@ -158,20 +203,5 @@ class P2PMediaLoader private constructor(
                 customEngineImplementationPath,
             )
         }
-    }
-
-    private suspend fun onWebViewLoaded() {
-        webViewManager.initCoreEngine(coreConfigJson)
-        webViewLoadCompletion.complete(Unit)
-    }
-
-    private fun onServerStarted() {
-        val urlPath = if (customEngineImplementationPath != null) {
-            Utils.getUrl(serverPort, CUSTOM_FILE_URL)
-        } else {
-            Utils.getUrl(serverPort, CORE_FILE_URL)
-        }
-
-        webViewManager.loadWebView(urlPath)
     }
 }

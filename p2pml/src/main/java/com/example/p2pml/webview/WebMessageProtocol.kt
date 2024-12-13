@@ -191,4 +191,22 @@ internal class WebMessageProtocol(
             segmentResponseCallbacks.remove(requestId)
         }
     }
+
+    private suspend fun resetSegmentResponseCallbacks() {
+        mutex.withLock {
+            segmentResponseCallbacks.forEach{ (_, deferred) ->
+                if (deferred.isCompleted) return@forEach
+
+                deferred.completeExceptionally(
+                    Exception("WebMessageProtocol is closing, no segment data will arrive.")
+                )
+            }
+            segmentResponseCallbacks.clear()
+        }
+    }
+
+    @SuppressLint("RequiresFeature")
+    suspend fun clear() {
+        resetSegmentResponseCallbacks()
+    }
 }

@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.view.View
-import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
@@ -27,8 +26,8 @@ import kotlinx.serialization.json.Json
 internal class WebViewManager(
     context: Context,
     private val coroutineScope: CoroutineScope,
-    private val p2pEngineStateManager: P2PStateManager,
-    private val exoPlayerPlaybackCalculator: ExoPlayerPlaybackCalculator,
+    private val engineStateManager: P2PStateManager,
+    private val playbackCalculator: ExoPlayerPlaybackCalculator,
     onPageLoadFinished: suspend () -> Unit
 ) {
     @SuppressLint("SetJavaScriptEnabled")
@@ -51,7 +50,7 @@ internal class WebViewManager(
         playbackInfoJob = coroutineScope.launch {
             while (isActive) {
                 try {
-                    if (p2pEngineStateManager.isEngineDisabled()) {
+                    if (engineStateManager.isEngineDisabled()) {
                         Log.d(
                             "WebViewManager",
                             "P2P Engine disabled, stopping playback info update."
@@ -62,7 +61,7 @@ internal class WebViewManager(
                     }
 
                     val currentPlaybackInfo =
-                        exoPlayerPlaybackCalculator.getPlaybackPositionAndSpeed()
+                        playbackCalculator.getPlaybackPositionAndSpeed()
                     val playbackInfoJson = Json.encodeToString(currentPlaybackInfo)
 
                     sendPlaybackInfo(playbackInfoJson)
@@ -85,7 +84,7 @@ internal class WebViewManager(
         coroutineScope.launch(Dispatchers.Main) {
             val isP2PDisabled = determineP2PDisabledStatus(dynamicCoreConfigJson) ?: return@launch
 
-            p2pEngineStateManager.changeP2PEngineStatus(isP2PDisabled)
+            engineStateManager.changeP2PEngineStatus(isP2PDisabled)
 
             webView.evaluateJavascript(
                 "javascript:window.p2p.applyDynamicP2PCoreConfig('$dynamicCoreConfigJson');",
@@ -110,20 +109,20 @@ internal class WebViewManager(
     }
 
     suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray>? {
-        if (p2pEngineStateManager.isEngineDisabled()) return null
+        if (engineStateManager.isEngineDisabled()) return null
 
         startPlaybackInfoUpdate()
         return webMessageProtocol.requestSegmentBytes(segmentUrl)
     }
 
     suspend fun sendInitialMessage() {
-        if (p2pEngineStateManager.isEngineDisabled()) return
+        if (engineStateManager.isEngineDisabled()) return
 
         webMessageProtocol.sendInitialMessage()
     }
 
     private suspend fun sendPlaybackInfo(playbackInfoJson: String) {
-        if (p2pEngineStateManager.isEngineDisabled()) return
+        if (engineStateManager.isEngineDisabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
@@ -134,7 +133,7 @@ internal class WebViewManager(
     }
 
     suspend fun sendAllStreams(streamsJson: String) {
-        if (p2pEngineStateManager.isEngineDisabled()) return
+        if (engineStateManager.isEngineDisabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
@@ -154,7 +153,7 @@ internal class WebViewManager(
     }
 
     suspend fun sendStream(streamJson: String) {
-        if (p2pEngineStateManager.isEngineDisabled()) return
+        if (engineStateManager.isEngineDisabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
@@ -165,7 +164,7 @@ internal class WebViewManager(
     }
 
     suspend fun setManifestUrl(manifestUrl: String) {
-        if (p2pEngineStateManager.isEngineDisabled()) return
+        if (engineStateManager.isEngineDisabled()) return
 
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
@@ -175,13 +174,20 @@ internal class WebViewManager(
         }
     }
 
-    fun destroy() {
+    private fun destroyWebView() {
+        webView.apply {
+            clearHistory()
+            clearCache(false)
+            removeJavascriptInterface("Android")
+            destroy()
+        }
+    }
+
+    suspend fun destroy() {
         playbackInfoJob?.cancel()
         playbackInfoJob = null
 
-        webView.apply {
-            parent?.let { (it as ViewGroup).removeView(this) }
-            destroy()
-        }
+        webMessageProtocol.clear()
+        destroyWebView()
     }
 }
