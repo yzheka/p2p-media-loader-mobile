@@ -12,7 +12,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.decodeURLQueryComponent
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respondText
-import io.ktor.utils.io.errors.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -80,9 +79,9 @@ internal class ManifestHandler(
             } else {
                 updateStreamJSON?.let { json ->
                     webViewManager.sendStream(json)
-                } ?: throw IOException("updateStreamJSON is null")
+                } ?: throw Exception("updateStreamJSON is null")
             }
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             Log.e("handleUpdate", "Unexpected error occurred: ${e.message}")
         }
     }

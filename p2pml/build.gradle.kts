@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.compose.compiler)
     id("org.jlleitschuh.gradle.ktlint")
     kotlin("plugin.serialization") version "2.0.20"
     id("maven-publish")
@@ -42,15 +43,10 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.runtime)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.webkit)
-
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
 }
 
 afterEvaluate {
