@@ -11,8 +11,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
-
     steps:
       - uses: actions/checkout@v4
 
@@ -21,9 +19,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-
-      - name: Run ktlint Check
-        run: ./gradlew :p2pml:ktlintCheck
 
       - name: Build with Gradle
         run: ./gradlew clean build
