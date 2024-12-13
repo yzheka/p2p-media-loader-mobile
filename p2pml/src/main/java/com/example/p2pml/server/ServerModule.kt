@@ -8,10 +8,10 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
-import io.ktor.server.engine.ApplicationEngine
+import io.ktor.server.cio.CIOApplicationEngine
+import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.cors.routing.CORS
-import io.ktor.server.routing.routing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -25,7 +25,7 @@ internal class ServerModule(
     private val onServerStarted: () -> Unit,
 ) {
     private var httpClient: OkHttpClient? = null
-    private var server: ApplicationEngine? = null
+    private var server: EmbeddedServer<CIOApplicationEngine, CIOApplicationEngine.Configuration>? = null
 
     fun start(port: Int = 8080) {
         if (server != null) return
@@ -49,7 +49,7 @@ internal class ServerModule(
     }
 
     private fun subscribeToServerStarted(application: Application) {
-        application.environment.monitor.subscribe(ApplicationStarted) {
+        application.monitor.subscribe(ApplicationStarted) {
             onServerStarted()
         }
     }
@@ -77,9 +77,7 @@ internal class ServerModule(
                 customEngineImplementationPath,
             )
 
-        application.routing {
-            routingModule.setup(this)
-        }
+        routingModule.setup(application)
     }
 
     private suspend fun destroyHttpClient() {

@@ -39,9 +39,10 @@ import androidx.media3.ui.PlayerView
 import com.example.p2pml.P2PMediaLoader
 import kotlinx.coroutines.launch
 
-
 @UnstableApi
-class LoggingDataSource(private val wrappedDataSource: DataSource) : DataSource {
+class LoggingDataSource(
+    private val wrappedDataSource: DataSource,
+) : DataSource {
     @OptIn(UnstableApi::class)
     override fun open(dataSpec: DataSpec): Long {
         Log.d("HLSSegmentLogger", "Requesting: ${dataSpec.uri}")
@@ -53,14 +54,17 @@ class LoggingDataSource(private val wrappedDataSource: DataSource) : DataSource 
         }
     }
 
-    override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
-        return try {
+    override fun read(
+        buffer: ByteArray,
+        offset: Int,
+        length: Int,
+    ): Int =
+        try {
             wrappedDataSource.read(buffer, offset, length)
         } catch (e: Exception) {
             Log.e("HLSSegmentLogger", "Error reading data source: ${e.message}", e)
             throw e
         }
-    }
 
     override fun addTransferListener(transferListener: TransferListener) {
         wrappedDataSource.addTransferListener(transferListener)
@@ -78,16 +82,18 @@ class LoggingDataSource(private val wrappedDataSource: DataSource) : DataSource 
 }
 
 @UnstableApi
-class LoggingDataSourceFactory(context: Context) : DataSource.Factory {
-    private val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-        .setConnectTimeoutMs(30000)
-        .setReadTimeoutMs(30000)
+class LoggingDataSourceFactory(
+    context: Context,
+) : DataSource.Factory {
+    private val httpDataSourceFactory =
+        DefaultHttpDataSource
+            .Factory()
+            .setConnectTimeoutMs(30000)
+            .setReadTimeoutMs(30000)
 
     private val baseDataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
 
-    override fun createDataSource(): DataSource {
-        return LoggingDataSource(baseDataSourceFactory.createDataSource())
-    }
+    override fun createDataSource(): DataSource = LoggingDataSource(baseDataSourceFactory.createDataSource())
 }
 
 @UnstableApi
@@ -104,37 +110,45 @@ class MainActivity : ComponentActivity() {
         WebView.setWebContentsDebuggingEnabled(true)
 
         lifecycleScope.launch {
-            p2pml = P2PMediaLoader.Builder()
-                .setCoreConfig("{\"swarmId\":\"TEST_KOTLIN\"}")
-                .setServerPort(8081)
-                .build()
-                .apply {
-                    start(this@MainActivity, lifecycleScope)
-                }
+            p2pml =
+                P2PMediaLoader
+                    .Builder()
+                    .setCoreConfig("{\"swarmId\":\"TEST_KOTLIN\"}")
+                    .setServerPort(8081)
+                    .build()
+                    .apply {
+                        start(this@MainActivity, lifecycleScope)
+                    }
 
             val manifest =
                 p2pml.getManifestUrl(Streams.HLS_BIG_BUCK_BUNNY_QUALITY_4)
 
             val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
-            val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory)
-                .createMediaSource(
-                    MediaItem.fromUri(manifest)
-                )
+            val mediaSource =
+                HlsMediaSource
+                    .Factory(loggingDataSourceFactory)
+                    .createMediaSource(
+                        MediaItem.fromUri(manifest),
+                    )
 
-            player = ExoPlayer.Builder(this@MainActivity)
-                .build()
-                .apply {
-                    setMediaSource(mediaSource)
-                    prepare()
-                    playWhenReady = true
-                    addListener(object : Player.Listener {
-                        override fun onPlaybackStateChanged(playbackState: Int) {
-                            if (playbackState != Player.STATE_READY) return
-                            loadingState.value = false
-                        }
-                    })
-                    p2pml.attachPlayer(this)
-                }
+            player =
+                ExoPlayer
+                    .Builder(this@MainActivity)
+                    .build()
+                    .apply {
+                        setMediaSource(mediaSource)
+                        prepare()
+                        playWhenReady = true
+                        addListener(
+                            object : Player.Listener {
+                                override fun onPlaybackStateChanged(playbackState: Int) {
+                                    if (playbackState != Player.STATE_READY) return
+                                    loadingState.value = false
+                                }
+                            },
+                        )
+                        p2pml.attachPlayer(this)
+                    }
 
             setContent {
                 ExoPlayerScreen(player = player, videoTitle = "Test Stream", loadingState.value)
@@ -159,30 +173,33 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
 fun ExoPlayerScreen(
     player: ExoPlayer,
     videoTitle: String,
-    isLoading: Boolean
+    isLoading: Boolean,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = videoTitle,
             color = Color.White,
             modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium,
         )
 
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            contentAlignment = Alignment.Center,
         ) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
@@ -190,7 +207,7 @@ fun ExoPlayerScreen(
                     PlayerView(context).apply {
                         this.player = player
                     }
-                }
+                },
             )
 
             if (isLoading) {
