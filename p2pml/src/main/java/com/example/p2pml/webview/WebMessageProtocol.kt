@@ -23,7 +23,7 @@ import kotlin.random.Random
 
 internal class WebMessageProtocol(
     private val webView: WebView,
-    private val coroutineScope: CoroutineScope
+    private val coroutineScope: CoroutineScope,
 ) {
     @SuppressLint("RequiresFeature")
     private val channels: Array<WebMessagePortCompat> =
@@ -40,7 +40,10 @@ internal class WebMessageProtocol(
     private fun setupWebMessageCallback() {
         channels[0].setWebMessageCallback(
             object : WebMessagePortCompat.WebMessageCallbackCompat() {
-                override fun onMessage(port: WebMessagePortCompat, message: WebMessageCompat?) {
+                override fun onMessage(
+                    port: WebMessagePortCompat,
+                    message: WebMessageCompat?,
+                ) {
                     when (message?.type) {
                         WebMessageCompat.TYPE_ARRAY_BUFFER -> {
                             handleSegmentIdBytes(message.arrayBuffer)
@@ -59,9 +62,9 @@ internal class WebMessageProtocol(
         if (incomingRequestId == null) {
             Log.d("WebMessageProtocol", "Error: Empty segment ID")
         }
-        val requestId = incomingRequestId
-            ?: throw IllegalStateException("Received segment bytes without a segment ID")
-
+        val requestId =
+            incomingRequestId
+                ?: throw IllegalStateException("Received segment bytes without a segment ID")
 
         coroutineScope.launch {
             val deferred = getSegmentResponseCallback(requestId)
@@ -69,7 +72,7 @@ internal class WebMessageProtocol(
             if (deferred == null) {
                 Log.d(
                     "WebMessageProtocol",
-                    "Error: No deferred found for segment ID: $requestId"
+                    "Error: No deferred found for segment ID: $requestId",
                 )
                 return@launch
             }
@@ -82,10 +85,11 @@ internal class WebMessageProtocol(
     }
 
     private fun handleMessage(message: String) {
-        if (message.contains("Error"))
+        if (message.contains("Error")) {
             handleErrorMessage(message)
-        else
+        } else {
             handleSegmentIdMessage(message)
+        }
     }
 
     private fun handleErrorMessage(message: String) {
@@ -100,17 +104,18 @@ internal class WebMessageProtocol(
             if (deferredSegmentBytes == null) {
                 Log.d(
                     "WebMessageProtocol",
-                    "Error: No deferred found for segment ID: $segmentId"
+                    "Error: No deferred found for segment ID: $segmentId",
                 )
                 return@launch
             }
 
-            val exception = when (errorType) {
-                "aborted" -> SegmentAbortedException("$segmentId request was aborted")
-                "not_found" -> SegmentNotFoundException("$segmentId not found in core engine")
-                "failed" -> Exception("Error occurred while fetching segment")
-                else -> Exception("Unknown error occurred while fetching segment")
-            }
+            val exception =
+                when (errorType) {
+                    "aborted" -> SegmentAbortedException("$segmentId request was aborted")
+                    "not_found" -> SegmentNotFoundException("$segmentId not found in core engine")
+                    "failed" -> Exception("Error occurred while fetching segment")
+                    else -> Exception("Unknown error occurred while fetching segment")
+                }
 
             deferredSegmentBytes.completeExceptionally(exception)
             removeSegmentResponseCallback(requestId)
@@ -121,9 +126,8 @@ internal class WebMessageProtocol(
         if (incomingRequestId != null) {
             Log.d(
                 "WebMessageProtocol",
-                "Received incorrect request ID: $requestId. Expected: $incomingRequestId"
+                "Received incorrect request ID: $requestId. Expected: $incomingRequestId",
             )
-
         }
         val requestIdToInt =
             requestId.toIntOrNull() ?: throw IllegalStateException("Invalid request ID")
@@ -137,14 +141,12 @@ internal class WebMessageProtocol(
             WebViewCompat.postWebMessage(
                 webView,
                 initialMessage,
-                Uri.parse("*")
+                Uri.parse("*"),
             )
         }
     }
 
-    suspend fun requestSegmentBytes(
-        segmentUrl: String,
-    ): CompletableDeferred<ByteArray> {
+    suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray> {
         val deferred = CompletableDeferred<ByteArray>()
         val requestId = generateRequestId()
         val segmentRequest = SegmentRequest(requestId, segmentUrl)
@@ -156,35 +158,30 @@ internal class WebMessageProtocol(
         return deferred
     }
 
-    private fun generateRequestId(): Int {
-        return Random.nextInt(0, 10000)
-    }
+    private fun generateRequestId(): Int = Random.nextInt(0, 10000)
 
     private suspend fun sendSegmentRequest(segmentUrl: String) {
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.processSegmentRequest('$segmentUrl');",
-                null
+                null,
             )
         }
     }
 
     private suspend fun addSegmentResponseCallback(
         requestId: Int,
-        deferred: CompletableDeferred<ByteArray>
+        deferred: CompletableDeferred<ByteArray>,
     ) {
         mutex.withLock {
             segmentResponseCallbacks[requestId] = deferred
         }
     }
 
-    private suspend fun getSegmentResponseCallback(
-        requestId: Int
-    ): CompletableDeferred<ByteArray>? {
-        return mutex.withLock {
+    private suspend fun getSegmentResponseCallback(requestId: Int): CompletableDeferred<ByteArray>? =
+        mutex.withLock {
             segmentResponseCallbacks[requestId]
         }
-    }
 
     private suspend fun removeSegmentResponseCallback(requestId: Int) {
         mutex.withLock {
@@ -194,11 +191,11 @@ internal class WebMessageProtocol(
 
     private suspend fun resetSegmentResponseCallbacks() {
         mutex.withLock {
-            segmentResponseCallbacks.forEach{ (_, deferred) ->
+            segmentResponseCallbacks.forEach { (_, deferred) ->
                 if (deferred.isCompleted) return@forEach
 
                 deferred.completeExceptionally(
-                    Exception("WebMessageProtocol is closing, no segment data will arrive.")
+                    Exception("WebMessageProtocol is closing, no segment data will arrive."),
                 )
             }
             segmentResponseCallbacks.clear()

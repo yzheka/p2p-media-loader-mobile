@@ -36,29 +36,29 @@ internal data class UpdateStreamParams(
 @Serializable
 internal data class SegmentRequest(
     val requestId: Int,
-    val segmentUrl: String
+    val segmentUrl: String,
 )
 
 @Serializable
 internal data class PlaybackInfo(
     val currentPlayPosition: Double,
-    val currentPlaySpeed: Float
+    val currentPlaySpeed: Float,
 )
 
 @Serializable
 internal data class StreamConfig(
-    val isP2PDisabled: Boolean? = null
+    val isP2PDisabled: Boolean? = null,
 )
 
 @Serializable
 internal data class DynamicP2PCoreConfig(
     val isP2PDisabled: Boolean? = null,
     val mainStream: StreamConfig? = null,
-    val secondaryStream: StreamConfig? = null
+    val secondaryStream: StreamConfig? = null,
 )
 
 internal enum class AppState {
     INITIALIZED,
     STARTED,
-    STOPPED
+    STOPPED,
 }

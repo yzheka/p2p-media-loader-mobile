@@ -27,21 +27,21 @@ internal class SegmentHandler(
     private val httpClient: OkHttpClient,
     private val webViewManager: WebViewManager,
     private val parser: HlsManifestParser,
-    private val p2pEngineStateManager: P2PStateManager
+    private val p2pEngineStateManager: P2PStateManager,
 ) {
-
     suspend fun handleSegmentRequest(call: ApplicationCall) {
-        val segmentUrlParam = call.request.queryParameters["segment"]
-            ?: return call.respondText(
-                "Missing 'segment' parameter",
-                status = HttpStatusCode.BadRequest
-            )
+        val segmentUrlParam =
+            call.request.queryParameters["segment"]
+                ?: return call.respondText(
+                    "Missing 'segment' parameter",
+                    status = HttpStatusCode.BadRequest,
+                )
         val decodedSegmentUrl = Utils.decodeBase64Url(segmentUrlParam)
         val byteRange = call.request.headers[HttpHeaders.Range]
 
         Log.d(
             "SegmentHandler",
-            "Received segment request for $decodedSegmentUrl"
+            "Received segment request for $decodedSegmentUrl",
         )
 
         try {
@@ -51,8 +51,9 @@ internal class SegmentHandler(
                 return
             }
 
-            val deferredSegmentBytes = webViewManager.requestSegmentBytes(decodedSegmentUrl)
-                ?: throw IllegalStateException("P2P engine is disabled")
+            val deferredSegmentBytes =
+                webViewManager.requestSegmentBytes(decodedSegmentUrl)
+                    ?: throw IllegalStateException("P2P engine is disabled")
             val segmentBytes = deferredSegmentBytes.await()
 
             respondSegment(call, segmentBytes, byteRange != null)
@@ -60,18 +61,18 @@ internal class SegmentHandler(
             Log.e("SegmentHandler", "Segment request aborted: ${e.message}")
             call.respondText(
                 "Segment aborted",
-                status = HttpStatusCode.RequestTimeout
+                status = HttpStatusCode.RequestTimeout,
             )
         } catch (e: SegmentNotFoundException) {
             Log.e(
                 "SegmentHandler",
-                "Segment not found: ${e.message}. Falling back to direct fetch."
+                "Segment not found: ${e.message}. Falling back to direct fetch.",
             )
             fetchAndRespondWithSegment(call, decodedSegmentUrl, byteRange)
         } catch (e: Exception) {
             Log.e(
                 "SegmentHandler",
-                "Error fetching segment: ${e.message}. Falling back to direct fetch."
+                "Error fetching segment: ${e.message}. Falling back to direct fetch.",
             )
             fetchAndRespondWithSegment(call, decodedSegmentUrl, byteRange)
         }
@@ -80,15 +81,18 @@ internal class SegmentHandler(
     private suspend fun respondSegment(
         call: ApplicationCall,
         segmentBytes: ByteArray,
-        isPartial: Boolean
+        isPartial: Boolean,
     ) {
         if (isPartial) {
-            call.respond(object : OutgoingContent.ByteArrayContent() {
-                override val contentType: ContentType = ContentType.Application.OctetStream
-                override val contentLength: Long = segmentBytes.size.toLong()
-                override val status: HttpStatusCode = HttpStatusCode.PartialContent
-                override fun bytes(): ByteArray = segmentBytes
-            })
+            call.respond(
+                object : OutgoingContent.ByteArrayContent() {
+                    override val contentType: ContentType = ContentType.Application.OctetStream
+                    override val contentLength: Long = segmentBytes.size.toLong()
+                    override val status: HttpStatusCode = HttpStatusCode.PartialContent
+
+                    override fun bytes(): ByteArray = segmentBytes
+                },
+            )
         } else {
             call.respondBytes(segmentBytes, ContentType.Application.OctetStream)
         }
@@ -97,30 +101,32 @@ internal class SegmentHandler(
     private suspend fun fetchAndRespondWithSegment(
         call: ApplicationCall,
         url: String,
-        byteRange: String? = null
-    ) = withContext(Dispatchers.IO)
-    {
+        byteRange: String? = null,
+    ) = withContext(Dispatchers.IO) {
         val filteredUrl = url.substringBeforeLast("|")
-        val request = Request.Builder()
-            .url(filteredUrl)
-            .apply { Utils.copyHeaders(call, this) }
-            .build()
+        val request =
+            Request
+                .Builder()
+                .url(filteredUrl)
+                .apply { Utils.copyHeaders(call, this) }
+                .build()
 
         httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 Log.e(
                     "SegmentHandler",
-                    "Error fetching segment through direct fetch: ${response.code}"
+                    "Error fetching segment through direct fetch: ${response.code}",
                 )
                 call.respondText(
                     "Error fetching segment",
-                    status = HttpStatusCode.fromValue(response.code)
+                    status = HttpStatusCode.fromValue(response.code),
                 )
                 return@withContext
             }
 
-            val segmentBytes = response.body?.use { it.bytes() }
-                ?: throw Exception("Empty response body")
+            val segmentBytes =
+                response.body?.use { it.bytes() }
+                    ?: throw Exception("Empty response body")
 
             respondSegment(call, segmentBytes, byteRange != null)
         }

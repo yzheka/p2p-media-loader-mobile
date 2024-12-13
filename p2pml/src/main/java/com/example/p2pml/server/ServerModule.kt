@@ -1,8 +1,8 @@
 package com.example.p2pml.server
 
 import androidx.media3.common.util.UnstableApi
-import com.example.p2pml.utils.P2PStateManager
 import com.example.p2pml.parser.HlsManifestParser
+import com.example.p2pml.utils.P2PStateManager
 import com.example.p2pml.webview.WebViewManager
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
@@ -22,7 +22,7 @@ internal class ServerModule(
     private val manifestParser: HlsManifestParser,
     private val p2pEngineStateManager: P2PStateManager,
     private val customEngineImplementationPath: String? = null,
-    private val onServerStarted: () -> Unit
+    private val onServerStarted: () -> Unit,
 ) {
     private var httpClient: OkHttpClient? = null
     private var server: ApplicationEngine? = null
@@ -30,11 +30,12 @@ internal class ServerModule(
     fun start(port: Int = 8080) {
         if (server != null) return
 
-        server = embeddedServer(CIO, port) {
-            configureCORS(this)
-            configureRouting(this)
-            subscribeToServerStarted(this)
-        }.start(wait = false)
+        server =
+            embeddedServer(CIO, port) {
+                configureCORS(this)
+                configureRouting(this)
+                subscribeToServerStarted(this)
+            }.start(wait = false)
     }
 
     private fun stopServer() {
@@ -53,26 +54,28 @@ internal class ServerModule(
         }
     }
 
-    private fun configureCORS(application: Application){
+    private fun configureCORS(application: Application) {
         application.install(CORS) {
             anyHost()
         }
     }
 
-    private fun configureRouting(application: Application){
+    private fun configureRouting(application: Application) {
         httpClient = OkHttpClient()
         val manifestHandler = ManifestHandler(httpClient!!, manifestParser, webViewManager)
-        val segmentHandler = SegmentHandler(
-            httpClient!!,
-            webViewManager,
-            manifestParser,
-            p2pEngineStateManager
-        )
-        val routingModule = ServerRoutes(
-            manifestHandler,
-            segmentHandler,
-            customEngineImplementationPath
-        )
+        val segmentHandler =
+            SegmentHandler(
+                httpClient!!,
+                webViewManager,
+                manifestParser,
+                p2pEngineStateManager,
+            )
+        val routingModule =
+            ServerRoutes(
+                manifestHandler,
+                segmentHandler,
+                customEngineImplementationPath,
+            )
 
         application.routing {
             routingModule.setup(this)

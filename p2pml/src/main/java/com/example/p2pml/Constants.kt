@@ -1,6 +1,5 @@
 package com.example.p2pml
 
-
 object Constants {
     const val MPEGURL_CONTENT_TYPE = "application/vnd.apple.mpegurl"
     const val DEFAULT_SERVER_PORT = 8080

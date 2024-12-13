@@ -6,8 +6,8 @@ import kotlinx.coroutines.launch
 
 internal class JavaScriptInterface(
     private val coroutineScope: CoroutineScope,
-    private val onFullyLoadedCallback: suspend () -> Unit) {
-
+    private val onFullyLoadedCallback: suspend () -> Unit,
+) {
     @JavascriptInterface
     fun onWebViewLoaded() {
         coroutineScope.launch {

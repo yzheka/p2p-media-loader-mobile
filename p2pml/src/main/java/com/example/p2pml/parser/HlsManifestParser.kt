@@ -8,10 +8,10 @@ import androidx.media3.exoplayer.hls.playlist.HlsMultivariantPlaylist
 import androidx.media3.exoplayer.hls.playlist.HlsPlaylistParser
 import com.example.p2pml.Constants.QueryParams
 import com.example.p2pml.Constants.StreamTypes
-import com.example.p2pml.utils.ExoPlayerPlaybackCalculator
 import com.example.p2pml.Segment
 import com.example.p2pml.Stream
 import com.example.p2pml.UpdateStreamParams
+import com.example.p2pml.utils.ExoPlayerPlaybackCalculator
 import com.example.p2pml.utils.Utils
 import io.ktor.http.encodeURLQueryComponent
 import kotlinx.coroutines.sync.Mutex
@@ -22,7 +22,7 @@ import kotlinx.serialization.json.Json
 @UnstableApi
 internal class HlsManifestParser(
     private val exoPlayerPlaybackCalculator: ExoPlayerPlaybackCalculator,
-    private val serverPort: Int
+    private val serverPort: Int,
 ) {
     private val parser = HlsPlaylistParser()
     private val mutex = Mutex()
@@ -33,32 +33,42 @@ internal class HlsManifestParser(
 
     private val currentSegmentRuntimeIds = mutableSetOf<String>()
 
-    suspend fun getModifiedManifest(originalManifest: String, manifestUrl: String): String {
-        return mutex.withLock { parseHlsManifest(manifestUrl, originalManifest) }
-    }
+    suspend fun getModifiedManifest(
+        originalManifest: String,
+        manifestUrl: String,
+    ): String =
+        mutex.withLock {
+            parseHlsManifest(manifestUrl, originalManifest)
+        }
 
-    suspend fun isCurrentSegment(segmentUrl: String): Boolean {
-        return mutex.withLock {
+    suspend fun isCurrentSegment(segmentUrl: String): Boolean =
+        mutex.withLock {
             currentSegmentRuntimeIds.contains(segmentUrl)
         }
-    }
 
-    private suspend fun parseHlsManifest(manifestUrl: String, manifest: String): String {
+    private suspend fun parseHlsManifest(
+        manifestUrl: String,
+        manifest: String,
+    ): String {
         val hlsPlaylist = parser.parse(manifestUrl.toUri(), manifest.byteInputStream())
 
         return when (hlsPlaylist) {
             is HlsMediaPlaylist -> parseMediaPlaylist(manifestUrl, hlsPlaylist, manifest)
-            is HlsMultivariantPlaylist -> parseMultiVariantPlaylist(
-                manifestUrl,
-                hlsPlaylist,
-                manifest
-            )
+            is HlsMultivariantPlaylist ->
+                parseMultiVariantPlaylist(
+                    manifestUrl,
+                    hlsPlaylist,
+                    manifest,
+                )
 
             else -> throw IllegalStateException("Unsupported playlist type")
         }
     }
 
-    private fun removeObsoleteSegments(variantUrl: String, removeUntilId: Long): List<String> {
+    private fun removeObsoleteSegments(
+        variantUrl: String,
+        removeUntilId: Long,
+    ): List<String> {
         val segmentsMap = streamSegments[variantUrl] ?: return emptyList()
         val obsoleteSegments = segmentsMap.filterKeys { it < removeUntilId }
 
@@ -87,14 +97,15 @@ internal class HlsManifestParser(
         val absoluteUrl = segment.getAbsoluteUrl(variantUrl)
         val runtimeUrl = segment.getRuntimeUrl(variantUrl)
 
-        val newSegment = Segment(
-            runtimeId = runtimeUrl,
-            externalId = segmentId,
-            url = absoluteUrl,
-            byteRange = segment.byteRange,
-            startTime = startTime,
-            endTime = endTime
-        )
+        val newSegment =
+            Segment(
+                runtimeId = runtimeUrl,
+                externalId = segmentId,
+                url = absoluteUrl,
+                byteRange = segment.byteRange,
+                startTime = startTime,
+                endTime = endTime,
+            )
 
         segmentsMap[segmentId] = newSegment
 
@@ -104,20 +115,21 @@ internal class HlsManifestParser(
     private suspend fun parseMediaPlaylist(
         manifestUrl: String,
         mediaPlaylist: HlsMediaPlaylist,
-        originalManifest: String
+        originalManifest: String,
     ): String {
         val isStreamLive = !mediaPlaylist.hasEndTag
         val newMediaSequence = mediaPlaylist.mediaSequence
         val updatedManifestBuilder = StringBuilder(originalManifest)
 
-        val initialStartTime = if (isStreamLive) {
-            exoPlayerPlaybackCalculator.getAbsolutePlaybackPosition(
-                manifestUrl,
-                originalManifest
-            )
-        } else {
-            0.0
-        }
+        val initialStartTime =
+            if (isStreamLive) {
+                exoPlayerPlaybackCalculator.getAbsolutePlaybackPosition(
+                    manifestUrl,
+                    originalManifest,
+                )
+            } else {
+                0.0
+            }
 
         val segmentsToRemove = removeObsoleteSegments(manifestUrl, newMediaSequence)
         val initializationSegments = mutableSetOf<HlsMediaPlaylist.Segment>()
@@ -140,7 +152,10 @@ internal class HlsManifestParser(
                 addNewSegment(manifestUrl, segmentIndex, initialStartTime, segment)
             if (newSegment != null) {
                 segmentsToAdd.add(newSegment)
-                Log.d("SegmentHandler", "Segment: $segmentIndex - ${newSegment.runtimeId}")
+                Log.d(
+                    "SegmentHandler",
+                    "Segment: $segmentIndex - ${newSegment.runtimeId}",
+                )
             }
         }
 
@@ -149,7 +164,7 @@ internal class HlsManifestParser(
                 originalManifest,
                 manifestUrl,
                 initializationSegment.url,
-                updatedManifestBuilder
+                updatedManifestBuilder,
             )
         }
 
@@ -157,31 +172,32 @@ internal class HlsManifestParser(
 
         val stream = findStreamByRuntimeId(manifestUrl)
         // This should be fired if there is no master manifest
-        if (stream == null)
+        if (stream == null) {
             streams.add(Stream(runtimeId = manifestUrl, type = StreamTypes.MAIN, index = 0))
+        }
 
         return updatedManifestBuilder.toString()
     }
 
     suspend fun getUpdateStreamParamsJSON(variantUrl: String): String? {
         mutex.withLock {
-            val updateStream = updateStreamParams[variantUrl]
-                ?: return null
+            val updateStream =
+                updateStreamParams[variantUrl]
+                    ?: return null
 
             return Json.encodeToString(updateStream)
         }
     }
 
-    suspend fun getStreamsJSON(): String {
-        return mutex.withLock {
+    suspend fun getStreamsJSON(): String =
+        mutex.withLock {
             Json.encodeToString(streams)
         }
-    }
 
     private fun parseMultiVariantPlaylist(
         manifestUrl: String,
         hlsPlaylist: HlsMultivariantPlaylist,
-        originalManifest: String
+        originalManifest: String,
     ): String {
         val updatedManifestBuilder = StringBuilder(originalManifest)
 
@@ -191,7 +207,7 @@ internal class HlsManifestParser(
                 index,
                 originalManifest,
                 manifestUrl,
-                updatedManifestBuilder
+                updatedManifestBuilder,
             )
         }
 
@@ -201,7 +217,7 @@ internal class HlsManifestParser(
                 index,
                 originalManifest,
                 manifestUrl,
-                updatedManifestBuilder
+                updatedManifestBuilder,
             )
         }
 
@@ -210,7 +226,7 @@ internal class HlsManifestParser(
                 originalManifest,
                 manifestUrl,
                 subtitle.url.toString(),
-                updatedManifestBuilder
+                updatedManifestBuilder,
             )
         }
 
@@ -219,7 +235,7 @@ internal class HlsManifestParser(
                 originalManifest,
                 manifestUrl,
                 caption.url.toString(),
-                updatedManifestBuilder
+                updatedManifestBuilder,
             )
         }
         return updatedManifestBuilder.toString()
@@ -229,28 +245,30 @@ internal class HlsManifestParser(
         variantUrl: String,
         newSegments: List<Segment>,
         segmentsToRemove: List<String>,
-        isLive: Boolean
+        isLive: Boolean,
     ) {
-        val updateStream = UpdateStreamParams(
-            streamRuntimeId = variantUrl,
-            addSegments = newSegments,
-            removeSegmentsIds = segmentsToRemove,
-            isLive = isLive
-        )
+        val updateStream =
+            UpdateStreamParams(
+                streamRuntimeId = variantUrl,
+                addSegments = newSegments,
+                removeSegmentsIds = segmentsToRemove,
+                isLive = isLive,
+            )
 
         updateStreamParams[variantUrl] = updateStream
     }
 
-    private fun findStreamByRuntimeId(runtimeId: String): Stream? {
-        return streams.find { it.runtimeId == runtimeId }
-    }
+    private fun findStreamByRuntimeId(runtimeId: String): Stream? =
+        streams.find {
+            it.runtimeId == runtimeId
+        }
 
     private fun processVariant(
         variant: HlsMultivariantPlaylist.Variant,
         index: Int,
         manifest: String,
         manifestUrl: String,
-        updatedManifestBuilder: StringBuilder
+        updatedManifestBuilder: StringBuilder,
     ) {
         val streamUrl = variant.url.toString()
         streams.add(Stream(runtimeId = streamUrl, type = StreamTypes.MAIN, index = index))
@@ -260,7 +278,7 @@ internal class HlsManifestParser(
             manifestUrl,
             streamUrl,
             updatedManifestBuilder,
-            QueryParams.MANIFEST
+            QueryParams.MANIFEST,
         )
     }
 
@@ -269,7 +287,7 @@ internal class HlsManifestParser(
         index: Int,
         manifest: String,
         manifestUrl: String,
-        updatedManifestBuilder: StringBuilder
+        updatedManifestBuilder: StringBuilder,
     ) {
         val streamUrl = rendition.url.toString()
         streams.add(Stream(runtimeId = streamUrl, type = StreamTypes.SECONDARY, index = index))
@@ -279,7 +297,7 @@ internal class HlsManifestParser(
             manifestUrl,
             streamUrl,
             updatedManifestBuilder,
-            QueryParams.MANIFEST
+            QueryParams.MANIFEST,
         )
     }
 
@@ -288,33 +306,39 @@ internal class HlsManifestParser(
         variantUrl: String,
         manifestBuilder: StringBuilder,
     ) {
-        val segmentUriInManifest = findUrlInManifest(
-            manifestBuilder.toString(),
-            segment.url,
-            variantUrl
-        )
+        val segmentUriInManifest =
+            findUrlInManifest(
+                manifestBuilder.toString(),
+                segment.url,
+                variantUrl,
+            )
         val absoluteSegmentUrl = segment.getAbsoluteUrl(variantUrl)
         val byteRange = segment.byteRange
 
-        val encodedAbsoluteSegmentUrl = if (byteRange != null)
-            Utils.encodeUrlToBase64("$absoluteSegmentUrl|${byteRange.start}-${byteRange.end}")
-        else
-            Utils.encodeUrlToBase64(absoluteSegmentUrl)
+        val encodedAbsoluteSegmentUrl =
+            if (byteRange != null) {
+                Utils.encodeUrlToBase64("$absoluteSegmentUrl|${byteRange.start}-${byteRange.end}")
+            } else {
+                Utils.encodeUrlToBase64(absoluteSegmentUrl)
+            }
 
-        val newUrl = Utils.getUrl(
-            serverPort,
-            "${QueryParams.SEGMENT}$encodedAbsoluteSegmentUrl"
-        )
+        val newUrl =
+            Utils.getUrl(
+                serverPort,
+                "${QueryParams.SEGMENT}$encodedAbsoluteSegmentUrl",
+            )
 
-        val startIndex = manifestBuilder.indexOf(segmentUriInManifest)
-            .takeIf { it != -1 }
-            ?: throw IllegalStateException("URL not found in manifest: $segment.url")
+        val startIndex =
+            manifestBuilder
+                .indexOf(segmentUriInManifest)
+                .takeIf { it != -1 }
+                ?: throw IllegalStateException("URL not found in manifest: $segment.url")
         val endIndex = startIndex + segmentUriInManifest.length
 
         manifestBuilder.replace(
             startIndex,
             endIndex,
-            newUrl
+            newUrl,
         )
     }
 
@@ -323,20 +347,23 @@ internal class HlsManifestParser(
         baseManifestUrl: String,
         originalUrl: String,
         updatedManifestBuilder: StringBuilder,
-        queryParam: String? = null
+        queryParam: String? = null,
     ) {
         val urlToFind = findUrlInManifest(manifest, originalUrl, baseManifestUrl)
         val absoluteUrl =
             Utils.getAbsoluteUrl(baseManifestUrl, originalUrl).encodeURLQueryComponent()
-        val newUrl = if (queryParam != null) {
-            Utils.getUrl(serverPort, "$queryParam$absoluteUrl")
-        } else {
-            absoluteUrl
-        }
+        val newUrl =
+            if (queryParam != null) {
+                Utils.getUrl(serverPort, "$queryParam$absoluteUrl")
+            } else {
+                absoluteUrl
+            }
 
-        val startIndex = updatedManifestBuilder.indexOf(urlToFind)
-            .takeIf { it != -1 }
-            ?: throw IllegalStateException("URL not found in manifest: $originalUrl")
+        val startIndex =
+            updatedManifestBuilder
+                .indexOf(urlToFind)
+                .takeIf { it != -1 }
+                ?: throw IllegalStateException("URL not found in manifest: $originalUrl")
         val endIndex = startIndex + urlToFind.length
         updatedManifestBuilder.replace(startIndex, endIndex, newUrl)
     }
@@ -344,7 +371,7 @@ internal class HlsManifestParser(
     private fun findUrlInManifest(
         manifest: String,
         urlToFind: String,
-        manifestUrl: String
+        manifestUrl: String,
     ): String {
         val baseManifestURL = manifestUrl.substringBeforeLast("/") + "/"
         val relativeUrlToFind = urlToFind.removePrefix(baseManifestURL)
@@ -354,7 +381,7 @@ internal class HlsManifestParser(
             manifest.contains(relativeUrlToFind) -> relativeUrlToFind
             else -> throw IllegalStateException(
                 "URL not found in manifest. urlToFind:" +
-                        "$urlToFind, manifestUrl: $manifestUrl"
+                    "$urlToFind, manifestUrl: $manifestUrl",
             )
         }
     }
