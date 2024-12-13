@@ -18,4 +18,8 @@ class P2PStateManager {
 
         isEngineDisabled = isP2PDisabled
     }
+
+    suspend fun reset() = mutex.withLock {
+        isEngineDisabled = false
+    }
 }

@@ -56,3 +56,9 @@ internal data class DynamicP2PCoreConfig(
     val mainStream: StreamConfig? = null,
     val secondaryStream: StreamConfig? = null
 )
+
+internal enum class AppState {
+    INITIALIZED,
+    STARTED,
+    STOPPED
+}

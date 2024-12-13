@@ -358,4 +358,13 @@ internal class HlsManifestParser(
             )
         }
     }
+
+    suspend fun reset() {
+        mutex.withLock {
+            streams.clear()
+            streamSegments.clear()
+            updateStreamParams.clear()
+            currentSegmentRuntimeIds.clear()
+        }
+    }
 }
