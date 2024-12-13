@@ -1,7 +1,6 @@
 package com.example.p2pml
 
 import android.content.Context
-import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.p2pml.Constants.CORE_FILE_URL
@@ -15,6 +14,9 @@ import com.example.p2pml.utils.Utils
 import com.example.p2pml.webview.WebViewManager
 import io.ktor.http.encodeURLQueryComponent
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -32,6 +34,9 @@ class P2PMediaLoader private constructor(
     private val playbackCalculator = ExoPlayerPlaybackCalculator()
     private val manifestParser = HlsManifestParser(playbackCalculator, serverPort)
 
+    private var job: Job? = null
+    private var scope: CoroutineScope? = null
+
     private var appState = AppState.INITIALIZED
     private var webViewManager: WebViewManager? = null
     private var serverModule: ServerModule? = null
@@ -43,30 +48,26 @@ class P2PMediaLoader private constructor(
      * This method must be called before using other functionalities of `P2PMediaLoader`.
      *
      * @param context The Android [Context] used to initialize the WebView.
-     * @param coroutineScope The [LifecycleCoroutineScope] for managing coroutines within the lifecycle.
      */
-    fun start(
-        context: Context,
-        coroutineScope: LifecycleCoroutineScope,
-    ) {
+    fun start(context: Context) {
         if (appState != AppState.INITIALIZED && appState != AppState.STOPPED) {
             throw IllegalStateException("Cannot start P2PMediaLoader in state: $appState")
         }
 
-        initializeComponents(context, coroutineScope)
+        job = Job()
+        scope = CoroutineScope(job!! + Dispatchers.Main)
+
+        initializeComponents(context)
         appState = AppState.STARTED
     }
 
-    private fun initializeComponents(
-        context: Context,
-        coroutineScope: LifecycleCoroutineScope,
-    ) {
+    private fun initializeComponents(context: Context) {
         webViewLoadCompletion = CompletableDeferred()
 
         webViewManager =
             WebViewManager(
                 context = context,
-                coroutineScope = coroutineScope,
+                coroutineScope = scope!!,
                 engineStateManager = engineStateManager,
                 playbackCalculator = playbackCalculator,
                 onPageLoadFinished = { onWebViewLoaded() },
@@ -150,6 +151,10 @@ class P2PMediaLoader private constructor(
             playbackCalculator.reset()
             manifestParser.reset()
             engineStateManager.reset()
+
+            job?.cancel()
+            job = null
+            scope = null
 
             appState = AppState.STOPPED
         }

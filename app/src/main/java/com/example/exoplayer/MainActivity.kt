@@ -117,7 +117,7 @@ class MainActivity : ComponentActivity() {
                     .setServerPort(8081)
                     .build()
                     .apply {
-                        start(this@MainActivity, lifecycleScope)
+                        start(this@MainActivity)
                     }
 
             val manifest =
