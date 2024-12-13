@@ -28,18 +28,20 @@ internal class WebViewManager(
     private val coroutineScope: CoroutineScope,
     private val engineStateManager: P2PStateManager,
     private val playbackCalculator: ExoPlayerPlaybackCalculator,
-    onPageLoadFinished: suspend () -> Unit
+    onPageLoadFinished: suspend () -> Unit,
 ) {
     @SuppressLint("SetJavaScriptEnabled")
-    private val webView = WebView(context).apply {
-        settings.javaScriptEnabled = true
-        settings.domStorageEnabled = true
-        webViewClient = WebViewClientCompat()
-        visibility = View.GONE
-        addJavascriptInterface(
-            JavaScriptInterface(coroutineScope, onPageLoadFinished), "Android"
-        )
-    }
+    private val webView =
+        WebView(context).apply {
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            webViewClient = WebViewClientCompat()
+            visibility = View.GONE
+            addJavascriptInterface(
+                JavaScriptInterface(coroutineScope, onPageLoadFinished),
+                "Android",
+            )
+        }
     private val webMessageProtocol = WebMessageProtocol(webView, coroutineScope)
 
     private var playbackInfoJob: Job? = null
@@ -47,31 +49,35 @@ internal class WebViewManager(
     private fun startPlaybackInfoUpdate() {
         if (playbackInfoJob !== null) return
 
-        playbackInfoJob = coroutineScope.launch {
-            while (isActive) {
-                try {
-                    if (engineStateManager.isEngineDisabled()) {
-                        Log.d(
+        playbackInfoJob =
+            coroutineScope.launch {
+                while (isActive) {
+                    try {
+                        if (engineStateManager.isEngineDisabled()) {
+                            Log.d(
+                                "WebViewManager",
+                                "P2P Engine disabled, stopping playback info update.",
+                            )
+                            playbackInfoJob?.cancel()
+                            playbackInfoJob = null
+                            break
+                        }
+
+                        val currentPlaybackInfo =
+                            playbackCalculator.getPlaybackPositionAndSpeed()
+                        val playbackInfoJson = Json.encodeToString(currentPlaybackInfo)
+
+                        sendPlaybackInfo(playbackInfoJson)
+
+                        delay(400)
+                    } catch (e: Exception) {
+                        Log.e(
                             "WebViewManager",
-                            "P2P Engine disabled, stopping playback info update."
+                            "Error sending playback info: ${e.message}",
                         )
-                        playbackInfoJob?.cancel()
-                        playbackInfoJob = null
-                        break
                     }
-
-                    val currentPlaybackInfo =
-                        playbackCalculator.getPlaybackPositionAndSpeed()
-                    val playbackInfoJson = Json.encodeToString(currentPlaybackInfo)
-
-                    sendPlaybackInfo(playbackInfoJson)
-
-                    delay(400)
-                } catch (e: Exception) {
-                    Log.e("WebViewManager", "Error sending playback info: ${e.message}")
                 }
             }
-        }
     }
 
     fun loadWebView(url: String) {
@@ -88,13 +94,13 @@ internal class WebViewManager(
 
             webView.evaluateJavascript(
                 "javascript:window.p2p.applyDynamicP2PCoreConfig('$dynamicCoreConfigJson');",
-                null
+                null,
             )
         }
     }
 
-    private fun determineP2PDisabledStatus(coreDynamicConfigJson: String): Boolean? {
-        return try {
+    private fun determineP2PDisabledStatus(coreDynamicConfigJson: String): Boolean? =
+        try {
             val config = Json.decodeFromString<DynamicP2PCoreConfig>(coreDynamicConfigJson)
 
             config.isP2PDisabled
@@ -106,7 +112,6 @@ internal class WebViewManager(
         } catch (e: Exception) {
             null
         }
-    }
 
     suspend fun requestSegmentBytes(segmentUrl: String): CompletableDeferred<ByteArray>? {
         if (engineStateManager.isEngineDisabled()) return null
@@ -127,7 +132,7 @@ internal class WebViewManager(
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.updatePlaybackInfo('$playbackInfoJson');",
-                null
+                null,
             )
         }
     }
@@ -138,16 +143,16 @@ internal class WebViewManager(
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.parseAllStreams('$streamsJson');",
-                null
+                null,
             )
         }
     }
 
     suspend fun initCoreEngine(coreConfigJson: String) {
-       withContext(Dispatchers.Main) {
+        withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.initP2P('$coreConfigJson');",
-                null
+                null,
             )
         }
     }
@@ -158,7 +163,7 @@ internal class WebViewManager(
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.parseStream('$streamJson');",
-                null
+                null,
             )
         }
     }
@@ -169,7 +174,7 @@ internal class WebViewManager(
         withContext(Dispatchers.Main) {
             webView.evaluateJavascript(
                 "javascript:window.p2p.setManifestUrl('$manifestUrl');",
-                null
+                null,
             )
         }
     }

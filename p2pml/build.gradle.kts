@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
+    id("org.jlleitschuh.gradle.ktlint")
     kotlin("plugin.serialization") version "2.0.20"
     id("maven-publish")
 }
@@ -21,7 +22,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -39,11 +40,10 @@ dependencies {
     implementation(libs.ktor.server.cio)
     implementation(libs.ktor.server.cors)
     implementation(libs.okhttp)
-    implementation (libs.androidx.media3.exoplayer.hls)
-    implementation (libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.exoplayer.hls)
+    implementation(libs.androidx.media3.exoplayer)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.webkit)
-
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

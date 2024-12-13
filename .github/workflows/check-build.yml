@@ -22,5 +22,8 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Run ktlint Check
+        run: ./gradlew :p2pml:ktlintCheck
+
       - name: Build with Gradle
         run: ./gradlew clean build

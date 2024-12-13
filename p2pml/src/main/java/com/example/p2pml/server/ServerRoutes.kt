@@ -11,21 +11,21 @@ import io.ktor.server.routing.get
 internal class ServerRoutes(
     private val manifestHandler: ManifestHandler,
     private val segmentHandler: SegmentHandler,
-    private val customP2pmlImplementationPath: String? = null
+    private val customP2pmlImplementationPath: String? = null,
 ) {
     fun setup(routing: Routing) {
         routing {
             get("/") {
                 when {
-                    call.parameters["manifest"] != null -> manifestHandler.handleManifestRequest(
-                        call
-                    )
+                    call.parameters["manifest"] != null ->
+                        manifestHandler.handleManifestRequest(call)
                     call.parameters["segment"] != null -> segmentHandler.handleSegmentRequest(call)
 
-                    else -> call.respondText(
-                        "Missing required parameter",
-                        status = io.ktor.http.HttpStatusCode.BadRequest
-                    )
+                    else ->
+                        call.respondText(
+                            "Missing required parameter",
+                            status = io.ktor.http.HttpStatusCode.BadRequest,
+                        )
                 }
             }
 

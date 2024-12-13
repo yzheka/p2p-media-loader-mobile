@@ -26,7 +26,7 @@ import kotlinx.coroutines.runBlocking
 class P2PMediaLoader private constructor(
     private val coreConfigJson: String,
     private val serverPort: Int,
-    private val customEngineImplementationPath: String?
+    private val customEngineImplementationPath: String?,
 ) {
     private val engineStateManager = P2PStateManager()
     private val playbackCalculator = ExoPlayerPlaybackCalculator()
@@ -45,32 +45,41 @@ class P2PMediaLoader private constructor(
      * @param context The Android [Context] used to initialize the WebView.
      * @param coroutineScope The [LifecycleCoroutineScope] for managing coroutines within the lifecycle.
      */
-    fun start(context: Context, coroutineScope: LifecycleCoroutineScope) {
-        if (appState != AppState.INITIALIZED && appState != AppState.STOPPED)
+    fun start(
+        context: Context,
+        coroutineScope: LifecycleCoroutineScope,
+    ) {
+        if (appState != AppState.INITIALIZED && appState != AppState.STOPPED) {
             throw IllegalStateException("Cannot start P2PMediaLoader in state: $appState")
+        }
 
         initializeComponents(context, coroutineScope)
         appState = AppState.STARTED
     }
 
-    private fun initializeComponents(context: Context, coroutineScope: LifecycleCoroutineScope) {
+    private fun initializeComponents(
+        context: Context,
+        coroutineScope: LifecycleCoroutineScope,
+    ) {
         webViewLoadCompletion = CompletableDeferred()
 
-        webViewManager = WebViewManager(
-            context = context,
-            coroutineScope = coroutineScope,
-            engineStateManager = engineStateManager,
-            playbackCalculator = playbackCalculator,
-            onPageLoadFinished = { onWebViewLoaded() }
-        )
+        webViewManager =
+            WebViewManager(
+                context = context,
+                coroutineScope = coroutineScope,
+                engineStateManager = engineStateManager,
+                playbackCalculator = playbackCalculator,
+                onPageLoadFinished = { onWebViewLoaded() },
+            )
 
-        serverModule = ServerModule(
-            webViewManager = webViewManager!!,
-            manifestParser = manifestParser,
-            p2pEngineStateManager = engineStateManager,
-            customEngineImplementationPath = customEngineImplementationPath,
-            onServerStarted = { onServerStarted() }
-        ).apply { start(serverPort) }
+        serverModule =
+            ServerModule(
+                webViewManager = webViewManager!!,
+                manifestParser = manifestParser,
+                p2pEngineStateManager = engineStateManager,
+                customEngineImplementationPath = customEngineImplementationPath,
+                onServerStarted = { onServerStarted() },
+            ).apply { start(serverPort) }
     }
 
     /**
@@ -116,8 +125,9 @@ class P2PMediaLoader private constructor(
     }
 
     private fun ensureStarted() {
-        if (appState != AppState.STARTED)
+        if (appState != AppState.STARTED) {
             throw IllegalStateException("Operation not allowed in state: $appState")
+        }
     }
 
     /**
@@ -126,8 +136,9 @@ class P2PMediaLoader private constructor(
      * **Note:** After calling this method, P2P streaming functionalities will be unavailable until re-initialized.
      */
     fun stop() {
-        if (appState != AppState.STARTED)
+        if (appState != AppState.STARTED) {
             throw IllegalStateException("Cannot stop P2PMediaLoader in state: $appState")
+        }
 
         runBlocking {
             webViewManager?.destroy()
@@ -150,11 +161,12 @@ class P2PMediaLoader private constructor(
     }
 
     private fun onServerStarted() {
-        val urlPath = if (customEngineImplementationPath != null) {
-            Utils.getUrl(serverPort, CUSTOM_FILE_URL)
-        } else {
-            Utils.getUrl(serverPort, CORE_FILE_URL)
-        }
+        val urlPath =
+            if (customEngineImplementationPath != null) {
+                Utils.getUrl(serverPort, CUSTOM_FILE_URL)
+            } else {
+                Utils.getUrl(serverPort, CORE_FILE_URL)
+            }
 
         webViewManager?.loadWebView(urlPath)
     }
@@ -174,12 +186,14 @@ class P2PMediaLoader private constructor(
          *   Defaults to an empty string, implying default configurations.
          */
         fun setCoreConfig(coreConfigJson: String) = apply { this.coreConfig = coreConfigJson }
+
         /**
          * Sets the server port.
          *
          * @param port The port number on which the internal server will run.
          */
         fun setServerPort(port: Int) = apply { this.serverPort = port }
+
         /**
          * Sets the custom engine implementation path.
          *
@@ -190,18 +204,16 @@ class P2PMediaLoader private constructor(
          * The path should be relative to your application's resources directory (`src/main/resources`).
          * This enables you to provide a custom `index.html` file with a custom P2PML engine implementation.
          */
-        fun setCustomImplementationPath(path: String?) =
-            apply { this.customEngineImplementationPath = path }
+        fun setCustomImplementationPath(path: String?) = apply { this.customEngineImplementationPath = path }
 
         /**
          * @return A new [P2PMediaLoader] instance.
          */
-        fun build(): P2PMediaLoader {
-            return P2PMediaLoader(
+        fun build(): P2PMediaLoader =
+            P2PMediaLoader(
                 coreConfig,
                 serverPort,
                 customEngineImplementationPath,
             )
-        }
     }
 }
