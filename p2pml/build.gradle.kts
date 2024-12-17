@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.p2pml"
+    namespace = "com.novage.p2pml"
     compileSdk = 35
 
     defaultConfig {
@@ -55,7 +55,7 @@ afterEvaluate {
             create<MavenPublication>("release") {
                 from(components["release"])
 
-                groupId = "com.example.p2pml"
+                groupId = "com.novage.p2pml"
                 artifactId = "p2pml"
                 version = "0.0.1-SNAPSHOT"
 
