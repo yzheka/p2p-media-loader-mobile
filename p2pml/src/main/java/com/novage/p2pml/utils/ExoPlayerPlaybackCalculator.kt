@@ -1,10 +1,8 @@
 package com.novage.p2pml.utils
 
-import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
-import androidx.media3.exoplayer.hls.playlist.HlsPlaylistParser
 import com.novage.p2pml.PlaybackInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -23,8 +21,7 @@ private data class PlaybackSegment(
 internal class ExoPlayerPlaybackCalculator {
     private var exoPlayer: ExoPlayer? = null
 
-    private val parser = HlsPlaylistParser()
-    private var parsedManifest: HlsMediaPlaylist? = null
+    private var currentMediaPlaylist: HlsMediaPlaylist? = null
     private var currentAbsoluteTime: Double? = null
 
     private var currentSegments = mutableMapOf<Long, PlaybackSegment>()
@@ -82,21 +79,16 @@ internal class ExoPlayerPlaybackCalculator {
             )
     }
 
-    suspend fun getAbsolutePlaybackPosition(
-        manifestUrl: String,
-        manifest: String,
-    ): Double =
+    suspend fun getAbsolutePlaybackPosition(parsedMediaPlaylist: HlsMediaPlaylist): Double =
         mutex.withLock {
-            parsedManifest =
-                parser.parse(manifestUrl.toUri(), manifest.byteInputStream()) as? HlsMediaPlaylist
-                    ?: throw IllegalStateException("Parsed manifest is null")
+            currentMediaPlaylist = parsedMediaPlaylist
 
-            val newMediaSequence = parsedManifest!!.mediaSequence
+            val newMediaSequence = parsedMediaPlaylist.mediaSequence
             currentAbsoluteTime = System.currentTimeMillis() / 1000.0
 
             removeObsoleteSegments(newMediaSequence)
 
-            parsedManifest!!.segments.forEachIndexed { index, segment ->
+            parsedMediaPlaylist.segments.forEachIndexed { index, segment ->
                 val segmentIndex = newMediaSequence + index
 
                 if (!currentSegments.contains(segmentIndex)) {
@@ -119,7 +111,7 @@ internal class ExoPlayerPlaybackCalculator {
                 }
             val playbackSpeed = withContext(Dispatchers.Main) { player.playbackParameters.speed }
 
-            if (parsedManifest == null || parsedManifest?.hasEndTag == true) {
+            if (currentMediaPlaylist == null || currentMediaPlaylist?.hasEndTag == true) {
                 return PlaybackInfo(playbackPositionInSeconds, playbackSpeed)
             }
 
@@ -144,7 +136,7 @@ internal class ExoPlayerPlaybackCalculator {
     suspend fun reset() =
         mutex.withLock {
             currentSegments.clear()
-            parsedManifest = null
+            currentMediaPlaylist = null
             currentAbsoluteTime = null
             exoPlayer = null
         }

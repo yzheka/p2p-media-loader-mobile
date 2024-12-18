@@ -21,7 +21,7 @@ import kotlinx.serialization.json.Json
 
 @UnstableApi
 internal class HlsManifestParser(
-    private val exoPlayerPlaybackCalculator: ExoPlayerPlaybackCalculator,
+    private val playbackCalculator: ExoPlayerPlaybackCalculator,
     private val serverPort: Int,
 ) {
     private val parser = HlsPlaylistParser()
@@ -112,6 +112,16 @@ internal class HlsManifestParser(
         return newSegment
     }
 
+    private suspend fun calculateInitialStartTime(
+        isLive: Boolean,
+        mediaPlaylist: HlsMediaPlaylist,
+    ): Double =
+        if (isLive) {
+            playbackCalculator.getAbsolutePlaybackPosition(mediaPlaylist)
+        } else {
+            0.0
+        }
+
     private suspend fun parseMediaPlaylist(
         manifestUrl: String,
         mediaPlaylist: HlsMediaPlaylist,
@@ -121,20 +131,11 @@ internal class HlsManifestParser(
         val newMediaSequence = mediaPlaylist.mediaSequence
         val updatedManifestBuilder = StringBuilder(originalManifest)
 
-        val initialStartTime =
-            if (isStreamLive) {
-                exoPlayerPlaybackCalculator.getAbsolutePlaybackPosition(
-                    manifestUrl,
-                    originalManifest,
-                )
-            } else {
-                0.0
-            }
-
         val segmentsToRemove = removeObsoleteSegments(manifestUrl, newMediaSequence)
         val initializationSegments = mutableSetOf<HlsMediaPlaylist.Segment>()
         val segmentsToAdd = mutableListOf<Segment>()
 
+        val initialStartTime = calculateInitialStartTime(isStreamLive, mediaPlaylist)
         currentSegmentRuntimeIds.clear()
         mediaPlaylist.segments.forEachIndexed { index, segment ->
             if (segment.initializationSegment != null) {
