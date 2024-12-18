@@ -1,9 +1,8 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
-    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
     id("org.jlleitschuh.gradle.ktlint")
-    kotlin("plugin.serialization") version "2.0.20"
     id("maven-publish")
 }
 
@@ -27,23 +26,24 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+
     kotlinOptions {
         jvmTarget = "1.8"
     }
 }
 
 dependencies {
+    compileOnly(libs.androidx.media3.exoplayer.hls)
+    compileOnly(libs.androidx.media3.exoplayer)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.cio)
     implementation(libs.ktor.server.cors)
     implementation(libs.okhttp)
-    implementation(libs.androidx.media3.exoplayer.hls)
-    implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.androidx.runtime)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.webkit)
     implementation(libs.androidx.core.ktx)
