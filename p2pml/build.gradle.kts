@@ -55,7 +55,7 @@ afterEvaluate {
             create<MavenPublication>("release") {
                 from(components["release"])
 
-                groupId = "com.novage.p2pml"
+                groupId = "com.novage"
                 artifactId = "p2pml"
                 version = "0.0.1-SNAPSHOT"
 
