@@ -121,7 +121,7 @@ class MainActivity : ComponentActivity() {
                     }
 
             val manifest =
-                p2pml.getManifestUrl(Streams.HLS_BIG_BUCK_BUNNY_QUALITY_4)
+                p2pml.getManifestUrl(Streams.HLS_LIVE_STREAM)
 
             val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
             val mediaSource =
