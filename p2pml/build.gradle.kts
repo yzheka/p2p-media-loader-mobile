@@ -47,6 +47,19 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.webkit)
     implementation(libs.androidx.core.ktx)
+
+    constraints {
+        implementation("androidx.media3:media3-exoplayer-hls") {
+            version {
+                strictly("[1.5.0,2.0.0)")
+            }
+        }
+        implementation("androidx.media3:media3-exoplayer") {
+            version {
+                strictly("[1.5.0,2.0.0)")
+            }
+        }
+    }
 }
 
 afterEvaluate {
