@@ -3,7 +3,7 @@ package com.novage.p2pml.utils
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class P2PStateManager {
+internal class P2PStateManager {
     private var isEngineDisabled = false
     private val mutex = Mutex()
 

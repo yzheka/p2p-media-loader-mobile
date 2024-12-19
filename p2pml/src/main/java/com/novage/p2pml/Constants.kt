@@ -1,6 +1,6 @@
 package com.novage.p2pml
 
-object Constants {
+internal object Constants {
     const val MPEGURL_CONTENT_TYPE = "application/vnd.apple.mpegurl"
     const val DEFAULT_SERVER_PORT = 8080
     const val LOCALHOST = "127.0.0.1"
