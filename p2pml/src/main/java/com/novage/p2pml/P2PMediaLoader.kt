@@ -23,6 +23,15 @@ import kotlinx.coroutines.runBlocking
  * `P2PMediaLoader` facilitates peer-to-peer media streaming within an Android application.
  *
  * @constructor Private constructor. Use the [Builder] to create instances.
+ *
+ * Usage:
+ * ```
+ * val p2pml = P2PMediaLoader.Builder()
+ *    .setCoreConfig(coreConfigJson) // Optional
+ *    .setServerPort(serverPort) // Optional
+ *    .setCustomImplementationPath(customEngineImplementationPath) // Optional
+ *    .build()
+ *    ```
  */
 @UnstableApi
 class P2PMediaLoader private constructor(
@@ -43,14 +52,13 @@ class P2PMediaLoader private constructor(
     private var webViewLoadCompletion: CompletableDeferred<Unit>? = null
 
     /**
-     * Initializes the `P2PMediaLoader` by setting up the WebView and starting the internal server.
+     * Initializes and starts P2P media streaming components.
      *
-     * This method must be called before using other functionalities of `P2PMediaLoader`.
-     *
-     * @param context The Android [Context] used to initialize the WebView.
+     * @param context Android context required for WebView initialization
+     * @throws IllegalStateException if called in an invalid state
      */
     fun start(context: Context) {
-        if (appState != AppState.INITIALIZED && appState != AppState.STOPPED) {
+        if (appState == AppState.STARTED) {
             throw IllegalStateException("Cannot start P2PMediaLoader in state: $appState")
         }
 
@@ -96,13 +104,11 @@ class P2PMediaLoader private constructor(
     }
 
     /**
-     * Associates an [ExoPlayer] instance with the `P2PMediaLoader` manager.
+     * Connects an ExoPlayer instance for playback monitoring.
+     * Required for P2P segment distribution and synchronization.
      *
-     * This allows `P2PMediaLoader` to monitor and calculate playback positions and speeds,
-     * facilitating synchronized P2P streaming and segment distribution.
-     *
-     * @param exoPlayer The [ExoPlayer] instance to be associated with `P2PMediaLoader`.
-     *
+     * @param exoPlayer ExoPlayer instance to monitor
+     * @throws IllegalStateException if P2PMediaLoader is not started
      */
     fun attachPlayer(exoPlayer: ExoPlayer) {
         ensureStarted()
@@ -111,10 +117,11 @@ class P2PMediaLoader private constructor(
     }
 
     /**
-     * Retrieves the server-localized manifest URL corresponding to the provided external manifest URL.
+     * Converts an external HLS manifest URL to a local URL handled by the P2P engine.
      *
-     * @param manifestUrl The external manifest URL (e.g., an HLS `.m3u8` URL) to be localized.
-     * @return A [String] representing the server-localized manifest URL.
+     * @param manifestUrl External HLS manifest URL (.m3u8)
+     * @return Local URL for P2P-enabled playback
+     * @throws IllegalStateException if P2PMediaLoader is not started
      */
     suspend fun getManifestUrl(manifestUrl: String): String {
         ensureStarted()
@@ -132,9 +139,10 @@ class P2PMediaLoader private constructor(
     }
 
     /**
-     * Cleans up associated resources.
+     * Stops P2P streaming and releases all resources.
+     * Call [start] to reinitialize after stopping.
      *
-     * **Note:** After calling this method, P2P streaming functionalities will be unavailable until re-initialized.
+     * @throws IllegalStateException if P2PMediaLoader is not started
      */
     fun stop() {
         if (appState != AppState.STARTED) {
@@ -185,31 +193,26 @@ class P2PMediaLoader private constructor(
         private var customEngineImplementationPath: String? = null
 
         /**
-         * @property coreConfigJson Optional JSON string containing core P2P configurations.
-         *   Refer to the [CoreConfig Documentation](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.CoreConfig.html)
-         *   for the expected structure and available configurations.
-         *   Defaults to an empty string, implying default configurations.
+         * Sets core P2P configurations. See [P2PML Core Config](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.CoreConfig.html)
+         * @param coreConfigJson JSON string with core configurations. Default: empty string (uses default config)
          */
         fun setCoreConfig(coreConfigJson: String) = apply { this.coreConfig = coreConfigJson }
 
         /**
-         * Sets the server port.
-         *
-         * @param port The port number on which the internal server will run.
+         * Sets the internal server port.
+         * @param port Server port number. Default: `8080`
          */
         fun setServerPort(port: Int) = apply { this.serverPort = port }
 
         /**
-         * Sets the custom engine implementation path.
-         *
-         * @param path Relative path to a custom resource folder within `src/main/resources`.
-         *
-         * **Note on Custom P2PML Implementation:**
-         *
-         * The path should be relative to your application's resources directory (`src/main/resources`).
-         * This enables you to provide a custom `index.html` file with a custom P2PML engine implementation.
+         * Sets custom engine implementation path relative to src/main/resources.
+         * Allows providing custom index.html with P2PML engine implementation.
+         * @param path Resource path for custom implementation. Default: null (uses built-in implementation)
          */
-        fun setCustomImplementationPath(path: String?) = apply { this.customEngineImplementationPath = path }
+        fun setCustomEngineImplementationPath(path: String?) =
+            apply {
+                this.customEngineImplementationPath = path
+            }
 
         /**
          * @return A new [P2PMediaLoader] instance.
