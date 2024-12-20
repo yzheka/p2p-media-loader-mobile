@@ -180,7 +180,7 @@ internal class HlsManifestParser(
         return updatedManifestBuilder.toString()
     }
 
-    suspend fun getUpdateStreamParamsJSON(variantUrl: String): String? {
+    suspend fun getUpdateStreamParamsJson(variantUrl: String): String? {
         mutex.withLock {
             val updateStream =
                 updateStreamParams[variantUrl]
@@ -190,7 +190,7 @@ internal class HlsManifestParser(
         }
     }
 
-    suspend fun getStreamsJSON(): String =
+    suspend fun getStreamsJson(): String =
         mutex.withLock {
             Json.encodeToString(streams)
         }

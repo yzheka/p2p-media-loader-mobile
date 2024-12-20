@@ -66,20 +66,20 @@ internal class ManifestHandler(
         needsInitialSetup: Boolean,
     ) {
         try {
-            val updateStreamJSON = manifestParser.getUpdateStreamParamsJSON(manifestUrl)
+            val updateStreamJson = manifestParser.getUpdateStreamParamsJson(manifestUrl)
 
             if (needsInitialSetup) {
-                val streamsJSON = manifestParser.getStreamsJSON()
+                val streamsJson = manifestParser.getStreamsJson()
 
                 webViewManager.sendInitialMessage()
                 webViewManager.setManifestUrl(manifestUrl)
-                webViewManager.sendAllStreams(streamsJSON)
+                webViewManager.sendAllStreams(streamsJson)
 
-                updateStreamJSON?.let { webViewManager.sendStream(it) }
+                updateStreamJson?.let { webViewManager.sendStream(it) }
             } else {
-                updateStreamJSON?.let { json ->
+                updateStreamJson?.let { json ->
                     webViewManager.sendStream(json)
-                } ?: throw Exception("updateStreamJSON is null")
+                } ?: throw Exception("updateStreamJson is null")
             }
         } catch (e: Exception) {
             Log.e("handleUpdate", "Unexpected error occurred: ${e.message}")
