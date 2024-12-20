@@ -74,20 +74,21 @@ class P2PMediaLoader private constructor(
 
         webViewManager =
             WebViewManager(
-                context = context,
-                coroutineScope = scope!!,
-                engineStateManager = engineStateManager,
-                playbackCalculator = playbackCalculator,
+                context,
+                scope!!,
+                engineStateManager,
+                playbackCalculator,
                 onPageLoadFinished = { onWebViewLoaded() },
             )
 
         serverModule =
             ServerModule(
-                webViewManager = webViewManager!!,
-                manifestParser = manifestParser,
-                p2pEngineStateManager = engineStateManager,
-                customEngineImplementationPath = customEngineImplementationPath,
+                webViewManager!!,
+                manifestParser,
+                engineStateManager,
+                customEngineImplementationPath,
                 onServerStarted = { onServerStarted() },
+                onManifestChanged = { onManifestChanged() },
             ).apply { start(serverPort) }
     }
 
@@ -167,6 +168,11 @@ class P2PMediaLoader private constructor(
 
             appState = AppState.STOPPED
         }
+    }
+
+    private suspend fun onManifestChanged() {
+        playbackCalculator.resetData()
+        manifestParser.reset()
     }
 
     private suspend fun onWebViewLoaded() {

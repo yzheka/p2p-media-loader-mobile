@@ -27,6 +27,8 @@ internal class HlsManifestParser(
     private val parser = HlsPlaylistParser()
     private val mutex = Mutex()
 
+    private var currentMasterManifestUrl: String? = null
+
     private val streams = mutableListOf<Stream>()
     private val streamSegments = mutableMapOf<String, MutableMap<Long, Segment>>()
     private val updateStreamParams = mutableMapOf<String, UpdateStreamParams>()
@@ -44,6 +46,12 @@ internal class HlsManifestParser(
     suspend fun isCurrentSegment(segmentUrl: String): Boolean =
         mutex.withLock {
             currentSegmentRuntimeIds.contains(segmentUrl)
+        }
+
+    suspend fun doesManifestExist(manifestUrl: String): Boolean =
+        mutex.withLock {
+            currentMasterManifestUrl == manifestUrl ||
+                streams.any { it.runtimeId == manifestUrl }
         }
 
     private suspend fun parseHlsManifest(
@@ -201,6 +209,7 @@ internal class HlsManifestParser(
         originalManifest: String,
     ): String {
         val updatedManifestBuilder = StringBuilder(originalManifest)
+        currentMasterManifestUrl = manifestUrl
 
         hlsPlaylist.variants.forEachIndexed { index, variant ->
             processVariant(

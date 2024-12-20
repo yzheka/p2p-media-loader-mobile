@@ -133,11 +133,16 @@ internal class ExoPlayerPlaybackCalculator {
             return PlaybackInfo(segmentAbsolutePlayTime, playbackSpeed)
         }
 
-    suspend fun reset() =
+    suspend fun resetData() =
         mutex.withLock {
             currentSegments.clear()
             currentMediaPlaylist = null
             currentAbsoluteTime = null
+        }
+
+    suspend fun reset() =
+        mutex.withLock {
+            resetData()
             exoPlayer = null
         }
 }

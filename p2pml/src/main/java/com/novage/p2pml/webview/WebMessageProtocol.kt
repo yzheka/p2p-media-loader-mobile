@@ -32,6 +32,8 @@ internal class WebMessageProtocol(
     private val mutex = Mutex()
     private var incomingRequestId: Int? = null
 
+    private var wasInitialMessageSent = false
+
     init {
         setupWebMessageCallback()
     }
@@ -136,6 +138,7 @@ internal class WebMessageProtocol(
 
     @SuppressLint("RequiresFeature")
     suspend fun sendInitialMessage() {
+        if (wasInitialMessageSent) return
         withContext(Dispatchers.Main) {
             val initialMessage = WebMessageCompat("", arrayOf(channels[1]))
             WebViewCompat.postWebMessage(
@@ -143,6 +146,7 @@ internal class WebMessageProtocol(
                 initialMessage,
                 Uri.parse("*"),
             )
+            wasInitialMessageSent = true
         }
     }
 
