@@ -30,7 +30,7 @@ internal class ManifestHandler(
     private val manifestParser: HlsManifestParser,
     private val webViewManager: WebViewManager,
 ) {
-    private var isMasterManifestProcessed = false
+    private var isInitialManifestProcessed = false
     private val mutex = Mutex()
 
     suspend fun handleManifestRequest(call: ApplicationCall) {
@@ -88,9 +88,9 @@ internal class ManifestHandler(
 
     private suspend fun checkAndSetInitialProcessing(): Boolean =
         mutex.withLock {
-            if (isMasterManifestProcessed) return false
+            if (isInitialManifestProcessed) return false
 
-            isMasterManifestProcessed = true
+            isInitialManifestProcessed = true
             return true
         }
 
