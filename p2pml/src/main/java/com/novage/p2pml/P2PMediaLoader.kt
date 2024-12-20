@@ -94,8 +94,9 @@ class P2PMediaLoader private constructor(
     /**
      * Applies dynamic core configurations to the `P2PMediaLoader` engine.
      *
-     *  @param dynamicCoreConfigJson A JSON string containing dynamic core configurations for the P2P engine.
-     *  Refer to the [DynamicCoreConfig Documentation](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.DynamicCoreConfig.html).
+     * @param dynamicCoreConfigJson A JSON string containing dynamic core configurations for the P2P engine.
+     * Refer to the [DynamicCoreConfig Documentation](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.DynamicCoreConfig.html).
+     * @throws IllegalStateException if P2PMediaLoader is not started
      */
     fun applyDynamicConfig(dynamicCoreConfigJson: String) {
         ensureStarted()
