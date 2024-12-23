@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -104,8 +103,6 @@ class MainActivity : ComponentActivity() {
 
     private val loadingState = mutableStateOf(true)
 
-    private val currentStreamId = mutableStateOf(Streams.HLS_LIVE_STREAM)
-
     @OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -154,33 +151,8 @@ class MainActivity : ComponentActivity() {
                     }
 
             setContent {
-                ExoPlayerScreen(player = player, videoTitle = "Test Stream", loadingState.value) {
-                    currentStreamId.value =
-                        if (currentStreamId.value == Streams.HLS_LIVE_STREAM) {
-                            Streams.HLS_BIG_BUCK_BUNNY
-                        } else {
-                            Streams.HLS_LIVE_STREAM
-                        }
-                    setStream(currentStreamId.value)
-                }
+                ExoPlayerScreen(player = player, videoTitle = "Test Stream", loadingState.value)
             }
-        }
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun setStream(streamUrl: String) {
-        lifecycleScope.launch {
-            loadingState.value = true
-            val manifest = p2pml.getManifestUrl(streamUrl)
-            val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
-            val mediaSource =
-                HlsMediaSource
-                    .Factory(loggingDataSourceFactory)
-                    .createMediaSource(MediaItem.fromUri(manifest))
-
-            player.setMediaSource(mediaSource)
-            player.prepare()
-            player.playWhenReady = true
         }
     }
 
@@ -207,10 +179,12 @@ fun ExoPlayerScreen(
     player: ExoPlayer,
     videoTitle: String,
     isLoading: Boolean,
-    onChangeStream: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().background(Color.Black),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -219,14 +193,6 @@ fun ExoPlayerScreen(
             modifier = Modifier.padding(16.dp),
             style = MaterialTheme.typography.headlineMedium,
         )
-
-        // Button to change the stream
-        Button(
-            onClick = { onChangeStream() },
-            modifier = Modifier.padding(8.dp),
-        ) {
-            Text("Change Stream")
-        }
 
         Box(
             modifier =
