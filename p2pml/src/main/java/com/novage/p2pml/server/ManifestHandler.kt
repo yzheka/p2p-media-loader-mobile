@@ -29,6 +29,7 @@ internal class ManifestHandler(
     private val httpClient: OkHttpClient,
     private val manifestParser: HlsManifestParser,
     private val webViewManager: WebViewManager,
+    private val onManifestChanged: suspend () -> Unit,
 ) {
     private var isInitialManifestProcessed = false
     private val mutex = Mutex()
@@ -44,6 +45,13 @@ internal class ManifestHandler(
 
         try {
             val fetchResult = fetchManifest(call, decodedManifestUrl)
+            val doesManifestExist = manifestParser.doesManifestExist(decodedManifestUrl)
+
+            if (!doesManifestExist) {
+                reset()
+                onManifestChanged()
+            }
+
             val modifiedManifest =
                 manifestParser.getModifiedManifest(
                     fetchResult.manifestContent,
@@ -119,4 +127,10 @@ internal class ManifestHandler(
                 ManifestFetchResult(body, responseUrl)
             }
         }
+
+    private suspend fun reset() {
+        mutex.withLock {
+            isInitialManifestProcessed = false
+        }
+    }
 }

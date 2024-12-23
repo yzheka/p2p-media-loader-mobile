@@ -23,6 +23,7 @@ internal class ServerModule(
     private val p2pEngineStateManager: P2PStateManager,
     private val customEngineImplementationPath: String? = null,
     private val onServerStarted: () -> Unit,
+    private val onManifestChanged: suspend () -> Unit,
 ) {
     private var httpClient: OkHttpClient? = null
     private var server: EmbeddedServer<CIOApplicationEngine, CIOApplicationEngine.Configuration>? = null
@@ -62,7 +63,7 @@ internal class ServerModule(
 
     private fun configureRouting(application: Application) {
         httpClient = OkHttpClient()
-        val manifestHandler = ManifestHandler(httpClient!!, manifestParser, webViewManager)
+        val manifestHandler = ManifestHandler(httpClient!!, manifestParser, webViewManager, onManifestChanged)
         val segmentHandler =
             SegmentHandler(
                 httpClient!!,
