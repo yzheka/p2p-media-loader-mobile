@@ -46,7 +46,7 @@ internal class ManifestHandler(
         try {
             val fetchResult = fetchManifest(call, decodedManifestUrl)
             val doesManifestExist = manifestParser.doesManifestExist(decodedManifestUrl)
-            Log.d("ManifestHandler", "Does manifest exist: $doesManifestExist")
+
             if (!doesManifestExist) {
                 reset()
                 onManifestChanged()
@@ -58,7 +58,7 @@ internal class ManifestHandler(
                     fetchResult.responseUrl,
                 )
             val needsInitialSetup = checkAndSetInitialProcessing()
-            Log.d("ManifestHandler", "Needs initial setup: $decodedManifestUrl $needsInitialSetup")
+
             handleUpdate(decodedManifestUrl, needsInitialSetup)
             call.respondText(modifiedManifest, ContentType.parse(MPEGURL_CONTENT_TYPE))
         } catch (e: Exception) {
