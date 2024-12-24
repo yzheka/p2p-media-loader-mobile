@@ -17,6 +17,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -37,6 +38,7 @@ import kotlinx.coroutines.runBlocking
 class P2PMediaLoader private constructor(
     private val coreConfigJson: String,
     private val serverPort: Int,
+    private val customJavaScriptInterfaces: List<Pair<String, Any>>,
     private val customEngineImplementationPath: String?,
 ) {
     private val engineStateManager = P2PStateManager()
@@ -78,6 +80,7 @@ class P2PMediaLoader private constructor(
                 scope!!,
                 engineStateManager,
                 playbackCalculator,
+                customJavaScriptInterfaces,
                 onPageLoadFinished = { onWebViewLoaded() },
             )
 
@@ -175,9 +178,11 @@ class P2PMediaLoader private constructor(
         manifestParser.reset()
     }
 
-    private suspend fun onWebViewLoaded() {
-        webViewManager?.initCoreEngine(coreConfigJson)
-        webViewLoadCompletion?.complete(Unit)
+    private fun onWebViewLoaded() {
+        scope?.launch {
+            webViewManager?.initCoreEngine(coreConfigJson)
+            webViewLoadCompletion?.complete(Unit)
+        }
     }
 
     private fun onServerStarted() {
@@ -198,6 +203,7 @@ class P2PMediaLoader private constructor(
         private var coreConfig: String = ""
         private var serverPort: Int = Constants.DEFAULT_SERVER_PORT
         private var customEngineImplementationPath: String? = null
+        private var customJavaScriptInterfaces: MutableList<Pair<String, Any>> = mutableListOf()
 
         /**
          * Sets core P2P configurations. See [P2PML Core Config](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.CoreConfig.html)
@@ -222,12 +228,28 @@ class P2PMediaLoader private constructor(
             }
 
         /**
+         * Adds a custom JavaScript interface to the WebView.
+         * The feature has to be used with custom engine implementation.
+         * methods has to be annotated with @JavascriptInterface.
+         *
+         * @param name Interface name
+         * @param obj Object with methods annotated with @JavascriptInterface
+         */
+        fun addCustomJavaScriptInterface(
+            name: String,
+            obj: Any,
+        ) = apply {
+            customJavaScriptInterfaces.add(Pair(name, obj))
+        }
+
+        /**
          * @return A new [P2PMediaLoader] instance.
          */
         fun build(): P2PMediaLoader =
             P2PMediaLoader(
                 coreConfig,
                 serverPort,
+                customJavaScriptInterfaces,
                 customEngineImplementationPath,
             )
     }
