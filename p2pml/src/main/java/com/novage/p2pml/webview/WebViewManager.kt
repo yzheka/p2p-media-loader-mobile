@@ -30,7 +30,7 @@ internal class WebViewManager(
     private val coroutineScope: CoroutineScope,
     private val engineStateManager: P2PStateManager,
     private val playbackCalculator: ExoPlayerPlaybackCalculator,
-    private val customJavaScriptInterfaces: List<Pair<String, Any>>,
+    customJavaScriptInterfaces: List<Pair<String, Any>>,
     private val onPageLoadFinished: () -> Unit,
 ) {
     @SuppressLint("SetJavaScriptEnabled")
