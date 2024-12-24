@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.view.View
+import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
@@ -22,13 +23,15 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+@SuppressLint("JavascriptInterface")
 @OptIn(UnstableApi::class)
 internal class WebViewManager(
     context: Context,
     private val coroutineScope: CoroutineScope,
     private val engineStateManager: P2PStateManager,
     private val playbackCalculator: ExoPlayerPlaybackCalculator,
-    onPageLoadFinished: suspend () -> Unit,
+    customJavaScriptInterfaces: List<Pair<String, Any>>,
+    private val onPageLoadFinished: () -> Unit,
 ) {
     @SuppressLint("SetJavaScriptEnabled")
     private val webView =
@@ -38,13 +41,32 @@ internal class WebViewManager(
             webViewClient = WebViewClientCompat()
             visibility = View.GONE
             addJavascriptInterface(
-                JavaScriptInterface(coroutineScope, onPageLoadFinished),
+                JavaScriptInterface(onPageLoadFinished),
                 "Android",
             )
         }
     private val webMessageProtocol = WebMessageProtocol(webView, coroutineScope)
 
     private var playbackInfoJob: Job? = null
+
+    init {
+        customJavaScriptInterfaces.forEach { (name, obj) ->
+            val isValid = validateJavaScriptInterface(obj)
+            if (!isValid) {
+                Log.e(
+                    "WebViewManager",
+                    "Object $obj does not have any methods annotated with @JavascriptInterface",
+                )
+                return@forEach
+            }
+            webView.addJavascriptInterface(obj, name)
+        }
+    }
+
+    private fun validateJavaScriptInterface(obj: Any): Boolean {
+        val methods = obj::class.java.methods
+        return methods.any { it.isAnnotationPresent(JavascriptInterface::class.java) }
+    }
 
     private fun startPlaybackInfoUpdate() {
         if (playbackInfoJob !== null) return
