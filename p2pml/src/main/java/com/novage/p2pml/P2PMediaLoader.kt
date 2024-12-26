@@ -13,7 +13,6 @@ import com.novage.p2pml.utils.P2PStateManager
 import com.novage.p2pml.utils.Utils
 import com.novage.p2pml.webview.WebViewManager
 import io.ktor.http.encodeURLQueryComponent
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -38,6 +37,8 @@ import kotlinx.coroutines.runBlocking
 class P2PMediaLoader private constructor(
     private val coreConfigJson: String,
     private val serverPort: Int,
+    private val onReady: () -> Unit,
+    private val onError: (String) -> Unit,
     private val customJavaScriptInterfaces: List<Pair<String, Any>>,
     private val customEngineImplementationPath: String?,
 ) {
@@ -51,7 +52,6 @@ class P2PMediaLoader private constructor(
     private var appState = AppState.INITIALIZED
     private var webViewManager: WebViewManager? = null
     private var serverModule: ServerModule? = null
-    private var webViewLoadCompletion: CompletableDeferred<Unit>? = null
 
     /**
      * Initializes and starts P2P media streaming components.
@@ -72,8 +72,6 @@ class P2PMediaLoader private constructor(
     }
 
     private fun initializeComponents(context: Context) {
-        webViewLoadCompletion = CompletableDeferred()
-
         webViewManager =
             WebViewManager(
                 context,
@@ -128,10 +126,8 @@ class P2PMediaLoader private constructor(
      * @return Local URL for P2P-enabled playback
      * @throws IllegalStateException if P2PMediaLoader is not started
      */
-    suspend fun getManifestUrl(manifestUrl: String): String {
+    fun getManifestUrl(manifestUrl: String): String {
         ensureStarted()
-
-        webViewLoadCompletion?.await()
 
         val encodedManifestURL = manifestUrl.encodeURLQueryComponent()
         return Utils.getUrl(serverPort, "$MANIFEST$encodedManifestURL")
@@ -181,7 +177,12 @@ class P2PMediaLoader private constructor(
     private fun onWebViewLoaded() {
         scope?.launch {
             webViewManager?.initCoreEngine(coreConfigJson)
-            webViewLoadCompletion?.complete(Unit)
+
+            try {
+                onReady()
+            } catch (e: Exception) {
+                onError(e.message ?: "Error occurred while initializing P2P engine")
+            }
         }
     }
 
@@ -204,6 +205,8 @@ class P2PMediaLoader private constructor(
         private var serverPort: Int = Constants.DEFAULT_SERVER_PORT
         private var customEngineImplementationPath: String? = null
         private var customJavaScriptInterfaces: MutableList<Pair<String, Any>> = mutableListOf()
+        private var onReady: (() -> Unit)? = null
+        private var onError: ((String) -> Unit)? = null
 
         /**
          * Sets core P2P configurations. See [P2PML Core Config](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.CoreConfig.html)
@@ -243,14 +246,34 @@ class P2PMediaLoader private constructor(
         }
 
         /**
+         * Sets a callback to be invoked when the P2P engine is ready.
+         * @param callback Callback function to be invoked when the P2P engine is ready
+         */
+        fun setOnReady(callback: () -> Unit) = apply { this.onReady = callback }
+
+        /**
+         * Sets a callback to be invoked when an error occurs.
+         * @param callback Callback function to be invoked when an error occurs
+         */
+        fun setOnError(callback: (String) -> Unit) = apply { this.onError = callback }
+
+        /**
          * @return A new [P2PMediaLoader] instance.
          */
-        fun build(): P2PMediaLoader =
-            P2PMediaLoader(
+        fun build(): P2PMediaLoader {
+            val onReadyCallback =
+                onReady ?: throw IllegalStateException("`onReady` callback must be set")
+            val onErrorCallback =
+                onError ?: throw IllegalStateException("`onError` callback must be set")
+
+            return P2PMediaLoader(
                 coreConfig,
                 serverPort,
+                onReadyCallback,
+                onErrorCallback,
                 customJavaScriptInterfaces,
                 customEngineImplementationPath,
             )
+        }
     }
 }

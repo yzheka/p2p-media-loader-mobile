@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -37,7 +36,135 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
 import com.novage.p2pml.P2PMediaLoader
-import kotlinx.coroutines.launch
+
+@UnstableApi
+class MainActivity : ComponentActivity() {
+    private lateinit var p2pml: P2PMediaLoader
+    private var player: ExoPlayer? = null
+
+    private val loadingState = mutableStateOf(true)
+
+    @OptIn(UnstableApi::class)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        WebView.setWebContentsDebuggingEnabled(true)
+        p2pml =
+            P2PMediaLoader
+                .Builder()
+                .setOnReady { setupExoPlayer() }
+                .setOnError { onError(it) }
+                .setCoreConfig("{\"swarmId\":\"TEST_KOTLIN\"}")
+                .setServerPort(8081)
+                .build()
+                .apply {
+                    start(this@MainActivity)
+                }
+
+        setContent {
+            ExoPlayerScreen(player = player, videoTitle = "Test Stream", loadingState.value)
+        }
+    }
+
+    private fun onError(message: String) {
+        Log.e("MainActivity", message)
+    }
+
+    private fun setupExoPlayer() {
+        player =
+            ExoPlayer
+                .Builder(this@MainActivity)
+                .build()
+
+        val manifest = p2pml.getManifestUrl(Streams.HLS_LIVE_STREAM)
+        val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
+
+        val mediaSource =
+            HlsMediaSource
+                .Factory(loggingDataSourceFactory)
+                .createMediaSource(
+                    MediaItem.fromUri(manifest),
+                )
+
+        player?.apply {
+            playWhenReady = true
+            setMediaSource(mediaSource)
+            prepare()
+            addListener(
+                object : Player.Listener {
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        if (playbackState != Player.STATE_READY) return
+                        loadingState.value = false
+                    }
+                },
+            )
+            p2pml.attachPlayer(this)
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        p2pml.applyDynamicConfig("{ \"isP2PDisabled\": true }")
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        p2pml.applyDynamicConfig("{ \"isP2PDisabled\": false }")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        player?.release()
+        p2pml.stop()
+    }
+}
+
+@Suppress("ktlint:standard:function-naming")
+@Composable
+fun ExoPlayerScreen(
+    player: ExoPlayer?,
+    videoTitle: String,
+    isLoading: Boolean,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = videoTitle,
+            color = Color.White,
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.headlineMedium,
+        )
+
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            contentAlignment = Alignment.Center,
+        ) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context ->
+                    PlayerView(context).apply {
+                        this.player = player
+                    }
+                },
+                update = { playerView ->
+                    playerView.player = player
+                },
+            )
+
+            if (isLoading) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        }
+    }
+}
 
 @UnstableApi
 class LoggingDataSource(
@@ -94,125 +221,4 @@ class LoggingDataSourceFactory(
     private val baseDataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
 
     override fun createDataSource(): DataSource = LoggingDataSource(baseDataSourceFactory.createDataSource())
-}
-
-@UnstableApi
-class MainActivity : ComponentActivity() {
-    private lateinit var p2pml: P2PMediaLoader
-    private lateinit var player: ExoPlayer
-
-    private val loadingState = mutableStateOf(true)
-
-    @OptIn(UnstableApi::class)
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        WebView.setWebContentsDebuggingEnabled(true)
-
-        lifecycleScope.launch {
-            p2pml =
-                P2PMediaLoader
-                    .Builder()
-                    .setCoreConfig("{\"swarmId\":\"TEST_KOTLIN\"}")
-                    .setServerPort(8081)
-                    .build()
-                    .apply {
-                        start(this@MainActivity)
-                    }
-
-            val manifest =
-                p2pml.getManifestUrl(Streams.HLS_LIVE_STREAM)
-
-            val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
-            val mediaSource =
-                HlsMediaSource
-                    .Factory(loggingDataSourceFactory)
-                    .createMediaSource(
-                        MediaItem.fromUri(manifest),
-                    )
-
-            player =
-                ExoPlayer
-                    .Builder(this@MainActivity)
-                    .build()
-                    .apply {
-                        setMediaSource(mediaSource)
-                        prepare()
-                        playWhenReady = true
-                        addListener(
-                            object : Player.Listener {
-                                override fun onPlaybackStateChanged(playbackState: Int) {
-                                    if (playbackState != Player.STATE_READY) return
-                                    loadingState.value = false
-                                }
-                            },
-                        )
-                        p2pml.attachPlayer(this)
-                    }
-
-            setContent {
-                ExoPlayerScreen(player = player, videoTitle = "Test Stream", loadingState.value)
-            }
-        }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        p2pml.applyDynamicConfig("{ \"isP2PDisabled\": true }")
-    }
-
-    override fun onRestart() {
-        super.onRestart()
-        p2pml.applyDynamicConfig("{ \"isP2PDisabled\": false }")
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        player.release()
-        p2pml.stop()
-    }
-}
-
-@Suppress("ktlint:standard:function-naming")
-@Composable
-fun ExoPlayerScreen(
-    player: ExoPlayer,
-    videoTitle: String,
-    isLoading: Boolean,
-) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(Color.Black),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = videoTitle,
-            color = Color.White,
-            modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.headlineMedium,
-        )
-
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-            contentAlignment = Alignment.Center,
-        ) {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    PlayerView(context).apply {
-                        this.player = player
-                    }
-                },
-            )
-
-            if (isLoading) {
-                CircularProgressIndicator(color = Color.White)
-            }
-        }
-    }
 }
