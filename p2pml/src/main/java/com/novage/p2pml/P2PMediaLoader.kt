@@ -6,6 +6,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.novage.p2pml.Constants.CORE_FILE_URL
 import com.novage.p2pml.Constants.CUSTOM_FILE_URL
 import com.novage.p2pml.Constants.QueryParams.MANIFEST
+import com.novage.p2pml.interop.OnErrorCallback
+import com.novage.p2pml.interop.OnReadyCallback
 import com.novage.p2pml.parser.HlsManifestParser
 import com.novage.p2pml.server.ServerModule
 import com.novage.p2pml.utils.ExoPlayerPlaybackCalculator
@@ -249,13 +251,13 @@ class P2PMediaLoader private constructor(
          * Sets a callback to be invoked when the P2P engine is ready.
          * @param callback Callback function to be invoked when the P2P engine is ready
          */
-        fun setOnReady(callback: () -> Unit) = apply { this.onReady = callback }
+        fun setOnReady(callback: OnReadyCallback) = apply { this.onReady = { callback.onReady() } }
 
         /**
          * Sets a callback to be invoked when an error occurs.
          * @param callback Callback function to be invoked when an error occurs
          */
-        fun setOnError(callback: (String) -> Unit) = apply { this.onError = callback }
+        fun setOnError(callback: OnErrorCallback) = apply { this.onError = { callback.onError(it) } }
 
         /**
          * @return A new [P2PMediaLoader] instance.
