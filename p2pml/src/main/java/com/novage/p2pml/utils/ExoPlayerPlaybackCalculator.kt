@@ -140,9 +140,8 @@ internal class ExoPlayerPlaybackCalculator {
             currentAbsoluteTime = null
         }
 
-    suspend fun reset() =
-        mutex.withLock {
-            resetData()
-            exoPlayer = null
-        }
+    suspend fun reset() {
+        resetData()
+        exoPlayer = null
+    }
 }

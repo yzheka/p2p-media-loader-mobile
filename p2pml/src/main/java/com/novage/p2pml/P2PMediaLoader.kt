@@ -164,11 +164,11 @@ class P2PMediaLoader constructor(
             manifestParser.reset()
             engineStateManager.reset()
 
+            appState = AppState.STOPPED
+
             job?.cancel()
             job = null
             scope = null
-
-            appState = AppState.STOPPED
         }
     }
 
