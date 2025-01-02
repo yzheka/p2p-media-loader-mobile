@@ -39,7 +39,12 @@ import com.novage.p2pml.P2PMediaLoader
 
 @UnstableApi
 class MainActivity : ComponentActivity() {
-    private lateinit var p2pml: P2PMediaLoader
+    private var p2pml = P2PMediaLoader(
+        readyCallback = { setupExoPlayer() },
+        errorCallback = { onError(it) },
+        coreConfigJson = "{\"swarmId\":\"TEST_KOTLIN\"}",
+        serverPort = 8081,
+    )
     private var player: ExoPlayer? = null
 
     private val loadingState = mutableStateOf(true)
@@ -49,17 +54,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         WebView.setWebContentsDebuggingEnabled(true)
-        p2pml =
-            P2PMediaLoader
-                .Builder()
-                .setOnReady { setupExoPlayer() }
-                .setOnError { onError(it) }
-                .setCoreConfig("{\"swarmId\":\"TEST_KOTLIN\"}")
-                .setServerPort(8081)
-                .build()
-                .apply {
-                    start(this@MainActivity)
-                }
+
+        p2pml.start(this)
 
         setContent {
             ExoPlayerScreen(player = player, videoTitle = "Test Stream", loadingState.value)
