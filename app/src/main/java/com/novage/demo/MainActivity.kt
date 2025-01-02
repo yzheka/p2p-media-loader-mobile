@@ -1,220 +1,49 @@
 package com.novage.demo
 
-import android.content.Context
-import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.OptIn
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.DataSource
-import androidx.media3.datasource.DataSpec
-import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.datasource.TransferListener
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.hls.HlsMediaSource
-import androidx.media3.ui.PlayerView
-import com.novage.p2pml.P2PMediaLoader
+import com.novage.demo.ui.ExoPlayerScreen
+import com.novage.demo.viewmodel.ExoPlayerViewModel
 
 @UnstableApi
 class MainActivity : ComponentActivity() {
-    private var p2pml = P2PMediaLoader(
-        readyCallback = { setupExoPlayer() },
-        errorCallback = { onError(it) },
-        coreConfigJson = "{\"swarmId\":\"TEST_KOTLIN\"}",
-        serverPort = 8081,
-    )
-    private var player: ExoPlayer? = null
-
-    private val loadingState = mutableStateOf(true)
+    private val viewModel: ExoPlayerViewModel by lazy {
+        ExoPlayerViewModel(application)
+    }
 
     @OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Enable debugging of WebView to see P2PML logs
         WebView.setWebContentsDebuggingEnabled(true)
 
-        p2pml.start(this)
+        viewModel.setupP2PML()
 
         setContent {
-            ExoPlayerScreen(player = player, videoTitle = "Test Stream", loadingState.value)
-        }
-    }
-
-    private fun onError(message: String) {
-        Log.e("MainActivity", message)
-    }
-
-    private fun setupExoPlayer() {
-        player =
-            ExoPlayer
-                .Builder(this@MainActivity)
-                .build()
-
-        val manifest = p2pml.getManifestUrl(Streams.HLS_LIVE_STREAM)
-        val loggingDataSourceFactory = LoggingDataSourceFactory(this@MainActivity)
-
-        val mediaSource =
-            HlsMediaSource
-                .Factory(loggingDataSourceFactory)
-                .createMediaSource(
-                    MediaItem.fromUri(manifest),
-                )
-
-        player?.apply {
-            playWhenReady = true
-            setMediaSource(mediaSource)
-            prepare()
-            addListener(
-                object : Player.Listener {
-                    override fun onPlaybackStateChanged(playbackState: Int) {
-                        if (playbackState != Player.STATE_READY) return
-                        loadingState.value = false
-                    }
-                },
-            )
-            p2pml.attachPlayer(this)
+            val isLoading by viewModel.loadingState.collectAsState()
+            ExoPlayerScreen(player = viewModel.player, videoTitle = "Test Stream", isLoading)
         }
     }
 
     override fun onStop() {
         super.onStop()
-        p2pml.applyDynamicConfig("{ \"isP2PDisabled\": true }")
+        viewModel.updateP2PConfig(isP2PDisabled = true)
     }
 
     override fun onRestart() {
         super.onRestart()
-        p2pml.applyDynamicConfig("{ \"isP2PDisabled\": false }")
+        viewModel.updateP2PConfig(isP2PDisabled = false)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        player?.release()
-        p2pml.stop()
+        viewModel.releasePlayer()
     }
-}
-
-@Suppress("ktlint:standard:function-naming")
-@Composable
-fun ExoPlayerScreen(
-    player: ExoPlayer?,
-    videoTitle: String,
-    isLoading: Boolean,
-) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(Color.Black),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = videoTitle,
-            color = Color.White,
-            modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.headlineMedium,
-        )
-
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-            contentAlignment = Alignment.Center,
-        ) {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    PlayerView(context).apply {
-                        this.player = player
-                    }
-                },
-                update = { playerView ->
-                    playerView.player = player
-                },
-            )
-
-            if (isLoading) {
-                CircularProgressIndicator(color = Color.White)
-            }
-        }
-    }
-}
-
-@UnstableApi
-class LoggingDataSource(
-    private val wrappedDataSource: DataSource,
-) : DataSource {
-    @OptIn(UnstableApi::class)
-    override fun open(dataSpec: DataSpec): Long {
-        Log.d("HLSSegmentLogger", "Requesting: ${dataSpec.uri}")
-        return try {
-            wrappedDataSource.open(dataSpec)
-        } catch (e: Exception) {
-            Log.e("HLSSegmentLogger", "Error opening data source: ${e.message}", e)
-            throw e
-        }
-    }
-
-    override fun read(
-        buffer: ByteArray,
-        offset: Int,
-        length: Int,
-    ): Int =
-        try {
-            wrappedDataSource.read(buffer, offset, length)
-        } catch (e: Exception) {
-            Log.e("HLSSegmentLogger", "Error reading data source: ${e.message}", e)
-            throw e
-        }
-
-    override fun addTransferListener(transferListener: TransferListener) {
-        wrappedDataSource.addTransferListener(transferListener)
-    }
-
-    override fun getUri(): Uri? = wrappedDataSource.uri
-
-    override fun close() {
-        try {
-            wrappedDataSource.close()
-        } catch (e: Exception) {
-            Log.e("HLSSegmentLogger", "Error closing data source: ${e.message}", e)
-        }
-    }
-}
-
-@UnstableApi
-class LoggingDataSourceFactory(
-    context: Context,
-) : DataSource.Factory {
-    private val httpDataSourceFactory =
-        DefaultHttpDataSource
-            .Factory()
-            .setConnectTimeoutMs(30000)
-            .setReadTimeoutMs(30000)
-
-    private val baseDataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
-
-    override fun createDataSource(): DataSource = LoggingDataSource(baseDataSourceFactory.createDataSource())
 }
