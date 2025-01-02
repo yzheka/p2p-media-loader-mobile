@@ -37,7 +37,7 @@ import kotlinx.coroutines.runBlocking
  * Default: null (uses built-in implementation)
  */
 @UnstableApi
-class P2PMediaLoader constructor(
+class P2PMediaLoader(
     private val readyCallback: P2PReadyCallback,
     private val errorCallback: OnErrorCallback,
     private val coreConfigJson: String = "",
@@ -45,6 +45,21 @@ class P2PMediaLoader constructor(
     private val customJavaScriptInterfaces: List<Pair<String, Any>> = emptyList(),
     private val customEngineImplementationPath: String? = null,
 ) {
+    // Secondary constructor for Java compatibility
+    constructor(
+        readyCallback: P2PReadyCallback,
+        errorCallback: OnErrorCallback,
+        serverPort: Int,
+        coreConfigJson: String,
+    ) : this(
+        readyCallback,
+        errorCallback,
+        coreConfigJson,
+        serverPort,
+        emptyList(),
+        null
+    )
+
     private val engineStateManager = P2PStateManager()
     private val playbackCalculator = ExoPlayerPlaybackCalculator()
     private val manifestParser = HlsManifestParser(playbackCalculator, serverPort)
