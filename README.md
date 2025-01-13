@@ -1,4 +1,7 @@
-# P2PML-Kotlin
+# P2P Media Loader Mobile
+
+![Platform: Android](https://img.shields.io/badge/platform-Android-blue)
+![Kotlin](https://img.shields.io/badge/language-Kotlin-blue)
 
 A Kotlin library for peer-to-peer media loading, designed to enhance streaming performance and reduce server load. Seamlessly integrate P2PML into your Android application with minimal setup.
 
@@ -13,7 +16,7 @@ A Kotlin library for peer-to-peer media loading, designed to enhance streaming p
 
 ### Step 1: Add JitPack to Your Project
 
-To include the P2PML-Kotlin library, first, configure `dependencyResolutionManagement` in your **`settings.gradle`** file:
+To include the P2P Media Loader Mobile library, first, configure `dependencyResolutionManagement` in your **`settings.gradle`** file:
 
 ```kotlin
 dependencyResolutionManagement {
@@ -31,7 +34,7 @@ dependencyResolutionManagement {
 Add the following implementation line to your **`build.gradle`** (app module):
 
 ```kotlin
-implementation("com.github.DimaDemchenko:p2pml-kotlin:3d9bc106af")
+implementation("com.github.Novage:p2p-media-loader-mobile:main-d71e8e4552-1")
 ```
 
 ### Step 3: Configure the AndroidManifest
@@ -73,5 +76,5 @@ Make sure to reference this file in the `<application>` tag of your **`AndroidMa
 
 ## Usage
 
-Once you've completed the setup, P2PML-Kotlin is ready to use in your application!
+Once you've completed the setup, P2P Media Loader is ready to use in your application!
 
