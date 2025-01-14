@@ -25,7 +25,7 @@ import kotlinx.coroutines.runBlocking
  * `P2PMediaLoader` facilitates peer-to-peer media streaming within an Android application.
  *
  * @param readyCallback Callback invoked when the P2P engine is ready for use
- * @param errorCallback Callback invoked when an error occurs
+ * @param onReadyErrorCallback Callback invoked when an error occurs
  * @param coreConfigJson Sets core P2P configurations. See [P2PML Core Config](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.CoreConfig.html)
  * JSON string with core configurations. Default: empty string (uses default config)
  *
@@ -39,7 +39,7 @@ import kotlinx.coroutines.runBlocking
 @UnstableApi
 class P2PMediaLoader(
     private val readyCallback: P2PReadyCallback,
-    private val errorCallback: OnErrorCallback,
+    private val onReadyErrorCallback: OnErrorCallback,
     private val coreConfigJson: String = "",
     private val serverPort: Int = Constants.DEFAULT_SERVER_PORT,
     private val customJavaScriptInterfaces: List<Pair<String, Any>> = emptyList(),
@@ -199,7 +199,7 @@ class P2PMediaLoader(
             try {
                 readyCallback.onReady()
             } catch (e: Exception) {
-                errorCallback.onError(e.message ?: "Unknown error")
+                onReadyErrorCallback.onError(e.message ?: "Unknown error")
             }
         }
     }
