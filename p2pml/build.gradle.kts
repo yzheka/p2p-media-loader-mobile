@@ -60,9 +60,9 @@ afterEvaluate {
                 version = "0.0.1-SNAPSHOT"
 
                 pom {
-                    name.set("p2pml")
+                    name.set("P2P Media Loader Mobile")
                     description.set("A sample Kotlin/Android library for P2P media streaming")
-                    url.set("https://github.com/DimaDemchenko/p2pml-kotlin")
+                    url.set("https://github.com/Novage/p2p-media-loader-mobile")
                     licenses {
                         license {
                             name.set("MIT License")
@@ -70,9 +70,9 @@ afterEvaluate {
                         }
                     }
                     scm {
-                        connection.set("scm:git:git://github.com/DimaDemchenko/p2pml-kotlin.git")
-                        developerConnection.set("scm:git:ssh://github.com:DimaDemchenko/p2pml-kotlin.git")
-                        url.set("https://github.com/DimaDemchenko/p2pml-kotlin")
+                        connection.set("scm:git:git://github.com/Novage/p2p-media-loader-mobile.git")
+                        developerConnection.set("scm:git:ssh://github.com:Novage/p2p-media-loader-mobile.git")
+                        url.set("https://github.com/Novage/p2p-media-loader-mobile")
                     }
                     developers {
                         developer {
@@ -87,7 +87,7 @@ afterEvaluate {
         repositories {
             maven {
                 name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/DimaDemchenko/p2pml-kotlin")
+                url = uri("https://maven.pkg.github.com/Novage/p2p-media-loader-mobile")
                 credentials {
                     username = System.getenv("GITHUB_ACTOR") ?: ""
                     password = System.getenv("GITHUB_TOKEN") ?: ""
