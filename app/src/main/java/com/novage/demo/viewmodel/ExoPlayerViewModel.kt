@@ -38,7 +38,7 @@ class ExoPlayerViewModel(application: Application): AndroidViewModel(application
     fun setupP2PML() {
         p2pml = P2PMediaLoader(
             readyCallback = { initializePlayback() },
-            onReadyErrorCallback = { onError(it) },
+            onReadyErrorCallback = { onReadyError(it) },
             coreConfigJson = "{\"swarmId\":\"TEST_KOTLIN\"}",
             serverPort = 8081,
         )
@@ -69,7 +69,8 @@ class ExoPlayerViewModel(application: Application): AndroidViewModel(application
         }
     }
 
-    private fun onError(message: String) {
+    private fun onReadyError(message: String) {
+        // Handle error
         Log.e("ExoPlayerViewModel", message)
     }
 
