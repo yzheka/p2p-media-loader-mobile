@@ -48,12 +48,12 @@ class P2PMediaLoader(
     // Second constructor for Java compatibility
     constructor(
         readyCallback: P2PReadyCallback,
-        errorCallback: OnErrorCallback,
+        onReadyErrorCallback: OnErrorCallback,
         serverPort: Int,
         coreConfigJson: String,
     ) : this(
         readyCallback,
-        errorCallback,
+        onReadyErrorCallback,
         coreConfigJson,
         serverPort,
         emptyList(),
