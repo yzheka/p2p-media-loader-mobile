@@ -63,17 +63,20 @@ afterEvaluate {
                     name.set("P2P Media Loader Mobile")
                     description.set("A sample Kotlin/Android library for P2P media streaming")
                     url.set("https://github.com/Novage/p2p-media-loader-mobile")
+
                     licenses {
                         license {
-                            name.set("MIT License")
-                            url.set("https://opensource.org/licenses/MIT")
+                            name.set("Apache License 2.0")
+                            url.set("https://opensource.org/licenses/Apache-2.0")
                         }
                     }
+
                     scm {
                         connection.set("scm:git:git://github.com/Novage/p2p-media-loader-mobile.git")
                         developerConnection.set("scm:git:ssh://github.com:Novage/p2p-media-loader-mobile.git")
                         url.set("https://github.com/Novage/p2p-media-loader-mobile")
                     }
+
                     developers {
                         developer {
                             id.set("DimaDemchenko")
