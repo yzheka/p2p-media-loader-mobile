@@ -45,7 +45,7 @@ class P2PMediaLoader(
     private val customJavaScriptInterfaces: List<Pair<String, Any>> = emptyList(),
     private val customEngineImplementationPath: String? = null,
 ) {
-    // Secondary constructor for Java compatibility
+    // Second constructor for Java compatibility
     constructor(
         readyCallback: P2PReadyCallback,
         errorCallback: OnErrorCallback,
