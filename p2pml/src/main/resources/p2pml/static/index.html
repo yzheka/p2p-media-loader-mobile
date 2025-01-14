@@ -62,7 +62,6 @@
           const streams = JSON.parse(jsonData);
 
           for (const stream of streams) {
-            console.log(">>> Add stream:", stream);
             this.core.addStreamIfNoneExists(stream);
           }
         }
@@ -71,11 +70,6 @@
           const playlist = JSON.parse(jsonData);
           const { streamRuntimeId, addSegments, removeSegmentsIds, isLive } =
             playlist;
-
-          console.log(">>> Parsed stream:", streamRuntimeId);
-          console.log("+++ Add segments:", addSegments);
-          console.log("--- Remove segments:", removeSegmentsIds);
-          console.log(">>> Is live:", isLive);
 
           this.core.updateStream(
             streamRuntimeId,
@@ -97,7 +91,7 @@
               this.port.postMessage(`${requestId}`);
               this.port.postMessage(copyData, [copyData]);
             } catch (e) {
-              console.error("Error in onSuccess:", e);
+              this.port.postMessage(`Error:${requestId}:failed|${segmentUrl}`);
             }
           };
 
@@ -119,13 +113,11 @@
               onError,
             });
           } catch (e) {
-            console.warn("Error in processSegmentRequest:", e);
             this.port.postMessage(`Error:${requestId}:not_found|${segmentUrl}`);
           }
         }
 
         setManifestUrl(manifestUrl) {
-          console.log(">>> Set manifest URL:", manifestUrl);
           this.core.setManifestResponseUrl(manifestUrl);
         }
 

@@ -76,10 +76,6 @@ internal class WebViewManager(
                 while (isActive) {
                     try {
                         if (engineStateManager.isEngineDisabled()) {
-                            Log.d(
-                                "WebViewManager",
-                                "P2P Engine disabled, stopping playback info update.",
-                            )
                             playbackInfoJob?.cancel()
                             playbackInfoJob = null
                             break
