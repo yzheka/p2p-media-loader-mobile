@@ -63,16 +63,14 @@ class P2PMediaLoader(
     )
 
     private val engineStateManager = P2PStateManager()
-
-    private var playbackProvider: PlaybackProvider? = null
-    private var manifestParser: HlsManifestParser? = null
+    private var appState = AppState.INITIALIZED
 
     private var job: Job? = null
     private var scope: CoroutineScope? = null
-
-    private var appState = AppState.INITIALIZED
-    private var webViewManager: WebViewManager? = null
     private var serverModule: ServerModule? = null
+    private var manifestParser: HlsManifestParser? = null
+    private var webViewManager: WebViewManager? = null
+    private var playbackProvider: PlaybackProvider? = null
 
     /**
      * Initializes and starts P2P media streaming components.
@@ -155,7 +153,7 @@ class P2PMediaLoader(
     fun applyDynamicConfig(dynamicCoreConfigJson: String) {
         ensureStarted()
 
-        webViewManager?.applyDynamicConfig(dynamicCoreConfigJson)
+        webViewManager!!.applyDynamicConfig(dynamicCoreConfigJson)
     }
 
     /**
@@ -197,8 +195,9 @@ class P2PMediaLoader(
             serverModule = null
 
             manifestParser?.reset()
-            playbackProvider?.resetData()
             manifestParser = null
+
+            playbackProvider?.resetData()
             playbackProvider = null
 
             engineStateManager.reset()
@@ -212,13 +211,13 @@ class P2PMediaLoader(
     }
 
     private suspend fun onManifestChanged() {
-        playbackProvider?.resetData()
-        manifestParser?.reset()
+        playbackProvider!!.resetData()
+        manifestParser!!.reset()
     }
 
     private fun onWebViewLoaded() {
-        scope?.launch {
-            webViewManager?.initCoreEngine(coreConfigJson)
+        scope!!.launch {
+            webViewManager!!.initCoreEngine(coreConfigJson)
 
             try {
                 readyCallback.onReady()
@@ -236,6 +235,6 @@ class P2PMediaLoader(
                 Utils.getUrl(serverPort, CORE_FILE_URL)
             }
 
-        webViewManager?.loadWebView(urlPath)
+        webViewManager!!.loadWebView(urlPath)
     }
 }
