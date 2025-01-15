@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Enable debugging of WebView to see P2PML logs
+        // Enable debugging of WebViews
         WebView.setWebContentsDebuggingEnabled(true)
 
         viewModel.setupP2PML()
