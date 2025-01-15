@@ -2,12 +2,18 @@ package com.novage.demo.viewmodel
 
 import android.app.Application
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DataSpec
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.TransferListener
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import com.novage.demo.Streams
@@ -15,15 +21,9 @@ import com.novage.p2pml.P2PMediaLoader
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import android.net.Uri
-import androidx.media3.datasource.DataSource
-import androidx.media3.datasource.DataSpec
-import androidx.media3.datasource.TransferListener
-import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.DefaultHttpDataSource
 
 @UnstableApi
-class ExoPlayerViewModel(application: Application): AndroidViewModel(application) {
+class ExoPlayerViewModel(application: Application) : AndroidViewModel(application) {
     private val context: Context
         get() = getApplication()
 
@@ -42,11 +42,12 @@ class ExoPlayerViewModel(application: Application): AndroidViewModel(application
             coreConfigJson = "{\"swarmId\":\"TEST_KOTLIN\"}",
             serverPort = 8081,
         )
-        p2pml?.start(context)
+        p2pml!!.start(context, player)
     }
 
     private fun initializePlayback() {
-        val manifest = p2pml?.getManifestUrl(Streams.HLS_LIVE_STREAM) ?: throw IllegalStateException("P2PML is not started")
+        val manifest = p2pml?.getManifestUrl(Streams.HLS_BIG_BUCK_BUNNY)
+            ?: throw IllegalStateException("P2PML is not started")
         val loggingDataSourceFactory = LoggingDataSourceFactory(context)
 
         val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory)
@@ -65,7 +66,6 @@ class ExoPlayerViewModel(application: Application): AndroidViewModel(application
                     }
                 }
             })
-            p2pml?.attachPlayer(this)
         }
     }
 
@@ -100,7 +100,8 @@ class LoggingDataSourceFactory(
 
     private val baseDataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
 
-    override fun createDataSource(): DataSource = LoggingDataSource(baseDataSourceFactory.createDataSource())
+    override fun createDataSource(): DataSource =
+        LoggingDataSource(baseDataSourceFactory.createDataSource())
 }
 
 

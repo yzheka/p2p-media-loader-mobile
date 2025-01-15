@@ -9,8 +9,10 @@ import com.novage.p2pml.Constants.QueryParams.MANIFEST
 import com.novage.p2pml.interop.OnErrorCallback
 import com.novage.p2pml.interop.P2PReadyCallback
 import com.novage.p2pml.parser.HlsManifestParser
+import com.novage.p2pml.providers.ExoPlayerPlaybackProvider
+import com.novage.p2pml.providers.ExternalPlaybackProvider
+import com.novage.p2pml.providers.PlaybackProvider
 import com.novage.p2pml.server.ServerModule
-import com.novage.p2pml.utils.ExoPlayerPlaybackCalculator
 import com.novage.p2pml.utils.P2PStateManager
 import com.novage.p2pml.utils.Utils
 import com.novage.p2pml.webview.WebViewManager
@@ -57,45 +59,75 @@ class P2PMediaLoader(
         coreConfigJson,
         serverPort,
         emptyList(),
-        null
+        null,
     )
 
     private val engineStateManager = P2PStateManager()
-    private val playbackCalculator = ExoPlayerPlaybackCalculator()
-    private val manifestParser = HlsManifestParser(playbackCalculator, serverPort)
+    private var appState = AppState.INITIALIZED
 
     private var job: Job? = null
     private var scope: CoroutineScope? = null
-
-    private var appState = AppState.INITIALIZED
-    private var webViewManager: WebViewManager? = null
     private var serverModule: ServerModule? = null
+    private var manifestParser: HlsManifestParser? = null
+    private var webViewManager: WebViewManager? = null
+    private var playbackProvider: PlaybackProvider? = null
 
     /**
      * Initializes and starts P2P media streaming components.
      *
      * @param context Android context required for WebView initialization
+     * @param exoPlayer ExoPlayer instance for media playback
      * @throws IllegalStateException if called in an invalid state
      */
-    fun start(context: Context) {
+    fun start(
+        context: Context,
+        exoPlayer: ExoPlayer,
+    ) {
+        prepareStart(context, ExoPlayerPlaybackProvider(exoPlayer))
+    }
+
+    /**
+     * Initializes and starts P2P media streaming components.
+     *
+     * @param context Android context required for WebView initialization
+     * @param getPlaybackInfo Function to retrieve playback information
+     * @throws IllegalStateException if called in an invalid state
+     */
+    fun start(
+        context: Context,
+        getPlaybackInfo: () -> PlaybackInfo,
+    ) {
+        prepareStart(context, ExternalPlaybackProvider(getPlaybackInfo))
+    }
+
+    private fun prepareStart(
+        context: Context,
+        provider: PlaybackProvider,
+    ) {
         if (appState == AppState.STARTED) {
             throw IllegalStateException("Cannot start P2PMediaLoader in state: $appState")
         }
 
         job = Job()
         scope = CoroutineScope(job!! + Dispatchers.Main)
+        playbackProvider = provider
 
-        initializeComponents(context)
+        initializeComponents(context, provider)
+
         appState = AppState.STARTED
     }
 
-    private fun initializeComponents(context: Context) {
+    private fun initializeComponents(
+        context: Context,
+        playbackProvider: PlaybackProvider,
+    ) {
+        manifestParser = HlsManifestParser(playbackProvider, serverPort)
         webViewManager =
             WebViewManager(
                 context,
                 scope!!,
                 engineStateManager,
-                playbackCalculator,
+                playbackProvider,
                 customJavaScriptInterfaces,
                 onPageLoadFinished = { onWebViewLoaded() },
             )
@@ -103,7 +135,7 @@ class P2PMediaLoader(
         serverModule =
             ServerModule(
                 webViewManager!!,
-                manifestParser,
+                manifestParser!!,
                 engineStateManager,
                 customEngineImplementationPath,
                 onServerStarted = { onServerStarted() },
@@ -121,20 +153,7 @@ class P2PMediaLoader(
     fun applyDynamicConfig(dynamicCoreConfigJson: String) {
         ensureStarted()
 
-        webViewManager?.applyDynamicConfig(dynamicCoreConfigJson)
-    }
-
-    /**
-     * Connects an ExoPlayer instance for playback monitoring.
-     * Required for P2P segment distribution and synchronization.
-     *
-     * @param exoPlayer ExoPlayer instance to monitor
-     * @throws IllegalStateException if P2PMediaLoader is not started
-     */
-    fun attachPlayer(exoPlayer: ExoPlayer) {
-        ensureStarted()
-
-        playbackCalculator.setExoPlayer(exoPlayer)
+        webViewManager!!.applyDynamicConfig(dynamicCoreConfigJson)
     }
 
     /**
@@ -175,8 +194,12 @@ class P2PMediaLoader(
             serverModule?.stop()
             serverModule = null
 
-            playbackCalculator.reset()
-            manifestParser.reset()
+            manifestParser?.reset()
+            manifestParser = null
+
+            playbackProvider?.resetData()
+            playbackProvider = null
+
             engineStateManager.reset()
 
             appState = AppState.STOPPED
@@ -188,13 +211,13 @@ class P2PMediaLoader(
     }
 
     private suspend fun onManifestChanged() {
-        playbackCalculator.resetData()
-        manifestParser.reset()
+        playbackProvider!!.resetData()
+        manifestParser!!.reset()
     }
 
     private fun onWebViewLoaded() {
-        scope?.launch {
-            webViewManager?.initCoreEngine(coreConfigJson)
+        scope!!.launch {
+            webViewManager!!.initCoreEngine(coreConfigJson)
 
             try {
                 readyCallback.onReady()
@@ -212,6 +235,6 @@ class P2PMediaLoader(
                 Utils.getUrl(serverPort, CORE_FILE_URL)
             }
 
-        webViewManager?.loadWebView(urlPath)
+        webViewManager!!.loadWebView(urlPath)
     }
 }
