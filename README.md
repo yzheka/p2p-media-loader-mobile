@@ -36,7 +36,7 @@ dependencyResolutionManagement {
 Add the following implementation line to your **`build.gradle`** (app module):
 
 ```kotlin
-implementation("com.github.Novage:p2p-media-loader-mobile:main-d71e8e4552-1")
+implementation("com.github.Novage:p2p-media-loader-mobile:main-SNAPSHOT")
 ```
 
 ### Step 3: Configure the AndroidManifest
@@ -111,8 +111,8 @@ class MainActivity : ComponentActivity() {
         
         // Initialize P2P Media Loader with callbacks
         p2pml = P2PMediaLoader(
-            readyCallback = { initializePlayback() },
-            onReadyErrorCallback = { onReadyError(it) },
+            onP2PReadyCallback = { initializePlayback() },
+            onP2PReadyErrorCallback = { onP2PReadyErrorCallback(it) },
             coreConfigJson = CORE_CONFIG_JSON,
             serverPort = SERVER_PORT,
         )
@@ -158,7 +158,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun onReadyError(error: String) {
+    private fun onP2PReadyErrorCallback(error: String) {
         // Implement error handling logic here
     }
 
@@ -223,7 +223,7 @@ public class MainActivity extends AppCompatActivity {
         playerView.setPlayer(exoPlayer);
     }
 
-    private void onReadyError(String error) {
+    private void onP2PReadyErrorCallback(String error) {
        // Implement error handling logic here
     }
     
@@ -256,7 +256,7 @@ public class MainActivity extends AppCompatActivity {
         // Initialize P2P Media Loader with callbacks
         p2pMediaLoader = new P2PMediaLoader(
             this::initializePlayback,
-            this::onReadyError,
+            this::onP2PReadyErrorCallback,
             SERVER_PORT,
             CORE_CONFIG_JSON
         );
