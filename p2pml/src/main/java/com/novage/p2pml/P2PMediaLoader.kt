@@ -6,8 +6,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.novage.p2pml.Constants.CORE_FILE_URL
 import com.novage.p2pml.Constants.CUSTOM_FILE_URL
 import com.novage.p2pml.Constants.QueryParams.MANIFEST
-import com.novage.p2pml.interop.OnErrorCallback
-import com.novage.p2pml.interop.P2PReadyCallback
+import com.novage.p2pml.interop.OnP2PReadyErrorCallback
+import com.novage.p2pml.interop.OnP2PReadyCallback
 import com.novage.p2pml.parser.HlsManifestParser
 import com.novage.p2pml.providers.ExoPlayerPlaybackProvider
 import com.novage.p2pml.providers.ExternalPlaybackProvider
@@ -26,8 +26,8 @@ import kotlinx.coroutines.runBlocking
 /**
  * `P2PMediaLoader` facilitates peer-to-peer media streaming within an Android application.
  *
- * @param readyCallback Callback invoked when the P2P engine is ready for use
- * @param onReadyErrorCallback Callback invoked when an error occurs
+ * @param onP2PReadyCallback Callback invoked when the P2P engine is ready for use
+ * @param onP2PReadyErrorCallback Callback invoked when an error occurs
  * @param coreConfigJson Sets core P2P configurations. See [P2PML Core Config](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.CoreConfig.html)
  * JSON string with core configurations. Default: empty string (uses default config)
  *
@@ -40,8 +40,8 @@ import kotlinx.coroutines.runBlocking
  */
 @UnstableApi
 class P2PMediaLoader(
-    private val readyCallback: P2PReadyCallback,
-    private val onReadyErrorCallback: OnErrorCallback,
+    private val onP2PReadyCallback: OnP2PReadyCallback,
+    private val onP2PReadyErrorCallback: OnP2PReadyErrorCallback,
     private val coreConfigJson: String = "",
     private val serverPort: Int = Constants.DEFAULT_SERVER_PORT,
     private val customJavaScriptInterfaces: List<Pair<String, Any>> = emptyList(),
@@ -49,13 +49,13 @@ class P2PMediaLoader(
 ) {
     // Second constructor for Java compatibility
     constructor(
-        readyCallback: P2PReadyCallback,
-        onReadyErrorCallback: OnErrorCallback,
+        onP2PReadyCallback: OnP2PReadyCallback,
+        onP2PReadyErrorCallback: OnP2PReadyErrorCallback,
         serverPort: Int,
         coreConfigJson: String,
     ) : this(
-        readyCallback,
-        onReadyErrorCallback,
+        onP2PReadyCallback,
+        onP2PReadyErrorCallback,
         coreConfigJson,
         serverPort,
         emptyList(),
@@ -220,9 +220,9 @@ class P2PMediaLoader(
             webViewManager!!.initCoreEngine(coreConfigJson)
 
             try {
-                readyCallback.onReady()
+                onP2PReadyCallback.onReady()
             } catch (e: Exception) {
-                onReadyErrorCallback.onError(e.message ?: "Unknown error")
+                onP2PReadyErrorCallback.onError(e.message ?: "Unknown error")
             }
         }
     }
