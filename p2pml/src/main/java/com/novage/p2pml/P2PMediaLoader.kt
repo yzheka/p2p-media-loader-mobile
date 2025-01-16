@@ -139,6 +139,7 @@ class P2PMediaLoader(
                 engineStateManager,
                 customEngineImplementationPath,
                 onServerStarted = { onServerStarted() },
+                onServerError = { onP2PReadyErrorCallback.onError(it) },
                 onManifestChanged = { onManifestChanged() },
             ).apply { start(serverPort) }
     }
@@ -235,6 +236,10 @@ class P2PMediaLoader(
                 Utils.getUrl(serverPort, CORE_FILE_URL)
             }
 
-        webViewManager!!.loadWebView(urlPath)
+        try {
+            webViewManager!!.loadWebView(urlPath)
+        } catch (e: Exception) {
+            onP2PReadyErrorCallback.onError(e.message ?: "Unknown error")
+        }
     }
 }
