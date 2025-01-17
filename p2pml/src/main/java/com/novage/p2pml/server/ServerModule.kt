@@ -23,6 +23,7 @@ internal class ServerModule(
     private val p2pEngineStateManager: P2PStateManager,
     private val customEngineImplementationPath: String? = null,
     private val onServerStarted: () -> Unit,
+    private val onServerError: (String) -> Unit,
     private val onManifestChanged: suspend () -> Unit,
 ) {
     private var httpClient: OkHttpClient? = null
@@ -31,12 +32,15 @@ internal class ServerModule(
     fun start(port: Int = 8080) {
         if (server != null) return
 
-        server =
-            embeddedServer(CIO, port) {
+        try {
+            server = embeddedServer(CIO, port) {
                 configureCORS(this)
                 configureRouting(this)
                 subscribeToServerStarted(this)
             }.start(wait = false)
+        } catch (e: Exception) {
+            onServerError(e.message ?: "Failed to start server on port $port")
+        }
     }
 
     private fun stopServer() {
