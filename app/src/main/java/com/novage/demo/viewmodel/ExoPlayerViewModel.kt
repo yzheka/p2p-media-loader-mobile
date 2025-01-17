@@ -37,8 +37,8 @@ class ExoPlayerViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun setupP2PML() {
         p2pml = P2PMediaLoader(
-            readyCallback = { initializePlayback() },
-            onReadyErrorCallback = { onReadyError(it) },
+            onP2PReadyCallback = { initializePlayback() },
+            onP2PReadyErrorCallback = { onReadyError(it) },
             coreConfigJson = "{\"swarmId\":\"TEST_KOTLIN\"}",
             serverPort = 8081,
         )

@@ -39,11 +39,6 @@ internal class SegmentHandler(
         val decodedSegmentUrl = Utils.decodeBase64Url(segmentUrlParam)
         val byteRange = call.request.headers[HttpHeaders.Range]
 
-        Log.d(
-            "SegmentHandler",
-            "Received segment request for $decodedSegmentUrl",
-        )
-
         try {
             val isCurrentSegment = parser.isCurrentSegment(decodedSegmentUrl)
             if (p2pEngineStateManager.isEngineDisabled() || !isCurrentSegment) {
@@ -58,7 +53,7 @@ internal class SegmentHandler(
 
             respondSegment(call, segmentBytes, byteRange != null)
         } catch (e: SegmentAbortedException) {
-            Log.e("SegmentHandler", "Segment request aborted: ${e.message}")
+            Log.w("SegmentHandler", "Segment request aborted: ${e.message}")
             call.respondText(
                 "Segment aborted",
                 status = HttpStatusCode.RequestTimeout,
