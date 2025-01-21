@@ -89,7 +89,7 @@ class P2PMediaLoader(
         context: Context,
         exoPlayer: ExoPlayer,
     ) {
-        Logger.d("P2PMediaLoader", "Starting P2P Media Loader with ExoPlayer")
+        Logger.d(TAG, "Starting P2P Media Loader with ExoPlayer")
         prepareStart(context, ExoPlayerPlaybackProvider(exoPlayer))
     }
 
@@ -104,7 +104,7 @@ class P2PMediaLoader(
         context: Context,
         getPlaybackInfo: () -> PlaybackInfo,
     ) {
-        Logger.d("P2PMediaLoader", "Starting P2P Media Loader with playback info callback")
+        Logger.d(TAG, "Starting P2P Media Loader with playback info callback")
         prepareStart(context, ExternalPlaybackProvider(getPlaybackInfo))
     }
 
