@@ -47,7 +47,7 @@ class P2PMediaLoader(
     private val serverPort: Int = Constants.DEFAULT_SERVER_PORT,
     private val customJavaScriptInterfaces: List<Pair<String, Any>> = emptyList(),
     private val customEngineImplementationPath: String? = null,
-    enableDebugLogs: Boolean = true,
+    enableDebugLogs: Boolean = false,
 ) {
     init {
         Logger.setDebugEnabled(enableDebugLogs)
