@@ -11,6 +11,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.webkit.WebViewClientCompat
 import com.novage.p2pml.DynamicP2PCoreConfig
 import com.novage.p2pml.providers.PlaybackProvider
+import com.novage.p2pml.utils.EventEmitter
 import com.novage.p2pml.utils.P2PStateManager
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +31,7 @@ internal class WebViewManager(
     private val coroutineScope: CoroutineScope,
     private val engineStateManager: P2PStateManager,
     private val playbackProvider: PlaybackProvider,
+    private val eventEmitter: EventEmitter,
     customJavaScriptInterfaces: List<Pair<String, Any>>,
     onPageLoadFinished: () -> Unit,
 ) {
@@ -41,7 +43,7 @@ internal class WebViewManager(
             webViewClient = WebViewClientCompat()
             visibility = View.GONE
             addJavascriptInterface(
-                JavaScriptInterface(onPageLoadFinished),
+                JavaScriptInterface(onPageLoadFinished, eventEmitter),
                 "Android",
             )
         }

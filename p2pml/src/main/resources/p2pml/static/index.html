@@ -46,6 +46,18 @@
             this.destroyP2PEngine();
           }
           this.core = new Core(this.coreConfig ?? {});
+          this.core.addEventListener(
+            "onChunkDownloaded",
+            (bytesLength, downloadSource, peerId) => {
+              console.log(
+                "onChunkDownloaded",
+                bytesLength,
+                downloadSource,
+                peerId
+              );
+              Android.onChunkDownloaded(bytesLength, downloadSource, peerId);
+            }
+          );
         }
 
         listenPort() {

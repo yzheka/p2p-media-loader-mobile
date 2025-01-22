@@ -13,6 +13,7 @@ import com.novage.p2pml.providers.ExoPlayerPlaybackProvider
 import com.novage.p2pml.providers.ExternalPlaybackProvider
 import com.novage.p2pml.providers.PlaybackProvider
 import com.novage.p2pml.server.ServerModule
+import com.novage.p2pml.utils.EventEmitter
 import com.novage.p2pml.utils.P2PStateManager
 import com.novage.p2pml.utils.Utils
 import com.novage.p2pml.webview.WebViewManager
@@ -62,6 +63,7 @@ class P2PMediaLoader(
         null,
     )
 
+    private val eventEmitter = EventEmitter()
     private val engineStateManager = P2PStateManager()
     private var appState = AppState.INITIALIZED
 
@@ -71,6 +73,20 @@ class P2PMediaLoader(
     private var manifestParser: HlsManifestParser? = null
     private var webViewManager: WebViewManager? = null
     private var playbackProvider: PlaybackProvider? = null
+
+    fun <T> addEventListener(
+        event: CoreEventMap<T>,
+        listener: (T) -> Unit,
+    ) {
+        eventEmitter.on(event, listener)
+    }
+
+    fun <T> removeEventListener(
+        event: CoreEventMap<T>,
+        listener: (T) -> Unit,
+    ) {
+        eventEmitter.off(event, listener)
+    }
 
     /**
      * Initializes and starts P2P media streaming components.
@@ -128,6 +144,7 @@ class P2PMediaLoader(
                 scope!!,
                 engineStateManager,
                 playbackProvider,
+                eventEmitter,
                 customJavaScriptInterfaces,
                 onPageLoadFinished = { onWebViewLoaded() },
             )
