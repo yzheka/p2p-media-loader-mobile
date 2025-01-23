@@ -8,7 +8,7 @@ import androidx.media3.common.util.UnstableApi
 object Logger {
     private var isDebugEnabled = false
 
-    fun setDebugEnabled(isDebugEnabled: Boolean) {
+    fun setDebugMode(isDebugEnabled: Boolean) {
         this.isDebugEnabled = isDebugEnabled
     }
 

@@ -51,7 +51,7 @@ class P2PMediaLoader(
     enableDebugLogs: Boolean = false,
 ) {
     init {
-        Logger.setDebugEnabled(enableDebugLogs)
+        Logger.setDebugMode(enableDebugLogs)
     }
 
     // Second constructor for Java compatibility
