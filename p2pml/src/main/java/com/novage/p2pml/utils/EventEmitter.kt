@@ -5,7 +5,7 @@ import com.novage.p2pml.CoreEventMap
 class EventEmitter {
     private val listeners = mutableMapOf<CoreEventMap<*>, MutableList<(Any?) -> Unit>>()
 
-    fun <T> on(
+    fun <T> addEventListener(
         event: CoreEventMap<T>,
         listener: (T) -> Unit,
     ) {
@@ -21,7 +21,7 @@ class EventEmitter {
         listeners[event]?.forEach { it(data) }
     }
 
-    fun <T> off(
+    fun <T> removeEventListener(
         event: CoreEventMap<T>,
         listener: (T) -> Unit,
     ) {

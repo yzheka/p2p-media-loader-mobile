@@ -90,7 +90,7 @@ class P2PMediaLoader(
         event: CoreEventMap<T>,
         listener: (T) -> Unit,
     ) {
-        eventEmitter.on(event, listener)
+        eventEmitter.addEventListener(event, listener)
     }
 
     /**
@@ -103,7 +103,7 @@ class P2PMediaLoader(
         event: CoreEventMap<T>,
         listener: (T) -> Unit,
     ) {
-        eventEmitter.off(event, listener)
+        eventEmitter.removeEventListener(event, listener)
     }
 
     /**
