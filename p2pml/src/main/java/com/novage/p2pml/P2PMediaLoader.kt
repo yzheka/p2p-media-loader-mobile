@@ -74,6 +74,12 @@ class P2PMediaLoader(
     private var webViewManager: WebViewManager? = null
     private var playbackProvider: PlaybackProvider? = null
 
+    /**
+     * Adds an event listener to the P2P engine.
+     *
+     * @param event Event type to listen for
+     * @param listener Callback function to invoke when the event occurs
+     */
     fun <T> addEventListener(
         event: CoreEventMap<T>,
         listener: (T) -> Unit,
@@ -81,6 +87,12 @@ class P2PMediaLoader(
         eventEmitter.on(event, listener)
     }
 
+    /**
+     * Removes an event listener from the P2P engine.
+     *
+     * @param event Event type to remove the listener from
+     * @param listener Callback function to remove
+     */
     fun <T> removeEventListener(
         event: CoreEventMap<T>,
         listener: (T) -> Unit,

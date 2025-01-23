@@ -26,4 +26,6 @@ class EventEmitter {
     ) {
         listeners.remove(event)?.removeAll { it == listener }
     }
+
+    fun <T> hasListeners(event: CoreEventMap<T>): Boolean = listeners[event]?.isNotEmpty() ?: false
 }

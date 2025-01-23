@@ -46,18 +46,56 @@
             this.destroyP2PEngine();
           }
           this.core = new Core(this.coreConfig ?? {});
+
           this.core.addEventListener(
             "onChunkDownloaded",
             (bytesLength, downloadSource, peerId) => {
-              console.log(
-                "onChunkDownloaded",
-                bytesLength,
-                downloadSource,
-                peerId
-              );
               Android.onChunkDownloaded(bytesLength, downloadSource, peerId);
             }
           );
+
+          this.core.addEventListener(
+            "onChunkUploaded",
+            (bytesLength, peerId) => {
+              Android.onChunkUploaded(bytesLength, peerId);
+            }
+          );
+
+          this.core.addEventListener("onSegmentLoaded", (params) => {
+            Android.onSegmentLoaded(JSON.stringify(params));
+          });
+
+          this.core.addEventListener("onSegmentError", (params) => {
+            Android.onSegmentError(JSON.stringify(params));
+          });
+
+          this.core.addEventListener("onSegmentAbort", (params) => {
+            Android.onSegmentAbort(JSON.stringify(params));
+          });
+
+          this.core.addEventListener("onSegmentStart", (params) => {
+            Android.onSegmentStart(JSON.stringify(params));
+          });
+
+          this.core.addEventListener("onPeerConnect", (params) => {
+            Android.onPeerConnect(JSON.stringify(params));
+          });
+
+          this.core.addEventListener("onPeerClose", (params) => {
+            Android.onPeerClose(JSON.stringify(params));
+          });
+
+          this.core.addEventListener("onPeerError", (params) => {
+            Android.onPeerError(JSON.stringify(params));
+          });
+
+          this.core.addEventListener("onTrackerError", (params) => {
+            Android.onTrackerError(JSON.stringify(params));
+          });
+
+          this.core.addEventListener("onTrackerWarning", (params) => {
+            Android.onTrackerWarning(JSON.stringify(params));
+          });
         }
 
         listenPort() {

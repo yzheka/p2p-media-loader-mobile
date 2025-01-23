@@ -1,9 +1,11 @@
 package com.novage.p2pml
 
+import kotlinx.serialization.Serializable
+
 sealed class CoreEventMap<out T> {
     data object OnSegmentLoaded : CoreEventMap<SegmentLoadDetails>()
 
-    data object OnSegmentStarted : CoreEventMap<SegmentStartDetails>()
+    data object OnSegmentStart : CoreEventMap<SegmentStartDetails>()
 
     data object OnSegmentError : CoreEventMap<SegmentErrorDetails>()
 
@@ -24,22 +26,26 @@ sealed class CoreEventMap<out T> {
     data object OnTrackerWarning : CoreEventMap<TrackerWarningDetails>()
 }
 
+@Serializable
 data class SegmentByteRange(
     val start: Int,
     val end: Int,
 )
 
+@Serializable
 data class PeerDetails(
     val peerId: String,
     val streamType: String,
 )
 
+@Serializable
 data class PeerErrorDetails(
     val peerId: String,
     val streamType: String,
     val error: String,
 )
 
+@Serializable
 data class SegmentDetails(
     val runtimeId: String,
     val externalId: Int,
@@ -49,18 +55,20 @@ data class SegmentDetails(
     val endTime: Double,
 )
 
+@Serializable
 data class SegmentLoadDetails(
     val segmentUrl: String,
     val bytesLength: Int,
     val downloadSource: String,
-    val peerId: String?,
+    val peerId: String? = null,
     val streamType: String,
 )
 
+@Serializable
 data class SegmentStartDetails(
     val segment: SegmentDetails,
     val downloadSource: String,
-    val peerId: String?,
+    val peerId: String? = null,
 )
 
 data class SegmentErrorDetails(
@@ -71,10 +79,11 @@ data class SegmentErrorDetails(
     val streamType: String,
 )
 
+@Serializable
 data class SegmentAbortDetails(
     val segment: SegmentDetails,
     val downloadSource: String,
-    val peerId: String?,
+    val peerId: String? = null,
     val streamType: String,
 )
 
@@ -89,11 +98,13 @@ data class ChunkUploadedDetails(
     val peerId: String,
 )
 
+@Serializable
 data class TrackerErrorDetails(
     val streamType: String,
     val error: String,
 )
 
+@Serializable
 data class TrackerWarningDetails(
     val streamType: String,
     val warning: String,
