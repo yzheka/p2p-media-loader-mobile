@@ -243,6 +243,7 @@ class P2PMediaLoader(
             playbackProvider = null
 
             engineStateManager.reset()
+            eventEmitter.removeAllListeners()
 
             appState = AppState.STOPPED
 
