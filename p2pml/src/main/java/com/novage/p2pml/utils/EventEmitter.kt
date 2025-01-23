@@ -9,6 +9,7 @@ class EventEmitter {
         event: CoreEventMap<T>,
         listener: (T) -> Unit,
     ) {
+        @Suppress("UNCHECKED_CAST")
         val wrapper: (Any?) -> Unit = { data -> listener(data as T) }
         listeners.getOrPut(event) { mutableListOf() }.add(wrapper)
     }
