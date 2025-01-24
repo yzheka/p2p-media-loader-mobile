@@ -4,6 +4,7 @@ import android.webkit.JavascriptInterface
 import com.novage.p2pml.ChunkDownloadedDetails
 import com.novage.p2pml.ChunkUploadedDetails
 import com.novage.p2pml.CoreEventMap
+import com.novage.p2pml.logger.Logger
 import com.novage.p2pml.utils.EventEmitter
 import kotlinx.serialization.json.Json
 
@@ -84,7 +85,8 @@ internal class JavaScriptInterface(
         try {
             val parsedParams = Json.decodeFromString<T>(jsonParams)
             eventEmitter.emit(event, parsedParams)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Logger.e("JavaScriptInterface", "Failed to parse event parameters", e)
         }
     }
 }
