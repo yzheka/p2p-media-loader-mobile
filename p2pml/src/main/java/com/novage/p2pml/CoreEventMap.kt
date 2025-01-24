@@ -1,67 +1,74 @@
+@file:JvmName("CoreEventMap")
+
 package com.novage.p2pml
 
 import kotlinx.serialization.Serializable
 
 /**
- * CoreEventMap is a sealed class that represents the different types of events that can be emitted by the P2P core.
- *
- * See [P2P Media Loader CoreEventMap](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p-media-loader-core.CoreEventMap.html)
+ * A sealed class representing different P2P core events, each with its own payload type.
  */
 sealed class CoreEventMap<T> {
     /**
-     * Fired when a segment is fully downloaded and available for use.
+     * Companion object holding all event singletons so Java can do:
+     *     CoreEventMaps.OnSegmentLoaded
+     * from Java code.
      */
-    object OnSegmentLoaded : CoreEventMap<SegmentLoadDetails>()
+    companion object {
+        @JvmField
+        val OnSegmentLoaded = OnSegmentLoadedEvent
 
-    /**
-     * Fired at the beginning of a segment download process.
-     */
-    object OnSegmentStart : CoreEventMap<SegmentStartDetails>()
+        @JvmField
+        val OnSegmentStart = OnSegmentStartEvent
 
-    /**
-     * Fired when an error occurs during the download of a segment.
-     */
-    object OnSegmentError : CoreEventMap<SegmentErrorDetails>()
+        @JvmField
+        val OnSegmentError = OnSegmentErrorEvent
 
-    /**
-     * Fired if the download of a segment is aborted before completion.
-     */
-    object OnSegmentAbort : CoreEventMap<SegmentAbortDetails>()
+        @JvmField
+        val OnSegmentAbort = OnSegmentAbortEvent
 
-    /**
-     * Fired when a new peer-to-peer connection is established.
-     */
-    object OnPeerConnect : CoreEventMap<PeerDetails>()
+        @JvmField
+        val OnPeerConnect = OnPeerConnectEvent
 
-    /**
-     * Fired when an existing peer-to-peer connection is closed.
-     */
-    object OnPeerClose : CoreEventMap<PeerDetails>()
+        @JvmField
+        val OnPeerClose = OnPeerCloseEvent
 
-    /**
-     * Fired when an error occurs during a peer-to-peer connection.
-     */
-    object OnPeerError : CoreEventMap<PeerErrorDetails>()
+        @JvmField
+        val OnPeerError = OnPeerErrorEvent
 
-    /**
-     * Fired after a chunk of data from a segment has been successfully downloaded.
-     */
-    object OnChunkDownloaded : CoreEventMap<ChunkDownloadedDetails>()
+        @JvmField
+        val OnChunkDownloaded = OnChunkDownloadedEvent
 
-    /**
-     * Fired when a chunk of data has been successfully uploaded to a peer.
-     */
-    object OnChunkUploaded : CoreEventMap<ChunkUploadedDetails>()
+        @JvmField
+        val OnChunkUploaded = OnChunkUploadedEvent
 
-    /**
-     * Fired when an error occurs during the tracker request process.
-     */
-    object OnTrackerError : CoreEventMap<TrackerErrorDetails>()
+        @JvmField
+        val OnTrackerError = OnTrackerErrorEvent
 
-    /**
-     * Fired when a warning occurs during the tracker request process.
-     */
-    object OnTrackerWarning : CoreEventMap<TrackerWarningDetails>()
+        @JvmField
+        val OnTrackerWarning = OnTrackerWarningEvent
+    }
+
+    object OnSegmentLoadedEvent : CoreEventMap<SegmentLoadDetails>()
+
+    object OnSegmentStartEvent : CoreEventMap<SegmentStartDetails>()
+
+    object OnSegmentErrorEvent : CoreEventMap<SegmentErrorDetails>()
+
+    object OnSegmentAbortEvent : CoreEventMap<SegmentAbortDetails>()
+
+    object OnPeerConnectEvent : CoreEventMap<PeerDetails>()
+
+    object OnPeerCloseEvent : CoreEventMap<PeerDetails>()
+
+    object OnPeerErrorEvent : CoreEventMap<PeerErrorDetails>()
+
+    object OnChunkDownloadedEvent : CoreEventMap<ChunkDownloadedDetails>()
+
+    object OnChunkUploadedEvent : CoreEventMap<ChunkUploadedDetails>()
+
+    object OnTrackerErrorEvent : CoreEventMap<TrackerErrorDetails>()
+
+    object OnTrackerWarningEvent : CoreEventMap<TrackerWarningDetails>()
 }
 
 /**
