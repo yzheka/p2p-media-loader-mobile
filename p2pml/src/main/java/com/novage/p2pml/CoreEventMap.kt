@@ -7,61 +7,61 @@ import kotlinx.serialization.Serializable
  *
  * See [P2P Media Loader CoreEventMap](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p-media-loader-core.CoreEventMap.html)
  */
-sealed class CoreEventMap<out T> {
+sealed class CoreEventMap<T> {
     /**
      * Fired when a segment is fully downloaded and available for use.
      */
-    data object OnSegmentLoaded : CoreEventMap<SegmentLoadDetails>()
+    object OnSegmentLoaded : CoreEventMap<SegmentLoadDetails>()
 
     /**
      * Fired at the beginning of a segment download process.
      */
-    data object OnSegmentStart : CoreEventMap<SegmentStartDetails>()
+    object OnSegmentStart : CoreEventMap<SegmentStartDetails>()
 
     /**
      * Fired when an error occurs during the download of a segment.
      */
-    data object OnSegmentError : CoreEventMap<SegmentErrorDetails>()
+    object OnSegmentError : CoreEventMap<SegmentErrorDetails>()
 
     /**
      * Fired if the download of a segment is aborted before completion.
      */
-    data object OnSegmentAbort : CoreEventMap<SegmentAbortDetails>()
+    object OnSegmentAbort : CoreEventMap<SegmentAbortDetails>()
 
     /**
      * Fired when a new peer-to-peer connection is established.
      */
-    data object OnPeerConnect : CoreEventMap<PeerDetails>()
+    object OnPeerConnect : CoreEventMap<PeerDetails>()
 
     /**
      * Fired when an existing peer-to-peer connection is closed.
      */
-    data object OnPeerClose : CoreEventMap<PeerDetails>()
+    object OnPeerClose : CoreEventMap<PeerDetails>()
 
     /**
      * Fired when an error occurs during a peer-to-peer connection.
      */
-    data object OnPeerError : CoreEventMap<PeerErrorDetails>()
+    object OnPeerError : CoreEventMap<PeerErrorDetails>()
 
     /**
      * Fired after a chunk of data from a segment has been successfully downloaded.
      */
-    data object OnChunkDownloaded : CoreEventMap<ChunkDownloadedDetails>()
+    object OnChunkDownloaded : CoreEventMap<ChunkDownloadedDetails>()
 
     /**
      * Fired when a chunk of data has been successfully uploaded to a peer.
      */
-    data object OnChunkUploaded : CoreEventMap<ChunkUploadedDetails>()
+    object OnChunkUploaded : CoreEventMap<ChunkUploadedDetails>()
 
     /**
      * Fired when an error occurs during the tracker request process.
      */
-    data object OnTrackerError : CoreEventMap<TrackerErrorDetails>()
+    object OnTrackerError : CoreEventMap<TrackerErrorDetails>()
 
     /**
      * Fired when a warning occurs during the tracker request process.
      */
-    data object OnTrackerWarning : CoreEventMap<TrackerWarningDetails>()
+    object OnTrackerWarning : CoreEventMap<TrackerWarningDetails>()
 }
 
 /**

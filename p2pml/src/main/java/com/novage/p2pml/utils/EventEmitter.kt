@@ -2,30 +2,36 @@ package com.novage.p2pml.utils
 
 import com.novage.p2pml.CoreEventMap
 
+fun interface EventListener<T> {
+    fun onEvent(data: T)
+}
+
 class EventEmitter {
-    private val listeners = mutableMapOf<CoreEventMap<*>, MutableList<(Any?) -> Unit>>()
+    private val listeners = mutableMapOf<CoreEventMap<*>, MutableList<EventListener<*>>>()
 
     fun <T> addEventListener(
         event: CoreEventMap<T>,
-        listener: (T) -> Unit,
+        listener: EventListener<T>,
     ) {
-        @Suppress("UNCHECKED_CAST")
-        val wrapper: (Any?) -> Unit = { data -> listener(data as T) }
-        listeners.getOrPut(event) { mutableListOf() }.add(wrapper)
+        val list = listeners.getOrPut(event) { mutableListOf() }
+        list.add(listener)
     }
 
     fun <T> emit(
         event: CoreEventMap<T>,
         data: T,
     ) {
-        listeners[event]?.forEach { it(data) }
+        listeners[event]?.forEach { listener ->
+            @Suppress("UNCHECKED_CAST")
+            (listener as EventListener<T>).onEvent(data)
+        }
     }
 
     fun <T> removeEventListener(
         event: CoreEventMap<T>,
-        listener: (T) -> Unit,
+        listener: EventListener<T>,
     ) {
-        listeners.remove(event)?.removeAll { it == listener }
+        listeners[event]?.remove(listener)
     }
 
     fun <T> hasListeners(event: CoreEventMap<T>): Boolean = listeners[event]?.isNotEmpty() ?: false
