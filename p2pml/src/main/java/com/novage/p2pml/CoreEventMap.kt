@@ -13,6 +13,7 @@ sealed class CoreEventMap<T> {
      *     CoreEventMaps.OnSegmentLoaded
      * from Java code.
      */
+    @Suppress("EXPOSED_PROPERTY_TYPE")
     companion object {
         /**
          * Fired when a segment is fully downloaded and available for use.
@@ -81,27 +82,27 @@ sealed class CoreEventMap<T> {
         val OnTrackerWarning = OnTrackerWarningEvent
     }
 
-    object OnSegmentLoadedEvent : CoreEventMap<SegmentLoadDetails>()
+    private object OnSegmentLoadedEvent : CoreEventMap<SegmentLoadDetails>()
 
-    object OnSegmentStartEvent : CoreEventMap<SegmentStartDetails>()
+    private object OnSegmentStartEvent : CoreEventMap<SegmentStartDetails>()
 
-    object OnSegmentErrorEvent : CoreEventMap<SegmentErrorDetails>()
+    private object OnSegmentErrorEvent : CoreEventMap<SegmentErrorDetails>()
 
-    object OnSegmentAbortEvent : CoreEventMap<SegmentAbortDetails>()
+    private object OnSegmentAbortEvent : CoreEventMap<SegmentAbortDetails>()
 
-    object OnPeerConnectEvent : CoreEventMap<PeerDetails>()
+    private object OnPeerConnectEvent : CoreEventMap<PeerDetails>()
 
-    object OnPeerCloseEvent : CoreEventMap<PeerDetails>()
+    private object OnPeerCloseEvent : CoreEventMap<PeerDetails>()
 
-    object OnPeerErrorEvent : CoreEventMap<PeerErrorDetails>()
+    private object OnPeerErrorEvent : CoreEventMap<PeerErrorDetails>()
 
-    object OnChunkDownloadedEvent : CoreEventMap<ChunkDownloadedDetails>()
+    private object OnChunkDownloadedEvent : CoreEventMap<ChunkDownloadedDetails>()
 
-    object OnChunkUploadedEvent : CoreEventMap<ChunkUploadedDetails>()
+    private object OnChunkUploadedEvent : CoreEventMap<ChunkUploadedDetails>()
 
-    object OnTrackerErrorEvent : CoreEventMap<TrackerErrorDetails>()
+    private object OnTrackerErrorEvent : CoreEventMap<TrackerErrorDetails>()
 
-    object OnTrackerWarningEvent : CoreEventMap<TrackerWarningDetails>()
+    private object OnTrackerWarningEvent : CoreEventMap<TrackerWarningDetails>()
 }
 
 /**
