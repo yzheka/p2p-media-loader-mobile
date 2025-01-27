@@ -3,7 +3,9 @@ package com.novage.p2pml
 import kotlinx.serialization.Serializable
 
 /**
- * A sealed class representing different P2P core events, each with its own payload type.
+ * CoreEventMap is a sealed class that represents the different types of events that can be emitted by the P2P core.
+ *
+ * See [P2P Media Loader CoreEventMap](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p-media-loader-core.CoreEventMap.html)
  */
 sealed class CoreEventMap<T> {
     /**
@@ -12,36 +14,69 @@ sealed class CoreEventMap<T> {
      * from Java code.
      */
     companion object {
+        /**
+         * Fired when a segment is fully downloaded and available for use.
+         */
         @JvmField
         val OnSegmentLoaded = OnSegmentLoadedEvent
 
+        /**
+         * Fired at the beginning of a segment download process.
+         */
         @JvmField
         val OnSegmentStart = OnSegmentStartEvent
 
+        /**
+         * Fired when an error occurs during the download of a segment.
+         */
         @JvmField
         val OnSegmentError = OnSegmentErrorEvent
 
+        /**
+         * Fired if the download of a segment is aborted before completion.
+         */
         @JvmField
         val OnSegmentAbort = OnSegmentAbortEvent
 
+        /**
+         * Fired when a new peer-to-peer connection is established.
+         */
         @JvmField
         val OnPeerConnect = OnPeerConnectEvent
 
+        /**
+         * Fired when an existing peer-to-peer connection is closed.
+         */
         @JvmField
         val OnPeerClose = OnPeerCloseEvent
 
+        /**
+         * Fired when an error occurs during a peer-to-peer connection.
+         */
         @JvmField
         val OnPeerError = OnPeerErrorEvent
 
+        /**
+         * Fired after a chunk of data from a segment has been successfully downloaded.
+         */
         @JvmField
         val OnChunkDownloaded = OnChunkDownloadedEvent
 
+        /**
+         * Fired when a chunk of data has been successfully uploaded to a peer.
+         */
         @JvmField
         val OnChunkUploaded = OnChunkUploadedEvent
 
+        /**
+         * Fired when an error occurs during the tracker request process.
+         */
         @JvmField
         val OnTrackerError = OnTrackerErrorEvent
 
+        /**
+         * Fired when a warning occurs during the tracker request process.
+         */
         @JvmField
         val OnTrackerWarning = OnTrackerWarningEvent
     }
