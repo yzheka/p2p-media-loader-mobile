@@ -17,13 +17,16 @@ import androidx.media3.datasource.TransferListener
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import com.novage.demo.Streams
+import com.novage.p2pml.CoreEventMap
 import com.novage.p2pml.P2PMediaLoader
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 @UnstableApi
-class ExoPlayerViewModel(application: Application) : AndroidViewModel(application) {
+class ExoPlayerViewModel(
+    application: Application,
+) : AndroidViewModel(application) {
     private val context: Context
         get() = getApplication()
 
@@ -36,36 +39,58 @@ class ExoPlayerViewModel(application: Application) : AndroidViewModel(applicatio
     val loadingState: StateFlow<Boolean> get() = _loadingState
 
     fun setupP2PML() {
-        p2pml = P2PMediaLoader(
-            onP2PReadyCallback = { initializePlayback() },
-            onP2PReadyErrorCallback = { onReadyError(it) },
-            coreConfigJson = "{\"swarmId\":\"TEST_KOTLIN\"}",
-            serverPort = 8081,
-        )
+        p2pml =
+            P2PMediaLoader(
+                onP2PReadyCallback = { initializePlayback() },
+                onP2PReadyErrorCallback = { onReadyError(it) },
+                coreConfigJson = "{\"swarmId\":\"TEST_KOTLIN\"}",
+                serverPort = 8081,
+            )
+
+        p2pml!!.addEventListener(CoreEventMap.OnPeerConnect) { params ->
+            // Implement logic to handle peer connection
+            Log.d("P2PML", "Peer connected: ${params.peerId} - ${params.streamType}")
+        }
+
+        p2pml!!.addEventListener(CoreEventMap.OnSegmentLoaded) { params ->
+            // Implement logic to handle loaded segment
+            Log.d("P2PML", "Segment loaded: ${params.segmentUrl} - ${params.bytesLength} - ${params.downloadSource}")
+        }
+
+        p2pml!!.addEventListener(CoreEventMap.OnChunkDownloaded) { params ->
+            // Implement logic to handle downloaded chunk
+            Log.d("P2PML", "Chunk downloaded: ${params.bytesLength} - ${params.downloadSource} - ${params.downloadSource}")
+        }
+
         p2pml!!.start(context, player)
     }
 
     private fun initializePlayback() {
-        val manifest = p2pml?.getManifestUrl(Streams.HLS_BIG_BUCK_BUNNY)
-            ?: throw IllegalStateException("P2PML is not started")
+        val manifest =
+            p2pml?.getManifestUrl(Streams.HLS_BIG_BUCK_BUNNY)
+                ?: throw IllegalStateException("P2PML is not started")
         val loggingDataSourceFactory = LoggingDataSourceFactory(context)
 
-        val mediaSource = HlsMediaSource.Factory(loggingDataSourceFactory)
-            .createMediaSource(MediaItem.fromUri(manifest))
+        val mediaSource =
+            HlsMediaSource
+                .Factory(loggingDataSourceFactory)
+                .createMediaSource(MediaItem.fromUri(manifest))
 
         player.apply {
             playWhenReady = true
             setMediaSource(mediaSource)
             prepare()
-            addListener(object : Player.Listener {
-                override fun onPlaybackStateChanged(playbackState: Int) {
-                    if (playbackState == Player.STATE_READY) {
-                        viewModelScope.launch {
-                            _loadingState.value = false
+            addListener(
+                object : Player.Listener {
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        if (playbackState == Player.STATE_READY) {
+                            viewModelScope.launch {
+                                _loadingState.value = false
+                            }
                         }
                     }
-                }
-            })
+                },
+            )
         }
     }
 
@@ -85,7 +110,6 @@ class ExoPlayerViewModel(application: Application) : AndroidViewModel(applicatio
     }
 }
 
-
 @UnstableApi
 class LoggingDataSourceFactory(
     context: Context,
@@ -100,10 +124,8 @@ class LoggingDataSourceFactory(
 
     private val baseDataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
 
-    override fun createDataSource(): DataSource =
-        LoggingDataSource(baseDataSourceFactory.createDataSource())
+    override fun createDataSource(): DataSource = LoggingDataSource(baseDataSourceFactory.createDataSource())
 }
-
 
 @UnstableApi
 class LoggingDataSource(
@@ -119,7 +141,11 @@ class LoggingDataSource(
         }
     }
 
-    override fun read(buffer: ByteArray, offset: Int, length: Int): Int =
+    override fun read(
+        buffer: ByteArray,
+        offset: Int,
+        length: Int,
+    ): Int =
         try {
             wrappedDataSource.read(buffer, offset, length)
         } catch (e: Exception) {

@@ -116,7 +116,23 @@ class MainActivity : ComponentActivity() {
             coreConfigJson = CORE_CONFIG_JSON,
             serverPort = SERVER_PORT,
         )
+        
+        // Event listeners for P2P Media Loader
+        p2pml.addEventListener(CoreEventMap.OnPeerConnect) { params ->
+            // Implement logic to handle peer connection
+            Log.d("P2PML", "Peer connected: ${params.peerId} - ${params.streamType}")
+        }
 
+        p2pml.addEventListener(CoreEventMap.OnSegmentLoaded) { params ->
+            // Implement logic to handle loaded segment
+            Log.d("P2PML", "Segment loaded: ${params.segmentUrl} - ${params.bytesLength} - ${params.downloadSource}")
+        }
+
+        p2pml.addEventListener(CoreEventMap.OnChunkDownloaded) { params ->
+            // Implement logic to handle downloaded chunk
+            Log.d("P2PML", "Chunk downloaded: ${params.bytesLength} - ${params.downloadSource} - ${params.downloadSource}")
+        }
+        
         // Start P2P Media Loader with the activity context and ExoPlayer instance
         p2pml.start(this, exoPlayer)
 
@@ -190,21 +206,21 @@ public class MainActivity extends AppCompatActivity {
     // URL to the media manifest
     private static final String MANIFEST_URL = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 
-    // JSON configuration for P2P Media Loader
+    // Port on which the P2P server will run
     private static final int SERVER_PORT = 8081;
 
-    // Port on which the P2P server will run
+    // JSON configuration for P2P Media Loader
     private static final String CORE_CONFIG_JSON = "{\"swarmId\":\"TEST_KOTLIN\"}";
 
     private ExoPlayer exoPlayer;
-    private P2PMediaLoader p2pMediaLoader;
+    private P2PMediaLoader p2pml;
 
     private PlayerView playerView;
     private ProgressBar loadingIndicator;
     private TextView videoTitle;
 
     private void initializePlayback() {
-        String manifestUrl = p2pMediaLoader.getManifestUrl(MANIFEST_URL);
+        String manifestUrl = p2pml.getManifestUrl(MANIFEST_URL);
 
         DefaultHttpDataSource.Factory dataSourceFactory = new DefaultHttpDataSource.Factory()
                 .setConnectTimeoutMs(15000) // Set the connection timeout
@@ -254,15 +270,31 @@ public class MainActivity extends AppCompatActivity {
         exoPlayer = new ExoPlayer.Builder(this).build();
 
         // Initialize P2P Media Loader with callbacks
-        p2pMediaLoader = new P2PMediaLoader(
+        p2pml = new P2PMediaLoader(
             this::initializePlayback,
             this::onP2PReadyErrorCallback,
             SERVER_PORT,
             CORE_CONFIG_JSON
         );
 
+        // Event listeners for P2P Media Loader
+        p2pml.addEventListener(CoreEventMap.OnPeerConnect, (params) -> {
+            // Implement logic to handle peer connection
+            System.out.println("Peer connected: " + params.getPeerId() + " - " + params.getStreamType());
+        });
+
+        p2pml.addEventListener(CoreEventMap.OnSegmentLoaded, (params) -> {
+            // Implement logic to handle loaded segment
+            System.out.println("Segment loaded: " + params.getSegmentUrl() + " - " + params.getBytesLength() + " - " + params.getDownloadSource());
+        });
+
+        p2pml.addEventListener(CoreEventMap.OnChunkDownloaded, (params) -> {
+            // Implement logic to handle downloaded chunk
+            System.out.println("Chunk downloaded: " + params.getBytesLength() + " - " + params.getDownloadSource() + " - " + params.getDownloadSource());
+        });
+        
         // Start P2P Media Loader with the activity context and ExoPlayer instance
-        p2pMediaLoader.start(this, exoPlayer);
+        p2pml.start(this, exoPlayer);
 
         // Listener to update UI based on playback state
         exoPlayer.addListener(new Player.Listener() {
@@ -284,8 +316,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onRestart() {
         super.onRestart();
         // Disable P2P features when the activity stops
-        if (p2pMediaLoader != null) {
-            p2pMediaLoader.applyDynamicConfig("{ \"isP2PDisabled\": false }");
+        if (p2pml != null) {
+            p2pml.applyDynamicConfig("{ \"isP2PDisabled\": false }");
         }
     }
 
@@ -293,8 +325,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         // Re-enable P2P features when the activity restarts
-        if (p2pMediaLoader != null) {
-            p2pMediaLoader.applyDynamicConfig("{ \"isP2PDisabled\": true }");
+        if (p2pml != null) {
+            p2pml.applyDynamicConfig("{ \"isP2PDisabled\": true }");
         }
     }
 
@@ -302,8 +334,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         // Release ExoPlayer resources and stop P2P Media Loader
-        if (p2pMediaLoader != null) {
-            p2pMediaLoader.stop();
+        if (p2pml != null) {
+            p2pml.stop();
         }
         if (exoPlayer != null) {
             exoPlayer.release();
