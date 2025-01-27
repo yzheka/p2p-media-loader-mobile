@@ -6,6 +6,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.novage.p2pml.Constants.CORE_FILE_URL
 import com.novage.p2pml.Constants.CUSTOM_FILE_URL
 import com.novage.p2pml.Constants.QueryParams.MANIFEST
+import com.novage.p2pml.interop.EventListener
 import com.novage.p2pml.interop.OnP2PReadyCallback
 import com.novage.p2pml.interop.OnP2PReadyErrorCallback
 import com.novage.p2pml.logger.Logger
@@ -88,7 +89,7 @@ class P2PMediaLoader(
      */
     fun <T> addEventListener(
         event: CoreEventMap<T>,
-        listener: (T) -> Unit,
+        listener: EventListener<T>,
     ) {
         eventEmitter.addEventListener(event, listener)
     }
@@ -101,7 +102,7 @@ class P2PMediaLoader(
      */
     fun <T> removeEventListener(
         event: CoreEventMap<T>,
-        listener: (T) -> Unit,
+        listener: EventListener<T>,
     ) {
         eventEmitter.removeEventListener(event, listener)
     }

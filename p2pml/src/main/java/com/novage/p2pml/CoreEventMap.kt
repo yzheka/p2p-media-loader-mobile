@@ -9,59 +9,99 @@ import kotlinx.serialization.Serializable
  */
 sealed class CoreEventMap<T> {
     /**
-     * Fired when a segment is fully downloaded and available for use.
+     * Companion object holding all event singletons so Java can do:
+     *     CoreEventMaps.OnSegmentLoaded
+     * from Java code.
      */
-    object OnSegmentLoaded : CoreEventMap<SegmentLoadDetails>()
+    companion object {
+        /**
+         * Fired when a segment is fully downloaded and available for use.
+         */
+        @JvmField
+        val OnSegmentLoaded = OnSegmentLoadedEvent
 
-    /**
-     * Fired at the beginning of a segment download process.
-     */
-    object OnSegmentStart : CoreEventMap<SegmentStartDetails>()
+        /**
+         * Fired at the beginning of a segment download process.
+         */
+        @JvmField
+        val OnSegmentStart = OnSegmentStartEvent
 
-    /**
-     * Fired when an error occurs during the download of a segment.
-     */
-    object OnSegmentError : CoreEventMap<SegmentErrorDetails>()
+        /**
+         * Fired when an error occurs during the download of a segment.
+         */
+        @JvmField
+        val OnSegmentError = OnSegmentErrorEvent
 
-    /**
-     * Fired if the download of a segment is aborted before completion.
-     */
-    object OnSegmentAbort : CoreEventMap<SegmentAbortDetails>()
+        /**
+         * Fired if the download of a segment is aborted before completion.
+         */
+        @JvmField
+        val OnSegmentAbort = OnSegmentAbortEvent
 
-    /**
-     * Fired when a new peer-to-peer connection is established.
-     */
-    object OnPeerConnect : CoreEventMap<PeerDetails>()
+        /**
+         * Fired when a new peer-to-peer connection is established.
+         */
+        @JvmField
+        val OnPeerConnect = OnPeerConnectEvent
 
-    /**
-     * Fired when an existing peer-to-peer connection is closed.
-     */
-    object OnPeerClose : CoreEventMap<PeerDetails>()
+        /**
+         * Fired when an existing peer-to-peer connection is closed.
+         */
+        @JvmField
+        val OnPeerClose = OnPeerCloseEvent
 
-    /**
-     * Fired when an error occurs during a peer-to-peer connection.
-     */
-    object OnPeerError : CoreEventMap<PeerErrorDetails>()
+        /**
+         * Fired when an error occurs during a peer-to-peer connection.
+         */
+        @JvmField
+        val OnPeerError = OnPeerErrorEvent
 
-    /**
-     * Fired after a chunk of data from a segment has been successfully downloaded.
-     */
-    object OnChunkDownloaded : CoreEventMap<ChunkDownloadedDetails>()
+        /**
+         * Fired after a chunk of data from a segment has been successfully downloaded.
+         */
+        @JvmField
+        val OnChunkDownloaded = OnChunkDownloadedEvent
 
-    /**
-     * Fired when a chunk of data has been successfully uploaded to a peer.
-     */
-    object OnChunkUploaded : CoreEventMap<ChunkUploadedDetails>()
+        /**
+         * Fired when a chunk of data has been successfully uploaded to a peer.
+         */
+        @JvmField
+        val OnChunkUploaded = OnChunkUploadedEvent
 
-    /**
-     * Fired when an error occurs during the tracker request process.
-     */
-    object OnTrackerError : CoreEventMap<TrackerErrorDetails>()
+        /**
+         * Fired when an error occurs during the tracker request process.
+         */
+        @JvmField
+        val OnTrackerError = OnTrackerErrorEvent
 
-    /**
-     * Fired when a warning occurs during the tracker request process.
-     */
-    object OnTrackerWarning : CoreEventMap<TrackerWarningDetails>()
+        /**
+         * Fired when a warning occurs during the tracker request process.
+         */
+        @JvmField
+        val OnTrackerWarning = OnTrackerWarningEvent
+    }
+
+    object OnSegmentLoadedEvent : CoreEventMap<SegmentLoadDetails>()
+
+    object OnSegmentStartEvent : CoreEventMap<SegmentStartDetails>()
+
+    object OnSegmentErrorEvent : CoreEventMap<SegmentErrorDetails>()
+
+    object OnSegmentAbortEvent : CoreEventMap<SegmentAbortDetails>()
+
+    object OnPeerConnectEvent : CoreEventMap<PeerDetails>()
+
+    object OnPeerCloseEvent : CoreEventMap<PeerDetails>()
+
+    object OnPeerErrorEvent : CoreEventMap<PeerErrorDetails>()
+
+    object OnChunkDownloadedEvent : CoreEventMap<ChunkDownloadedDetails>()
+
+    object OnChunkUploadedEvent : CoreEventMap<ChunkUploadedDetails>()
+
+    object OnTrackerErrorEvent : CoreEventMap<TrackerErrorDetails>()
+
+    object OnTrackerWarningEvent : CoreEventMap<TrackerWarningDetails>()
 }
 
 /**

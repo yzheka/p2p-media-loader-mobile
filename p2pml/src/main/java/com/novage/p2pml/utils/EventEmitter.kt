@@ -1,6 +1,7 @@
 package com.novage.p2pml.utils
 
 import com.novage.p2pml.CoreEventMap
+import com.novage.p2pml.interop.EventListener
 
 class EventEmitter {
     private val listeners = mutableMapOf<CoreEventMap<*>, MutableList<EventListener<*>>>()
