@@ -82,27 +82,27 @@ sealed class CoreEventMap<T> {
         val OnTrackerWarning = OnTrackerWarningEvent
     }
 
-    private object OnSegmentLoadedEvent : CoreEventMap<SegmentLoadDetails>()
+    private data object OnSegmentLoadedEvent : CoreEventMap<SegmentLoadDetails>()
 
-    private object OnSegmentStartEvent : CoreEventMap<SegmentStartDetails>()
+    private data object OnSegmentStartEvent : CoreEventMap<SegmentStartDetails>()
 
-    private object OnSegmentErrorEvent : CoreEventMap<SegmentErrorDetails>()
+    private data object OnSegmentErrorEvent : CoreEventMap<SegmentErrorDetails>()
 
-    private object OnSegmentAbortEvent : CoreEventMap<SegmentAbortDetails>()
+    private data object OnSegmentAbortEvent : CoreEventMap<SegmentAbortDetails>()
 
-    private object OnPeerConnectEvent : CoreEventMap<PeerDetails>()
+    private data object OnPeerConnectEvent : CoreEventMap<PeerDetails>()
 
-    private object OnPeerCloseEvent : CoreEventMap<PeerDetails>()
+    private data object OnPeerCloseEvent : CoreEventMap<PeerDetails>()
 
-    private object OnPeerErrorEvent : CoreEventMap<PeerErrorDetails>()
+    private data object OnPeerErrorEvent : CoreEventMap<PeerErrorDetails>()
 
-    private object OnChunkDownloadedEvent : CoreEventMap<ChunkDownloadedDetails>()
+    private data object OnChunkDownloadedEvent : CoreEventMap<ChunkDownloadedDetails>()
 
-    private object OnChunkUploadedEvent : CoreEventMap<ChunkUploadedDetails>()
+    private data object OnChunkUploadedEvent : CoreEventMap<ChunkUploadedDetails>()
 
-    private object OnTrackerErrorEvent : CoreEventMap<TrackerErrorDetails>()
+    private data object OnTrackerErrorEvent : CoreEventMap<TrackerErrorDetails>()
 
-    private object OnTrackerWarningEvent : CoreEventMap<TrackerWarningDetails>()
+    private data object OnTrackerWarningEvent : CoreEventMap<TrackerWarningDetails>()
 }
 
 /**
