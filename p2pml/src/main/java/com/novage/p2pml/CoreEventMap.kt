@@ -1,5 +1,3 @@
-@file:JvmName("CoreEventMap")
-
 package com.novage.p2pml
 
 import kotlinx.serialization.Serializable
