@@ -90,11 +90,27 @@
           });
 
           this.core.addEventListener("onTrackerError", (params) => {
-            Android.onTrackerError(JSON.stringify(params));
+            const serializableParams = {
+              streamType: params.streamType,
+              error: {
+                message: params.error.message,
+                stack: params.error.stack,
+              },
+            };
+
+            Android.onTrackerError(JSON.stringify(serializableParams));
           });
 
           this.core.addEventListener("onTrackerWarning", (params) => {
-            Android.onTrackerWarning(JSON.stringify(params));
+            const serializableParams = {
+              streamType: params.streamType,
+              warning: {
+                message: params.warning.message,
+                stack: params.warning.stack,
+              },
+            };
+
+            Android.onTrackerWarning(JSON.stringify(serializableParams));
           });
         }
 

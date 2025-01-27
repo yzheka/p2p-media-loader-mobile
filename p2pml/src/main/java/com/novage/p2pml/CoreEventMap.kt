@@ -263,7 +263,7 @@ data class ChunkUploadedDetails(
 @Serializable
 data class TrackerErrorDetails(
     val streamType: String,
-    val error: String,
+    val error: JsError,
 )
 
 /**
@@ -275,5 +275,17 @@ data class TrackerErrorDetails(
 @Serializable
 data class TrackerWarningDetails(
     val streamType: String,
-    val warning: String,
+    val warning: JsError,
+)
+
+/**
+ * Represents a JavaScript error.
+ *
+ * @property message The error message.
+ * @property stack The stack trace of the error.
+ */
+@Serializable
+data class JsError(
+    val message: String,
+    val stack: String? = null,
 )
