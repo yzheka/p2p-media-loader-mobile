@@ -17,7 +17,6 @@ import androidx.media3.datasource.TransferListener
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import com.novage.demo.Streams
-import com.novage.p2pml.CoreEventMap
 import com.novage.p2pml.P2PMediaLoader
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,21 +45,6 @@ class ExoPlayerViewModel(
                 coreConfigJson = "{\"swarmId\":\"TEST_KOTLIN\"}",
                 serverPort = 8081,
             )
-
-        p2pml!!.addEventListener(CoreEventMap.OnPeerConnect) { params ->
-            // Implement logic to handle peer connection
-            Log.d("P2PML", "Peer connected: ${params.peerId} - ${params.streamType}")
-        }
-
-        p2pml!!.addEventListener(CoreEventMap.OnSegmentLoaded) { params ->
-            // Implement logic to handle loaded segment
-            Log.d("P2PML", "Segment loaded: ${params.segmentUrl} - ${params.bytesLength} - ${params.downloadSource}")
-        }
-
-        p2pml!!.addEventListener(CoreEventMap.OnChunkDownloaded) { params ->
-            // Implement logic to handle downloaded chunk
-            Log.d("P2PML", "Chunk downloaded: ${params.bytesLength} - ${params.downloadSource} - ${params.downloadSource}")
-        }
 
         p2pml!!.start(context, player)
     }
