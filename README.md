@@ -78,7 +78,7 @@ Make sure to reference this file in the `<application>` tag of your **`AndroidMa
 
 ## Usage
 
-#### ⚠️ P2P may not work properly on Android simulators. Please test P2P on real devices. ⚠️
+#### ⚠️ P2P (WebRTC) may not connect to the outer world if it runs on Android emulators due to its virtual machine [network configuration](https://developer.android.com/studio/run/emulator-networking) (NAT). Please test P2P connectivity on real devices. ⚠️
 
 Once you've completed the setup, P2P Media Loader is ready to use in your application!
 
