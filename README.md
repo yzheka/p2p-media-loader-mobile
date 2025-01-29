@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
         private const val MANIFEST_URL = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
         
         // JSON configuration for P2P Media Loader
-        // See https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.CoreConfig.html
+        // See https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p-media-loader-core.CoreConfig.html
         private const val CORE_CONFIG_JSON = "{\"swarmId\":\"TEST_KOTLIN\"}"
         
         // Port on which the P2P server will run
