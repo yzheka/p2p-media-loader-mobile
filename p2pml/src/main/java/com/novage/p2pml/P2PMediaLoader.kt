@@ -31,7 +31,7 @@ import kotlinx.coroutines.runBlocking
  *
  * @param onP2PReadyCallback Callback invoked when the P2P engine is ready for use
  * @param onP2PReadyErrorCallback Callback invoked when an error occurs
- * @param coreConfigJson Sets core P2P configurations. See [P2PML Core Config](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.CoreConfig.html)
+ * @param coreConfigJson Sets core P2P configurations. See [P2PML Core Config](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p-media-loader-core.CoreConfig.html)
  * JSON string with core configurations. Default: empty string (uses default config)
  *
  * @param serverPort Port number for the local server. Default: 8080
@@ -188,7 +188,7 @@ class P2PMediaLoader(
      * Applies dynamic core configurations to the `P2PMediaLoader` engine.
      *
      * @param dynamicCoreConfigJson A JSON string containing dynamic core configurations for the P2P engine.
-     * Refer to the [DynamicCoreConfig Documentation](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.DynamicCoreConfig.html).
+     * Refer to the [DynamicCoreConfig Documentation](https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p-media-loader-core.DynamicCoreConfig.html).
      * @throws IllegalStateException if P2PMediaLoader is not started
      */
     fun applyDynamicConfig(dynamicCoreConfigJson: String) {

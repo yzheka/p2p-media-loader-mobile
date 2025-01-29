@@ -184,14 +184,14 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         // Disable P2P features when the activity stops
-        // See https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.DynamicCoreConfig.html
+        // See https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p-media-loader-core.DynamicCoreConfig.html
         p2pml.applyDynamicConfig("{\"isP2PDisabled\": true}")
     }
 
     override fun onRestart() {
         super.onRestart()
         // Re-enable P2P features when the activity restarts
-        // See https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.DynamicCoreConfig.html
+        // See https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p-media-loader-core.DynamicCoreConfig.html
         p2pml.applyDynamicConfig("{\"isP2PDisabled\": false}")
     }
 
@@ -215,7 +215,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int SERVER_PORT = 8081;
 
     // JSON configuration for P2P Media Loader
-    // See https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.CoreConfig.html
+    // See https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p-media-loader-core.CoreConfig.html
     private static final String CORE_CONFIG_JSON = "{\"swarmId\":\"TEST_KOTLIN\"}";
 
     private ExoPlayer exoPlayer;
@@ -323,7 +323,7 @@ public class MainActivity extends AppCompatActivity {
         super.onRestart();
         // Disable P2P features when the activity stops
         if (p2pml != null) {
-            // See https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.DynamicCoreConfig.html
+            // See https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p-media-loader-core.DynamicCoreConfig.html
             p2pml.applyDynamicConfig("{ \"isP2PDisabled\": false }");
         }
     }
@@ -333,7 +333,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStop();
         // Re-enable P2P features when the activity restarts
         if (p2pml != null) {
-            // See https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p_media_loader_core.DynamicCoreConfig.html
+            // See https://novage.github.io/p2p-media-loader/docs/v2.1.0/types/p2p-media-loader-core.DynamicCoreConfig.html
             p2pml.applyDynamicConfig("{ \"isP2PDisabled\": true }");
         }
     }
