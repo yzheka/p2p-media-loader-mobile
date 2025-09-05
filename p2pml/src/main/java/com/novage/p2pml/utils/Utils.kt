@@ -29,7 +29,7 @@ internal object Utils {
 
     fun encodeUrlToBase64(url: String): String = url.encodeBase64().encodeURLParameter()
 
-    fun decodeBase64Url(encodedString: String): String = encodedString.decodeBase64String().decodeURLQueryComponent()
+    fun decodeBase64Url(encodedString: String): String = encodedString.decodeURLQueryComponent().decodeBase64String()
 
     fun getUrl(
         port: Int,
