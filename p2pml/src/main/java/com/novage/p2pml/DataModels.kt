@@ -1,6 +1,10 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package com.novage.p2pml
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonIgnoreUnknownKeys
 
 @Serializable
 internal data class Stream(
@@ -51,11 +55,13 @@ data class PlaybackInfo(
 )
 
 @Serializable
+@JsonIgnoreUnknownKeys
 internal data class StreamConfig(
     val isP2PDisabled: Boolean? = null,
 )
 
 @Serializable
+@JsonIgnoreUnknownKeys
 internal data class DynamicP2PCoreConfig(
     val isP2PDisabled: Boolean? = null,
     val mainStream: StreamConfig? = null,
