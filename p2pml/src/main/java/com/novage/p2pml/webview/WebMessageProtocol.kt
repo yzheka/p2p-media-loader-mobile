@@ -1,12 +1,12 @@
 package com.novage.p2pml.webview
 
 import android.annotation.SuppressLint
+import android.net.Uri
 import android.webkit.WebView
-import androidx.core.net.toUri
 import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebMessagePortCompat
 import androidx.webkit.WebViewCompat
-import androidx.webkit.WebViewFeature
+import androidx.webkit.internal.ApiHelperForM.setWebMessageCallback
 import com.novage.p2pml.SegmentRequest
 import com.novage.p2pml.logger.Logger
 import com.novage.p2pml.utils.SegmentAbortedException
@@ -18,19 +18,22 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.random.Random
+import androidx.core.net.toUri
 
 internal class WebMessageProtocol(
     private val webView: WebView,
     private val coroutineScope: CoroutineScope,
 ) {
+    @SuppressLint("RequiresFeature")
+    private val channels: Array<WebMessagePortCompat> = runCatching {
+        WebViewCompat.createWebMessageChannel(webView)
+    }.onFailure{
+        handleErrorMessage(it.message?:it.toString())
+    }.getOrDefault(emptyArray())
     private val segmentResponseCallbacks = mutableMapOf<Int, CompletableDeferred<ByteArray>>()
-    private val channels: Array<WebMessagePortCompat> by lazy {
-        if(WebViewFeature.isFeatureSupported( WebViewFeature.CREATE_WEB_MESSAGE_CHANNEL))
-            WebViewCompat.createWebMessageChannel(webView)
-        else emptyArray()
-    }
     private val mutex = Mutex()
     private var incomingRequestId: Int? = null
 
@@ -42,8 +45,7 @@ internal class WebMessageProtocol(
 
     @SuppressLint("RequiresFeature")
     private fun initializeWebMessageCallback() {
-        if(channels.isEmpty())handleErrorMessage("Web Message channel is not available")
-        else channels.first().setWebMessageCallback(
+        channels.firstOrNull()?.setWebMessageCallback(
             object : WebMessagePortCompat.WebMessageCallbackCompat() {
                 override fun onMessage(
                     port: WebMessagePortCompat,
@@ -124,9 +126,8 @@ internal class WebMessageProtocol(
 
     @SuppressLint("RequiresFeature")
     suspend fun sendInitialMessage() {
-        if (wasInitialMessageSent) return
-        if(channels.isEmpty())handleErrorMessage("Web Message channel is not available")
-        else withContext(Dispatchers.Main) {
+        if (wasInitialMessageSent||channels.isEmpty()) return
+        withContext(Dispatchers.Main) {
             val initialMessage = WebMessageCompat("", arrayOf(channels[1]))
             WebViewCompat.postWebMessage(
                 webView,
