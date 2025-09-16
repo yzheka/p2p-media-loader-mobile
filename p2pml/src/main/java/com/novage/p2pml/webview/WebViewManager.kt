@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.view.View
 import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
@@ -41,6 +42,7 @@ internal class WebViewManager(
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             webViewClient = WebViewClientCompat()
+            webChromeClient = WebChromeClient()
             visibility = View.GONE
             addJavascriptInterface(
                 JavaScriptInterface(onPageLoadFinished, eventEmitter),

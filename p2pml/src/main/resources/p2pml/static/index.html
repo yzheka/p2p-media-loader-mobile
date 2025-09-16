@@ -2,16 +2,9 @@
 <html lang="">
   <head>
     <title>WebView Example</title>
-    <script type="importmap">
-      {
-        "imports": {
-          "p2p-media-loader-core": "./js/p2p-media-loader-core.es.min.js"
-        }
-      }
-    </script>
 
     <script type="module">
-      import { Core } from "p2p-media-loader-core";
+      import { Core } from "./js/p2p-media-loader-core.es.min.js";
 
       class P2P {
         constructor() {
@@ -45,7 +38,10 @@
           if (this.core) {
             this.destroyP2PEngine();
           }
-          this.core = new Core(this.coreConfig ?? {});
+          if(this.coreConfig)
+            this.core = new Core(this.coreConfig);
+          else
+            this.core = new Core({});
 
           this.core.addEventListener(
             "onChunkDownloaded",

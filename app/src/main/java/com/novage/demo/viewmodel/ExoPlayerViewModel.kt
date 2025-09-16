@@ -44,6 +44,7 @@ class ExoPlayerViewModel(
                 onP2PReadyErrorCallback = { onReadyError(it) },
                 coreConfigJson = "{\"swarmId\":\"TEST_KOTLIN\"}",
                 serverPort = 8081,
+                enableDebugLogs = true
             )
 
         p2pml!!.start(context, player)
