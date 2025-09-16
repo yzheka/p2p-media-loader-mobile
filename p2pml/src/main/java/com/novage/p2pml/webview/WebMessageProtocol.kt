@@ -6,6 +6,7 @@ import android.webkit.WebView
 import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebMessagePortCompat
 import androidx.webkit.WebViewCompat
+import androidx.webkit.internal.ApiHelperForM.setWebMessageCallback
 import com.novage.p2pml.SegmentRequest
 import com.novage.p2pml.logger.Logger
 import com.novage.p2pml.utils.SegmentAbortedException
@@ -20,14 +21,18 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.random.Random
+import androidx.core.net.toUri
 
 internal class WebMessageProtocol(
     private val webView: WebView,
     private val coroutineScope: CoroutineScope,
 ) {
     @SuppressLint("RequiresFeature")
-    private val channels: Array<WebMessagePortCompat> =
+    private val channels: Array<WebMessagePortCompat> = runCatching {
         WebViewCompat.createWebMessageChannel(webView)
+    }.onFailure{
+        handleErrorMessage(it.message?:it.toString())
+    }.getOrDefault(emptyArray())
     private val segmentResponseCallbacks = mutableMapOf<Int, CompletableDeferred<ByteArray>>()
     private val mutex = Mutex()
     private var incomingRequestId: Int? = null
@@ -40,7 +45,7 @@ internal class WebMessageProtocol(
 
     @SuppressLint("RequiresFeature")
     private fun initializeWebMessageCallback() {
-        channels[0].setWebMessageCallback(
+        channels.firstOrNull()?.setWebMessageCallback(
             object : WebMessagePortCompat.WebMessageCallbackCompat() {
                 override fun onMessage(
                     port: WebMessagePortCompat,
@@ -60,7 +65,7 @@ internal class WebMessageProtocol(
                         Logger.e(TAG, "Error while handling message: ${e.message}", e)
                     }
                 }
-            },
+            }
         )
     }
 
@@ -121,13 +126,13 @@ internal class WebMessageProtocol(
 
     @SuppressLint("RequiresFeature")
     suspend fun sendInitialMessage() {
-        if (wasInitialMessageSent) return
+        if (wasInitialMessageSent||channels.isEmpty()) return
         withContext(Dispatchers.Main) {
             val initialMessage = WebMessageCompat("", arrayOf(channels[1]))
             WebViewCompat.postWebMessage(
                 webView,
                 initialMessage,
-                Uri.parse("*"),
+                "*".toUri(),
             )
             wasInitialMessageSent = true
         }
